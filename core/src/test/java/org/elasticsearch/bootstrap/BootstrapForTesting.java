@@ -79,6 +79,10 @@ public class BootstrapForTesting {
                 Security.setCodebaseProperties();
                 // initialize paths the same exact way as bootstrap
                 Permissions perms = new Permissions();
+
+                // TODO(talevy): HACK
+                perms.add(new FilePermission("/tmp/geolite2city.mmdb", "read,readlink"));
+
                 // add permissions to everything in classpath
                 for (URL url : JarHell.parseClassPath()) {
                     Path path = PathUtils.get(url.toURI());

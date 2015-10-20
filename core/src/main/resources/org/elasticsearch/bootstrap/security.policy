@@ -62,6 +62,11 @@ grant codeBase "${es.security.plugin.lang-expression}" {
   permission java.lang.RuntimePermission "createClassLoader";
 };
 
+grant codeBase "${es.security.plugin.ingest}" {
+  // needed because of geoip2
+  permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+};
+
 grant codeBase "${es.security.plugin.lang-groovy}" {
   // needed to generate runtime classes
   permission java.lang.RuntimePermission "createClassLoader";

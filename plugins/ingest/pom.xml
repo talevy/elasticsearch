@@ -21,6 +21,15 @@
         <xlint.options>-Xlint:-rawtypes</xlint.options>
     </properties>
 
+    <dependencies>
+        <!-- GEOIP -->
+        <dependency>
+            <groupId>com.maxmind.geoip2</groupId>
+            <artifactId>geoip2</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>
