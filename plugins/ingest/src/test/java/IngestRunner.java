@@ -34,6 +34,7 @@ public class IngestRunner {
         settings.put("http.cors.allow-origin", "*");
         settings.put("script.inline", "on");
         settings.put("cluster.name", IngestRunner.class.getSimpleName());
+        settings.put("path.home", "/Users/tal/tmp/ingesttest/home");
 
         final CountDownLatch latch = new CountDownLatch(1);
         final Node node = new MockNode(settings.build(), Version.CURRENT, Collections.singleton(IngestPlugin.class));

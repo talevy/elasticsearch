@@ -20,6 +20,7 @@
 package org.elasticsearch.ingest.processor.geoip;
 
 import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.exception.AddressNotFoundException;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CityResponse;
 import com.maxmind.geoip2.record.*;
@@ -95,11 +96,13 @@ public final class GeoProcessor implements Processor {
                     geoData.put("timezone", location.getTimeZone());
                     geoData.put("latitude", location.getLatitude());
                     geoData.put("longitude", location.getLongitude());
-                    geoData.put("location", new double[] { location.getLongitude(), location.getLatitude() });
+                    if (location.getLatitude() != null && location.getLongitude() != null) {
+                        geoData.put("location", new double[]{location.getLongitude(), location.getLatitude()});
+                    }
 
                     data.addField(targetField, geoData);
                 } catch (IOException|GeoIp2Exception e) {
-                    throw new RuntimeException("Unable to initialize geolite database", e);
+                    // throw new RuntimeException("Unable to initialize geolite database", e);
                 }
                 return null;
             }
