@@ -24,6 +24,7 @@ import org.elasticsearch.ingest.processor.Processor;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -148,6 +149,7 @@ public final class MutateProcessor implements Processor {
         throw new UnsupportedOperationException();
     }
 
+    @SuppressWarnings("unchecked")
     private void doJoin(Data data) {
         if (join == null) { return; }
 
@@ -197,7 +199,7 @@ public final class MutateProcessor implements Processor {
         for(String field : uppercase) {
             Object val = data.getProperty(field);
             if (val instanceof String) {
-                data.addField(field, ((String) val).toUpperCase());
+                data.addField(field, ((String) val).toUpperCase(Locale.US));
             } else {
                 // TODO(talevy): throw exception
             }
@@ -210,7 +212,7 @@ public final class MutateProcessor implements Processor {
         for(String field : lowercase) {
             Object val = data.getProperty(field);
             if (val instanceof String) {
-                data.addField(field, ((String) val).toLowerCase());
+                data.addField(field, ((String) val).toLowerCase(Locale.US));
             } else {
                 // TODO(talevy): throw exception
             }
@@ -276,6 +278,7 @@ public final class MutateProcessor implements Processor {
             this.lowercase = lowercase;
         }
 
+        @SuppressWarnings("unchecked")
         public void fromMap(Map<String, Object> config) {
             this.update = (Map<String, Object>) config.get("update");
             this.rename = (Map<String, String>) config.get("rename");

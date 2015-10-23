@@ -37,7 +37,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.google.common.base.Charsets;
 import org.jcodings.specific.UTF8Encoding;
 import org.joni.*;
 import org.joni.exception.ValueException;
@@ -61,7 +60,7 @@ public class Grok {
             ")+" +
             ")" +
             ")?" + "\\}";
-    private static final Regex GROK_PATTERN_REGEX = new Regex(GROK_PATTERN.getBytes(Charsets.UTF_8), 0, GROK_PATTERN.getBytes(Charsets.UTF_8).length, Option.NONE, UTF8Encoding.INSTANCE, Syntax.DEFAULT);
+    private static final Regex GROK_PATTERN_REGEX = new Regex(GROK_PATTERN.getBytes(StandardCharsets.UTF_8), 0, GROK_PATTERN.getBytes(StandardCharsets.UTF_8).length, Option.NONE, UTF8Encoding.INSTANCE, Syntax.DEFAULT);
     private Regex compiledExpression;
     private String expression;
     private boolean namedCaptures;
@@ -122,10 +121,10 @@ public class Grok {
 
     public String groupMatch(String name, Region region, String pattern) {
         try {
-            int number = GROK_PATTERN_REGEX.nameToBackrefNumber(name.getBytes(Charsets.UTF_8), 0, name.getBytes(Charset.defaultCharset()).length, region);
+            int number = GROK_PATTERN_REGEX.nameToBackrefNumber(name.getBytes(StandardCharsets.UTF_8), 0, name.getBytes(Charset.defaultCharset()).length, region);
             int begin = region.beg[number];
             int end = region.end[number];
-            return new String(pattern.getBytes(Charsets.UTF_8), begin, end - begin, Charsets.UTF_8);
+            return new String(pattern.getBytes(StandardCharsets.UTF_8), begin, end - begin, StandardCharsets.UTF_8);
         } catch (StringIndexOutOfBoundsException e) {
             return null;
         } catch (ValueException e) {
@@ -139,7 +138,7 @@ public class Grok {
      * @return named regex expression
      */
     public String toRegex(String grokPattern) {
-        byte[] grokPatternBytes = grokPattern.getBytes(Charsets.UTF_8);
+        byte[] grokPatternBytes = grokPattern.getBytes(StandardCharsets.UTF_8);
         Matcher matcher = GROK_PATTERN_REGEX.matcher(grokPatternBytes);
 
         int result = matcher.search(0, grokPatternBytes.length, Option.NONE);
@@ -161,8 +160,8 @@ public class Grok {
                 grokPart = String.format(Locale.US, "(?:%s)", pattern);
             }
 
-            String start = new String(grokPatternBytes, 0, result, Charsets.UTF_8);
-            String rest = new String(grokPatternBytes, region.end[0], grokPatternBytes.length - region.end[0], Charsets.UTF_8);
+            String start = new String(grokPatternBytes, 0, result, StandardCharsets.UTF_8);
+            String rest = new String(grokPatternBytes, region.end[0], grokPatternBytes.length - region.end[0], StandardCharsets.UTF_8);
             return start + toRegex(grokPart + rest);
         }
 
@@ -171,12 +170,12 @@ public class Grok {
 
     public void compile(String grokPattern) {
         expression = toRegex(grokPattern);
-        byte[] expressionBytes = expression.getBytes(Charsets.UTF_8);
+        byte[] expressionBytes = expression.getBytes(StandardCharsets.UTF_8);
         compiledExpression = new Regex(expressionBytes, 0, expressionBytes.length, Option.DEFAULT, UTF8Encoding.INSTANCE);
     }
 
     public boolean match(String text) {
-        Matcher matcher = compiledExpression.matcher(text.getBytes(Charsets.UTF_8));
+        Matcher matcher = compiledExpression.matcher(text.getBytes(StandardCharsets.UTF_8));
         int result = matcher.search(0, text.length(), Option.DEFAULT);
         if (result != -1) {
             return true;
@@ -186,7 +185,7 @@ public class Grok {
     }
 
     public Map<String, Object> captures(String text) {
-        byte[] textAsBytes = text.getBytes(Charsets.UTF_8);
+        byte[] textAsBytes = text.getBytes(StandardCharsets.UTF_8);
         HashMap<String, Object> fields = new HashMap<>();
         Matcher matcher = compiledExpression.matcher(textAsBytes);
         int result = matcher.search(0, textAsBytes.length, Option.DEFAULT);
@@ -196,10 +195,10 @@ public class Grok {
                 NameEntry e = entry.next();
                 int number = e.getBackRefs()[0];
 
-                String groupName = new String(e.name, e.nameP, e.nameEnd - e.nameP, Charsets.UTF_8);
+                String groupName = new String(e.name, e.nameP, e.nameEnd - e.nameP, StandardCharsets.UTF_8);
                 String matchValue = null;
                 if (region.beg[number] >= 0) {
-                    matchValue = new String(textAsBytes, region.beg[number], region.end[number] - region.beg[number], Charsets.UTF_8);
+                    matchValue = new String(textAsBytes, region.beg[number], region.end[number] - region.beg[number], StandardCharsets.UTF_8);
                 }
                 GrokMatchGroup match = new GrokMatchGroup(groupName, matchValue);
                 fields.put(match.getName(), match.getValue());

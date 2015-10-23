@@ -24,12 +24,17 @@ import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CityResponse;
 import com.maxmind.geoip2.record.*;
 import org.elasticsearch.SpecialPermission;
+import org.elasticsearch.common.io.PathUtils;
+import org.elasticsearch.common.network.NetworkAddress;
 import org.elasticsearch.ingest.Data;
 import org.elasticsearch.ingest.processor.Processor;
 
-import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
@@ -53,9 +58,10 @@ public final class GeoProcessor implements Processor {
         this.databasePath = databasePath;
         this.targetField = (targetField == null) ? "geoip" : targetField;
 
-        File database = new File(databasePath);
+        Path database = PathUtils.getDefaultFileSystem().getPath(databasePath);
         try {
-            this.dbReader = new DatabaseReader.Builder(database).build();
+            InputStream reader = Files.newInputStream(database, StandardOpenOption.READ);
+            this.dbReader = new DatabaseReader.Builder(reader).build();
         } catch (IOException e) {
             // TODO(talevy): handle exception
         }
@@ -80,7 +86,7 @@ public final class GeoProcessor implements Processor {
                     Subdivision subdivision = response.getMostSpecificSubdivision();
 
                     HashMap<String, Object> geoData = new HashMap<String, Object>();
-                    geoData.put("ip", ipAddress.getHostAddress());
+                    geoData.put("ip", NetworkAddress.format(ipAddress));
                     geoData.put("country_iso_code", country.getIsoCode());
                     geoData.put("country_name", country.getName());
                     geoData.put("continent_name", continent.getName());
