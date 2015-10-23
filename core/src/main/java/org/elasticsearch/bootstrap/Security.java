@@ -170,6 +170,7 @@ final class Security {
         m.put("lang-groovy",         "org.elasticsearch.script.groovy.GroovyPlugin");
         m.put("lang-javascript",     "org.elasticsearch.plugin.javascript.JavaScriptPlugin");
         m.put("lang-python",         "org.elasticsearch.plugin.python.PythonPlugin");
+        m.put("ingest",              "org.elasticsearch.plugin.ingest.IngestPlugin");
         SPECIAL_PLUGINS = Collections.unmodifiableMap(m);
     }
 
