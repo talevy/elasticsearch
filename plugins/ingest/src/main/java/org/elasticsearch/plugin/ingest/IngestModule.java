@@ -23,6 +23,7 @@ import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.multibindings.MapBinder;
 import org.elasticsearch.ingest.processor.Processor;
 import org.elasticsearch.ingest.processor.mutate.MutateProcessor;
+import org.elasticsearch.ingest.processor.grok.GrokProcessor;
 import org.elasticsearch.ingest.processor.simple.SimpleProcessor;
 import org.elasticsearch.plugin.ingest.rest.IngestRestFilter;
 
@@ -42,6 +43,7 @@ public class IngestModule extends AbstractModule {
 
         registerProcessor(SimpleProcessor.TYPE, SimpleProcessor.Builder.Factory.class);
         registerProcessor(MutateProcessor.TYPE, MutateProcessor.Builder.Factory.class);
+        registerProcessor(GrokProcessor.TYPE, GrokProcessor.Builder.Factory.class);
 
         MapBinder<String, Processor.Builder.Factory> mapBinder = MapBinder.newMapBinder(binder(), String.class, Processor.Builder.Factory.class);
         for (Map.Entry<String, Class<? extends Processor.Builder.Factory>> entry : processors.entrySet()) {
