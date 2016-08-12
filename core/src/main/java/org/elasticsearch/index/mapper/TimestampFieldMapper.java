@@ -55,7 +55,7 @@ public class TimestampFieldMapper extends MetadataFieldMapper {
         static {
             FIELD_TYPE.setStored(true);
             FIELD_TYPE.setTokenized(false);
-            FIELD_TYPE.setNumericPrecisionStep(Defaults.PRECISION_STEP_64_BIT);
+            FIELD_TYPE.setNumericPrcisionStep(Defaults.PRECISION_STEP_64_BIT);
             FIELD_TYPE.setName(NAME);
             FIELD_TYPE.setDateTimeFormatter(DATE_TIME_FORMATTER);
             FIELD_TYPE.setIndexAnalyzer(Lucene.KEYWORD_ANALYZER);

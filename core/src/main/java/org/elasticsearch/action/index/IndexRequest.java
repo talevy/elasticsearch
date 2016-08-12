@@ -596,28 +596,28 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
         }
 
         // generate timestamp if not provided, we always have one post this stage...
-        if (timestamp == null) {
-            String defaultTimestamp = TimestampFieldMapper.Defaults.DEFAULT_TIMESTAMP;
-            if (mappingMd != null && mappingMd.timestamp() != null) {
-                // If we explicitly ask to reject null timestamp
-                if (mappingMd.timestamp().ignoreMissing() != null && mappingMd.timestamp().ignoreMissing() == false) {
-                    throw new TimestampParsingException("timestamp is required by mapping");
-                }
-                defaultTimestamp = mappingMd.timestamp().defaultTimestamp();
-            }
-
-            if (defaultTimestamp.equals(TimestampFieldMapper.Defaults.DEFAULT_TIMESTAMP)) {
-                timestamp = Long.toString(System.currentTimeMillis());
-            } else {
-                // if we are here, the defaultTimestamp is not
-                // TimestampFieldMapper.Defaults.DEFAULT_TIMESTAMP but
-                // this can only happen if defaultTimestamp was
-                // assigned again because mappingMd and
-                // mappingMd#timestamp() are not null
-                assert mappingMd != null;
-                timestamp = MappingMetaData.Timestamp.parseStringTimestamp(defaultTimestamp, mappingMd.timestamp().dateTimeFormatter());
-            }
-        }
+//        if (timestamp == null) {
+//            String defaultTimestamp = TimestampFieldMapper.Defaults.DEFAULT_TIMESTAMP;
+//            if (mappingMd != null && mappingMd.timestamp() != null) {
+//                // If we explicitly ask to reject null timestamp
+//                if (mappingMd.timestamp().ignoreMissing() != null && mappingMd.timestamp().ignoreMissing() == false) {
+//                    throw new TimestampParsingException("timestamp is required by mapping");
+//                }
+//                defaultTimestamp = mappingMd.timestamp().defaultTimestamp();
+//            }
+//
+//            if (defaultTimestamp.equals(TimestampFieldMapper.Defaults.DEFAULT_TIMESTAMP)) {
+//                timestamp = Long.toString(System.currentTimeMillis());
+//            } else {
+//                // if we are here, the defaultTimestamp is not
+//                // TimestampFieldMapper.Defaults.DEFAULT_TIMESTAMP but
+//                // this can only happen if defaultTimestamp was
+//                // assigned again because mappingMd and
+//                // mappingMd#timestamp() are not null
+//                assert mappingMd != null;
+//                timestamp = MappingMetaData.Timestamp.parseStringTimestamp(defaultTimestamp, mappingMd.timestamp().dateTimeFormatter());
+//            }
+//        }
     }
 
     /* resolve the routing if needed */
