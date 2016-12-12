@@ -44,7 +44,7 @@ final class Grok {
             "%\\{" +
             "(?<name>" +
             "(?<pattern>[A-z0-9]+)" +
-            "(?::(?<subname>[A-z0-9_:.-]+))?" +
+            "(?::(?<subname>[[[:word:]]]+))?" +
             ")" +
             "(?:=(?<definition>" +
             "(?:" +
