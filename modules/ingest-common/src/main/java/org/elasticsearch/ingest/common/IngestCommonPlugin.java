@@ -96,7 +96,9 @@ public class IngestCommonPlugin extends Plugin implements ActionPlugin, IngestPl
 
     @Override
     public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
-        return Arrays.asList(new ActionHandler<>(GrokProcessorGetAction.INSTANCE, GrokProcessorGetAction.TransportAction.class));
+        return Arrays.asList(
+            new ActionHandler<>(GrokProcessorGetAction.INSTANCE, GrokProcessorGetAction.TransportAction.class),
+        new ActionHandler<>(GrokProcessorPostAction.INSTANCE, GrokProcessorPostAction.TransportAction.class));
     }
 
     @Override
@@ -104,7 +106,9 @@ public class IngestCommonPlugin extends Plugin implements ActionPlugin, IngestPl
                                              IndexScopedSettings indexScopedSettings, SettingsFilter settingsFilter,
                                              IndexNameExpressionResolver indexNameExpressionResolver,
                                              Supplier<DiscoveryNodes> nodesInCluster) {
-        return Arrays.asList(new GrokProcessorGetAction.RestAction(settings, restController));
+        return Arrays.asList(
+            new GrokProcessorGetAction.RestAction(settings, restController),
+            new GrokProcessorPostAction.RestAction(settings, restController));
     }
 
 

@@ -176,5 +176,9 @@ final class Grok {
         }
         return null;
     }
+
+    public String getExpression() {
+        return expression;
+    }
 }
 
