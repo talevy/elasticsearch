@@ -56,13 +56,36 @@ public class JsonProcessorTests extends ESTestCase {
     public void testInvalidJson() {
         JsonProcessor jsonProcessor = new JsonProcessor("tag", "field", "target_field", false);
         Map<String, Object> document = new HashMap<>();
-        document.put("field", "invalid json");
+        document.put("field", "{invalidjson}");
         IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
 
         Exception exception = expectThrows(IllegalArgumentException.class, () -> jsonProcessor.execute(ingestDocument));
-        assertThat(exception.getCause().getCause().getMessage(), equalTo("Unrecognized token"
-                + " 'invalid': was expecting ('true', 'false' or 'null')\n"
-                + " at [Source: invalid json; line: 1, column: 8]"));
+        assertThat(exception.getCause().getMessage(), equalTo("Unexpected character ('i' (code 105))" +
+            ": was expecting double-quote to start field name\n" +
+            " at [Source: {invalidjson}; line: 1, column: 3]"));
+    }
+
+    public void testNonMapInRoot() {
+        JsonProcessor jsonProcessor = new JsonProcessor("tag", "field", "target_field", true);
+        Map<String, Object> document = new HashMap<>();
+        document.put("field", "\"mystring\"");
+        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
+
+        Exception exception = expectThrows(IllegalArgumentException.class, () -> jsonProcessor.execute(ingestDocument));
+        assertThat(exception.getMessage(), equalTo("Only JSON Objects can be added to root object, please specify a targetField"));
+    }
+
+    public void testStringTopLevel() throws Exception {
+        JsonProcessor jsonProcessor = new JsonProcessor("tag", "field", "target_field", false);
+        Map<String, Object> document = new HashMap<>();
+        document.put("field", "\"mystring\"");
+        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("target_field", "mystring");
+        jsonProcessor.execute(ingestDocument);
+        IngestDocument expectedIngestDocument = RandomDocumentPicks.randomIngestDocument(random(), expected);
+        assertIngestDocument(ingestDocument, expectedIngestDocument);
+
     }
 
     public void testFieldMissing() {

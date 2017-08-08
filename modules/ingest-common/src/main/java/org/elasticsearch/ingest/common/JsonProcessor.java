@@ -20,13 +20,17 @@
 package org.elasticsearch.ingest.common;
 
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
+import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
+import java.io.IOException;
 import java.util.Map;
 
 import static org.elasticsearch.ingest.ConfigurationUtils.newConfigurationException;
@@ -62,20 +66,47 @@ public final class JsonProcessor extends AbstractProcessor {
         return addToRoot;
     }
 
+    private Object parseJSONValue(String string) {
+        Object value = null;
+        try (XContentParser parser = JsonXContent.jsonXContent.createParser(NamedXContentRegistry.EMPTY, string)) {
+            XContentParser.Token nextToken = parser.nextToken();
+            if (nextToken == XContentParser.Token.START_OBJECT) {
+                value = parser.map();
+            } else if (nextToken == XContentParser.Token.START_ARRAY) {
+                value = parser.list();
+            } else if (nextToken == XContentParser.Token.VALUE_STRING) {
+                value = parser.text();
+            } else if (nextToken == XContentParser.Token.VALUE_BOOLEAN) {
+                value = parser.booleanValue();
+            } else if (nextToken == XContentParser.Token.VALUE_NUMBER) {
+                value = parser.numberValue();
+            } else if (nextToken == XContentParser.Token.VALUE_NULL) {
+                value = null;
+            } else {
+                throw new IllegalArgumentException("unsupported javascript type");
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed to parse JSON value", e);
+        }
+
+        return value;
+    }
+
     @Override
+    @SuppressWarnings("unchecked")
     public void execute(IngestDocument document) throws Exception {
         String stringValue = document.getFieldValue(field, String.class);
-        try {
-            Map<String, Object> mapValue = XContentHelper.convertToMap(JsonXContent.jsonXContent, stringValue, false);
-            if (addToRoot) {
-                for (Map.Entry<String, Object> entry : mapValue.entrySet()) {
-                    document.setFieldValue(entry.getKey(), entry.getValue());
-                }
-            } else {
-                document.setFieldValue(targetField, mapValue);
+        Object jsonValue = parseJSONValue(stringValue);
+        if (addToRoot) {
+            if (jsonValue instanceof Map == false) {
+                throw new IllegalArgumentException("Only JSON Objects can be added to root object, please specify a targetField");
             }
-        } catch (ElasticsearchParseException e) {
-            throw new IllegalArgumentException(e);
+            Map<String, Object> mapValue = (Map<String, Object>) jsonValue;
+            for (Map.Entry<String, Object> entry : mapValue.entrySet()) {
+                document.setFieldValue(entry.getKey(), entry.getValue());
+            }
+        } else {
+            document.setFieldValue(targetField, jsonValue);
         }
     }
 
