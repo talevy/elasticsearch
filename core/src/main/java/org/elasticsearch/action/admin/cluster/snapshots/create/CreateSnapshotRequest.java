@@ -90,6 +90,18 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
         this.repository = repository;
     }
 
+    public CreateSnapshotRequest(StreamInput in) throws IOException {
+        super(in);
+        snapshot = in.readString();
+        repository = in.readString();
+        indices = in.readStringArray();
+        indicesOptions = IndicesOptions.readIndicesOptions(in);
+        settings = readSettingsFromStream(in);
+        includeGlobalState = in.readBoolean();
+        waitForCompletion = in.readBoolean();
+        partial = in.readBoolean();
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = null;
@@ -383,15 +395,7 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        snapshot = in.readString();
-        repository = in.readString();
-        indices = in.readStringArray();
-        indicesOptions = IndicesOptions.readIndicesOptions(in);
-        settings = readSettingsFromStream(in);
-        includeGlobalState = in.readBoolean();
-        waitForCompletion = in.readBoolean();
-        partial = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

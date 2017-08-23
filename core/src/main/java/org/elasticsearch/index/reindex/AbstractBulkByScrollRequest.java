@@ -132,6 +132,20 @@ public abstract class AbstractBulkByScrollRequest<Self extends AbstractBulkByScr
         }
     }
 
+    public AbstractBulkByScrollRequest(StreamInput in) throws IOException {
+        super(in);
+        searchRequest = new SearchRequest(in);
+        abortOnVersionConflict = in.readBoolean();
+        size = in.readVInt();
+        refresh = in.readBoolean();
+        timeout = new TimeValue(in);
+        activeShardCount = ActiveShardCount.readFrom(in);
+        retryBackoffInitialTime = new TimeValue(in);
+        maxRetries = in.readVInt();
+        requestsPerSecond = in.readFloat();
+        slices = in.readVInt();
+    }
+
     /**
      * `this` cast to Self. Used for building fluent methods without cast
      * warnings.
@@ -398,18 +412,7 @@ public abstract class AbstractBulkByScrollRequest<Self extends AbstractBulkByScr
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        searchRequest = new SearchRequest();
-        searchRequest.readFrom(in);
-        abortOnVersionConflict = in.readBoolean();
-        size = in.readVInt();
-        refresh = in.readBoolean();
-        timeout = new TimeValue(in);
-        activeShardCount = ActiveShardCount.readFrom(in);
-        retryBackoffInitialTime = new TimeValue(in);
-        maxRetries = in.readVInt();
-        requestsPerSecond = in.readFloat();
-        slices = in.readVInt();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

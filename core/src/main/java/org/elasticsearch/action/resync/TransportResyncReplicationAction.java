@@ -30,6 +30,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.seqno.SequenceNumbersService;
@@ -60,17 +61,16 @@ public class TransportResyncReplicationAction extends TransportWriteAction<Resyn
     }
 
     @Override
-    protected void registerRequestHandlers(String actionName, TransportService transportService, Supplier<ResyncReplicationRequest> request,
-                                           Supplier<ResyncReplicationRequest> replicaRequest, String executor) {
-        transportService.registerRequestHandler(actionName, request, ThreadPool.Names.SAME, new OperationTransportHandler());
+    protected void registerRequestHandlers(String actionName, TransportService transportService,
+                                           Writeable.Reader<ResyncReplicationRequest> request,
+                                           Writeable.Reader<ResyncReplicationRequest> replicaRequest, String executor) {
+        transportService.registerRequestHandler(actionName, ThreadPool.Names.SAME, request, new OperationTransportHandler());
         // we should never reject resync because of thread pool capacity on primary
         transportService.registerRequestHandler(transportPrimaryAction,
-            () -> new ConcreteShardRequest<>(request),
-            executor, true, true,
+            executor, true, true, ConcreteShardRequest.getReader(request),
             new PrimaryOperationTransportHandler());
         transportService.registerRequestHandler(transportReplicaAction,
-            () -> new ConcreteReplicaRequest<>(replicaRequest),
-            executor, true, true,
+            executor, true, true, ConcreteReplicaRequest.getReplicaReader(replicaRequest),
             new ReplicaOperationTransportHandler());
     }
 

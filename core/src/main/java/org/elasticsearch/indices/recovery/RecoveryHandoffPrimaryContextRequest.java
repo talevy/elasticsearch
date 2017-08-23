@@ -56,6 +56,13 @@ class RecoveryHandoffPrimaryContextRequest extends TransportRequest {
         this.primaryContext = primaryContext;
     }
 
+    RecoveryHandoffPrimaryContextRequest(StreamInput in) throws IOException {
+        super(in);
+        recoveryId = in.readLong();
+        shardId = ShardId.readShardId(in);
+        primaryContext = new GlobalCheckpointTracker.PrimaryContext(in);
+    }
+
     long recoveryId() {
         return this.recoveryId;
     }
@@ -70,10 +77,7 @@ class RecoveryHandoffPrimaryContextRequest extends TransportRequest {
 
     @Override
     public void readFrom(final StreamInput in) throws IOException {
-        super.readFrom(in);
-        recoveryId = in.readLong();
-        shardId = ShardId.readShardId(in);
-        primaryContext = new GlobalCheckpointTracker.PrimaryContext(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

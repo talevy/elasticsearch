@@ -29,13 +29,18 @@ import java.io.IOException;
 public class IndicesSegmentsRequest extends BroadcastRequest<IndicesSegmentsRequest> {
 
     protected boolean verbose = false;
-    
+
     public IndicesSegmentsRequest() {
         this(Strings.EMPTY_ARRAY);
     }
 
     public IndicesSegmentsRequest(String... indices) {
         super(indices);
+    }
+
+    public IndicesSegmentsRequest(StreamInput in) throws IOException {
+        super(in);
+        verbose = in.readBoolean();
     }
 
     /**
@@ -58,13 +63,12 @@ public class IndicesSegmentsRequest extends BroadcastRequest<IndicesSegmentsRequ
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
         out.writeBoolean(verbose);
-        
+
     }
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        verbose = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
-    
+
 }

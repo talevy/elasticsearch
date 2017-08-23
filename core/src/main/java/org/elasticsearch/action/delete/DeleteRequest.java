@@ -80,6 +80,16 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest> impleme
         this.id = id;
     }
 
+    public DeleteRequest(StreamInput in) throws IOException {
+        super(in);
+        type = in.readString();
+        id = in.readString();
+        routing = in.readOptionalString();
+        parent = in.readOptionalString();
+        version = in.readLong();
+        versionType = VersionType.fromValue(in.readByte());
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = super.validate();
@@ -198,13 +208,7 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest> impleme
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        type = in.readString();
-        id = in.readString();
-        routing = in.readOptionalString();
-        parent = in.readOptionalString();
-        version = in.readLong();
-        versionType = VersionType.fromValue(in.readByte());
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

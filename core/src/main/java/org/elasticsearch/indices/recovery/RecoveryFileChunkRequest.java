@@ -56,6 +56,23 @@ public final class RecoveryFileChunkRequest extends TransportRequest {
         this.sourceThrottleTimeInNanos = sourceThrottleTimeInNanos;
     }
 
+    public RecoveryFileChunkRequest(StreamInput in) throws IOException {
+        super(in);
+        recoveryId = in.readLong();
+        shardId = ShardId.readShardId(in);
+        String name = in.readString();
+        position = in.readVLong();
+        long length = in.readVLong();
+        String checksum = in.readString();
+        content = in.readBytesReference();
+        Version writtenBy = Lucene.parseVersionLenient(in.readString(), null);
+        assert writtenBy != null;
+        metaData = new StoreFileMetaData(name, length, checksum, writtenBy);
+        lastChunk = in.readBoolean();
+        totalTranslogOps = in.readVInt();
+        sourceThrottleTimeInNanos = in.readLong();
+    }
+
     public long recoveryId() {
         return this.recoveryId;
     }
@@ -94,20 +111,7 @@ public final class RecoveryFileChunkRequest extends TransportRequest {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        recoveryId = in.readLong();
-        shardId = ShardId.readShardId(in);
-        String name = in.readString();
-        position = in.readVLong();
-        long length = in.readVLong();
-        String checksum = in.readString();
-        content = in.readBytesReference();
-        Version writtenBy = Lucene.parseVersionLenient(in.readString(), null);
-        assert writtenBy != null;
-        metaData = new StoreFileMetaData(name, length, checksum, writtenBy);
-        lastChunk = in.readBoolean();
-        totalTranslogOps = in.readVInt();
-        sourceThrottleTimeInNanos = in.readLong();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

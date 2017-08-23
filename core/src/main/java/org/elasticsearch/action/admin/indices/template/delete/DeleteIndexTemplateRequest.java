@@ -44,6 +44,11 @@ public class DeleteIndexTemplateRequest extends MasterNodeRequest<DeleteIndexTem
         this.name = name;
     }
 
+    public DeleteIndexTemplateRequest(StreamInput in) throws IOException {
+        super(in);
+        name = in.readString();
+    }
+
     /**
      * Set the index template name to delete.
      */
@@ -70,8 +75,7 @@ public class DeleteIndexTemplateRequest extends MasterNodeRequest<DeleteIndexTem
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        name = in.readString();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

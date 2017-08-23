@@ -38,6 +38,31 @@ public class GetTaskRequest extends ActionRequest {
     private boolean waitForCompletion = false;
     private TimeValue timeout = null;
 
+
+    public GetTaskRequest() {
+    }
+
+    public GetTaskRequest(TaskId taskId, TimeValue timeout, boolean waitForCompletion) {
+        this.taskId = taskId;
+        this.timeout = timeout;
+        this.waitForCompletion = waitForCompletion;
+    }
+
+    private GetTaskRequest(String parentTaskNode, long parentTaskId, TaskId taskId, TimeValue timeout,
+                           boolean waitForCompletion) {
+        setParentTask(parentTaskNode, parentTaskId);
+        this.taskId = taskId;
+        this.timeout = timeout;
+        this.waitForCompletion = waitForCompletion;
+    }
+
+    public GetTaskRequest(StreamInput in) throws IOException {
+        super(in);
+        taskId = TaskId.readFromStream(in);
+        timeout = in.readOptionalWriteable(TimeValue::new);
+        waitForCompletion = in.readBoolean();
+    }
+
     /**
      * Get the TaskId to look up.
      */
@@ -84,12 +109,7 @@ public class GetTaskRequest extends ActionRequest {
     }
 
     GetTaskRequest nodeRequest(String thisNodeId, long thisTaskId) {
-        GetTaskRequest copy = new GetTaskRequest();
-        copy.setParentTask(thisNodeId, thisTaskId);
-        copy.setTaskId(taskId);
-        copy.setTimeout(timeout);
-        copy.setWaitForCompletion(waitForCompletion);
-        return copy;
+        return new GetTaskRequest(thisNodeId, thisTaskId, taskId, timeout, waitForCompletion);
     }
 
     @Override
@@ -103,10 +123,7 @@ public class GetTaskRequest extends ActionRequest {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        taskId = TaskId.readFromStream(in);
-        timeout = in.readOptionalWriteable(TimeValue::new);
-        waitForCompletion = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

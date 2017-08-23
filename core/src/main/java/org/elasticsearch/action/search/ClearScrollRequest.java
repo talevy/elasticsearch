@@ -38,6 +38,15 @@ public class ClearScrollRequest extends ActionRequest implements ToXContentObjec
 
     private List<String> scrollIds;
 
+    public ClearScrollRequest() {
+
+    }
+
+    public ClearScrollRequest(StreamInput in) throws IOException {
+        super(in);
+        scrollIds = Arrays.asList(in.readStringArray());
+    }
+
     public List<String> getScrollIds() {
         return scrollIds;
     }
@@ -72,8 +81,7 @@ public class ClearScrollRequest extends ActionRequest implements ToXContentObjec
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        scrollIds = Arrays.asList(in.readStringArray());
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

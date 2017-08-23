@@ -41,6 +41,11 @@ public class NodesUsageRequest extends BaseNodesRequest<NodesUsageRequest> {
         super(nodesIds);
     }
 
+    public NodesUsageRequest(StreamInput in) throws IOException {
+        super(in);
+        this.restActions = in.readBoolean();
+    }
+
     /**
      * Sets all the request flags.
      */
@@ -74,8 +79,7 @@ public class NodesUsageRequest extends BaseNodesRequest<NodesUsageRequest> {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        this.restActions = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

@@ -42,6 +42,17 @@ public class ClusterStateRequest extends MasterNodeReadRequest<ClusterStateReque
     public ClusterStateRequest() {
     }
 
+    public ClusterStateRequest(StreamInput in) throws IOException {
+        super(in);
+        routingTable = in.readBoolean();
+        nodes = in.readBoolean();
+        metaData = in.readBoolean();
+        blocks = in.readBoolean();
+        customs = in.readBoolean();
+        indices = in.readStringArray();
+        indicesOptions = IndicesOptions.readIndicesOptions(in);
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         return null;
@@ -135,14 +146,7 @@ public class ClusterStateRequest extends MasterNodeReadRequest<ClusterStateReque
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        routingTable = in.readBoolean();
-        nodes = in.readBoolean();
-        metaData = in.readBoolean();
-        blocks = in.readBoolean();
-        customs = in.readBoolean();
-        indices = in.readStringArray();
-        indicesOptions = IndicesOptions.readIndicesOptions(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

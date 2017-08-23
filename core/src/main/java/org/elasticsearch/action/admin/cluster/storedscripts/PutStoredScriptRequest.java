@@ -47,6 +47,28 @@ public class PutStoredScriptRequest extends AcknowledgedRequest<PutStoredScriptR
         super();
     }
 
+    public PutStoredScriptRequest(StreamInput in) throws IOException {
+        super(in);
+
+        if (in.getVersion().before(Version.V_6_0_0_alpha2)) {
+            in.readString(); // read lang from previous versions
+        }
+        id = in.readOptionalString();
+        content = in.readBytesReference();
+        if (in.getVersion().onOrAfter(Version.V_5_3_0)) {
+            xContentType = XContentType.readFrom(in);
+        } else {
+            xContentType = XContentFactory.xContentType(content);
+        }
+        if (in.getVersion().onOrAfter(Version.V_6_0_0_alpha2)) {
+            context = in.readOptionalString();
+            source = new StoredScriptSource(in);
+        } else {
+            source = StoredScriptSource.parse(content, xContentType == null ? XContentType.JSON : xContentType);
+        }
+    }
+
+
     public PutStoredScriptRequest(String id, String context, BytesReference content, XContentType xContentType, StoredScriptSource source) {
         super();
         this.id = id;
@@ -115,24 +137,7 @@ public class PutStoredScriptRequest extends AcknowledgedRequest<PutStoredScriptR
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-
-        if (in.getVersion().before(Version.V_6_0_0_alpha2)) {
-            in.readString(); // read lang from previous versions
-        }
-        id = in.readOptionalString();
-        content = in.readBytesReference();
-        if (in.getVersion().onOrAfter(Version.V_5_3_0)) {
-            xContentType = XContentType.readFrom(in);
-        } else {
-            xContentType = XContentFactory.xContentType(content);
-        }
-        if (in.getVersion().onOrAfter(Version.V_6_0_0_alpha2)) {
-            context = in.readOptionalString();
-            source = new StoredScriptSource(in);
-        } else {
-            source = StoredScriptSource.parse(content, xContentType == null ? XContentType.JSON : xContentType);
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

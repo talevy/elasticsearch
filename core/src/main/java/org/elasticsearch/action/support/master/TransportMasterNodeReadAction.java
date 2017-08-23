@@ -23,6 +23,7 @@ import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
@@ -45,13 +46,13 @@ public abstract class TransportMasterNodeReadAction<Request extends MasterNodeRe
 
     protected TransportMasterNodeReadAction(Settings settings, String actionName, TransportService transportService,
                                             ClusterService clusterService, ThreadPool threadPool, ActionFilters actionFilters,
-                                            IndexNameExpressionResolver indexNameExpressionResolver, Supplier<Request> request) {
+                                            IndexNameExpressionResolver indexNameExpressionResolver, Writeable.Reader<Request> request) {
         this(settings, actionName, true, transportService, clusterService, threadPool, actionFilters, indexNameExpressionResolver,request);
     }
 
     protected TransportMasterNodeReadAction(Settings settings, String actionName, boolean checkSizeLimit, TransportService transportService,
                                             ClusterService clusterService, ThreadPool threadPool, ActionFilters actionFilters,
-                                            IndexNameExpressionResolver indexNameExpressionResolver, Supplier<Request> request) {
+                                            IndexNameExpressionResolver indexNameExpressionResolver, Writeable.Reader<Request> request) {
         super(settings, actionName, checkSizeLimit, transportService, clusterService, threadPool, actionFilters,
             indexNameExpressionResolver,request);
         this.forceLocal = FORCE_LOCAL_SETTING.get(settings);

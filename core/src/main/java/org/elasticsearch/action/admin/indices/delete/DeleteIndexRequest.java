@@ -26,6 +26,7 @@ import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.util.CollectionUtils;
+import org.elasticsearch.index.engine.Engine;
 
 import java.io.IOException;
 
@@ -41,6 +42,12 @@ public class DeleteIndexRequest extends AcknowledgedRequest<DeleteIndexRequest> 
     private IndicesOptions indicesOptions = IndicesOptions.fromOptions(false, true, true, true, false, false, true);
 
     public DeleteIndexRequest() {
+    }
+
+    public DeleteIndexRequest(StreamInput in) throws IOException {
+        super(in);
+        indices = in.readStringArray();
+        indicesOptions = IndicesOptions.readIndicesOptions(in);
     }
 
     /**
@@ -96,9 +103,7 @@ public class DeleteIndexRequest extends AcknowledgedRequest<DeleteIndexRequest> 
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        indices = in.readStringArray();
-        indicesOptions = IndicesOptions.readIndicesOptions(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

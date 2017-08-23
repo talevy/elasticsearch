@@ -52,6 +52,13 @@ public abstract class AbstractBulkIndexByScrollRequest<Self extends AbstractBulk
         super(searchRequest, setDefaults);
     }
 
+    protected AbstractBulkIndexByScrollRequest(StreamInput in) throws IOException {
+        super(in);
+        if (in.readBoolean()) {
+            script = new Script(in);
+        }
+    }
+
     /**
      * Script to modify the documents before they are processed.
      */
@@ -74,10 +81,7 @@ public abstract class AbstractBulkIndexByScrollRequest<Self extends AbstractBulk
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        if (in.readBoolean()) {
-            script = new Script(in);
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

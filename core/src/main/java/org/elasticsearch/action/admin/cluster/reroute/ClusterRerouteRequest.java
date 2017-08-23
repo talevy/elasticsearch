@@ -41,6 +41,14 @@ public class ClusterRerouteRequest extends AcknowledgedRequest<ClusterRerouteReq
     public ClusterRerouteRequest() {
     }
 
+    public ClusterRerouteRequest(StreamInput in) throws IOException {
+        super(in);
+        commands = AllocationCommands.readFrom(in);
+        dryRun = in.readBoolean();
+        explain = in.readBoolean();
+        retryFailed = in.readBoolean();
+    }
+
     /**
      * Adds allocation commands to be applied to the cluster. Note, can be empty, in which case
      * will simply run a simple "reroute".
@@ -123,11 +131,7 @@ public class ClusterRerouteRequest extends AcknowledgedRequest<ClusterRerouteReq
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        commands = AllocationCommands.readFrom(in);
-        dryRun = in.readBoolean();
-        explain = in.readBoolean();
-        retryFailed = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

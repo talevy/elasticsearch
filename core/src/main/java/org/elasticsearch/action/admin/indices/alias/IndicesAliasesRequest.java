@@ -68,6 +68,12 @@ public class IndicesAliasesRequest extends AcknowledgedRequest<IndicesAliasesReq
 
     }
 
+    public IndicesAliasesRequest(StreamInput in) throws IOException {
+        super(in);
+        allAliasActions = in.readList(AliasActions::new);
+    }
+
+
     /**
      * Request to take one or more actions on one or more indexes and alias combinations.
      */
@@ -465,8 +471,7 @@ public class IndicesAliasesRequest extends AcknowledgedRequest<IndicesAliasesReq
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        allAliasActions = in.readList(AliasActions::new);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

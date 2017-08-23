@@ -43,6 +43,17 @@ public class RecoveryFinalizeRecoveryRequest extends TransportRequest {
         this.globalCheckpoint = globalCheckpoint;
     }
 
+    RecoveryFinalizeRecoveryRequest(StreamInput in) throws IOException {
+        super(in);
+        recoveryId = in.readLong();
+        shardId = ShardId.readShardId(in);
+        if (in.getVersion().onOrAfter(Version.V_6_0_0_alpha1)) {
+            globalCheckpoint = in.readZLong();
+        } else {
+            globalCheckpoint = SequenceNumbersService.UNASSIGNED_SEQ_NO;
+        }
+    }
+
     public long recoveryId() {
         return this.recoveryId;
     }
@@ -57,14 +68,7 @@ public class RecoveryFinalizeRecoveryRequest extends TransportRequest {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        recoveryId = in.readLong();
-        shardId = ShardId.readShardId(in);
-        if (in.getVersion().onOrAfter(Version.V_6_0_0_alpha1)) {
-            globalCheckpoint = in.readZLong();
-        } else {
-            globalCheckpoint = SequenceNumbersService.UNASSIGNED_SEQ_NO;
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

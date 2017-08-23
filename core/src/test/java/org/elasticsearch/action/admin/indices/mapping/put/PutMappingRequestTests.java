@@ -86,8 +86,7 @@ public class PutMappingRequestTests extends ESTestCase {
             request.writeTo(bytesStreamOutput);
             try (StreamInput in = StreamInput.wrap(bytesStreamOutput.bytes().toBytesRef().bytes)) {
                 in.setVersion(version);
-                PutMappingRequest serialized = new PutMappingRequest();
-                serialized.readFrom(in);
+                PutMappingRequest serialized = new PutMappingRequest(in);
 
                 String source = serialized.source();
                 assertEquals(XContentHelper.convertToJson(new BytesArray(mapping), false, XContentType.YAML), source);

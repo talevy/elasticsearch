@@ -45,6 +45,24 @@ public class ClusterSearchShardsRequest extends MasterNodeReadRequest<ClusterSea
     public ClusterSearchShardsRequest() {
     }
 
+    public ClusterSearchShardsRequest(StreamInput in) throws IOException {
+        super(in);
+
+        indices = new String[in.readVInt()];
+        for (int i = 0; i < indices.length; i++) {
+            indices[i] = in.readString();
+        }
+
+        routing = in.readOptionalString();
+        preference = in.readOptionalString();
+
+        if (in.getVersion().onOrBefore(Version.V_5_1_1)) {
+            //types
+            in.readStringArray();
+        }
+        indicesOptions = IndicesOptions.readIndicesOptions(in);
+    }
+
     public ClusterSearchShardsRequest(String... indices) {
         indices(indices);
     }
@@ -124,21 +142,7 @@ public class ClusterSearchShardsRequest extends MasterNodeReadRequest<ClusterSea
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-
-        indices = new String[in.readVInt()];
-        for (int i = 0; i < indices.length; i++) {
-            indices[i] = in.readString();
-        }
-
-        routing = in.readOptionalString();
-        preference = in.readOptionalString();
-
-        if (in.getVersion().onOrBefore(Version.V_5_1_1)) {
-            //types
-            in.readStringArray();
-        }
-        indicesOptions = IndicesOptions.readIndicesOptions(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

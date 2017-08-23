@@ -32,6 +32,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.engine.Engine;
@@ -67,11 +68,13 @@ public abstract class TransportWriteAction<
         > extends TransportReplicationAction<Request, ReplicaRequest, Response> {
 
     protected TransportWriteAction(Settings settings, String actionName, TransportService transportService,
-            ClusterService clusterService, IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction,
-            ActionFilters actionFilters, IndexNameExpressionResolver indexNameExpressionResolver, Supplier<Request> request,
-                                   Supplier<ReplicaRequest> replicaRequest, String executor) {
+                                   ClusterService clusterService, IndicesService indicesService, ThreadPool threadPool,
+                                   ShardStateAction shardStateAction, ActionFilters actionFilters,
+                                   IndexNameExpressionResolver indexNameExpressionResolver,
+                                   Writeable.Reader<Request> request, Writeable.Reader<ReplicaRequest> replicaRequest,
+                                   String executor) {
         super(settings, actionName, transportService, clusterService, indicesService, threadPool, shardStateAction, actionFilters,
-                indexNameExpressionResolver, request, replicaRequest, executor);
+            indexNameExpressionResolver, request, replicaRequest, executor);
     }
 
     /** Syncs operation result to the translog or throws a shard not available failure */

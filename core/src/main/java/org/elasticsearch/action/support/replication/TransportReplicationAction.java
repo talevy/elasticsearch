@@ -46,6 +46,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.lease.Releasables;
 import org.elasticsearch.common.settings.Settings;
@@ -112,8 +113,8 @@ public abstract class TransportReplicationAction<
                                          ClusterService clusterService, IndicesService indicesService,
                                          ThreadPool threadPool, ShardStateAction shardStateAction,
                                          ActionFilters actionFilters,
-                                         IndexNameExpressionResolver indexNameExpressionResolver, Supplier<Request> request,
-                                         Supplier<ReplicaRequest> replicaRequest, String executor) {
+                                         IndexNameExpressionResolver indexNameExpressionResolver, Writeable.Reader<Request> request,
+                                         Writeable.Reader<ReplicaRequest> replicaRequest, String executor) {
         super(settings, actionName, threadPool, actionFilters, indexNameExpressionResolver, transportService.getTaskManager());
         this.transportService = transportService;
         this.clusterService = clusterService;
@@ -128,15 +129,14 @@ public abstract class TransportReplicationAction<
         this.transportOptions = transportOptions();
     }
 
-    protected void registerRequestHandlers(String actionName, TransportService transportService, Supplier<Request> request,
-                                           Supplier<ReplicaRequest> replicaRequest, String executor) {
-        transportService.registerRequestHandler(actionName, request, ThreadPool.Names.SAME, new OperationTransportHandler());
-        transportService.registerRequestHandler(transportPrimaryAction, () -> new ConcreteShardRequest<>(request), executor,
+    protected void registerRequestHandlers(String actionName, TransportService transportService, Writeable.Reader<Request> request,
+                                           Writeable.Reader<ReplicaRequest> replicaRequest, String executor) {
+        transportService.registerRequestHandler(actionName, ThreadPool.Names.SAME, request, new OperationTransportHandler());
+        transportService.registerRequestHandler(transportPrimaryAction, executor, ConcreteShardRequest.getReader(request),
             new PrimaryOperationTransportHandler());
         // we must never reject on because of thread pool capacity on replicas
         transportService.registerRequestHandler(transportReplicaAction,
-            () -> new ConcreteReplicaRequest<>(replicaRequest),
-            executor, true, true,
+            executor, true, true, ConcreteReplicaRequest.getReplicaReader(replicaRequest),
             new ReplicaOperationTransportHandler());
     }
 
@@ -1144,13 +1144,6 @@ public abstract class TransportReplicationAction<
 
         private R request;
 
-        public ConcreteShardRequest(Supplier<R> requestSupplier) {
-            request = requestSupplier.get();
-            // null now, but will be populated by reading from the streams
-            targetAllocationID = null;
-            primaryTerm = 0L;
-        }
-
         public ConcreteShardRequest(R request, String targetAllocationID, long primaryTerm) {
             Objects.requireNonNull(request);
             Objects.requireNonNull(targetAllocationID);
@@ -1185,9 +1178,7 @@ public abstract class TransportReplicationAction<
 
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            targetAllocationID = in.readString();
-            primaryTerm = in.readVLong();
-            request.readFrom(in);
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override
@@ -1213,15 +1204,20 @@ public abstract class TransportReplicationAction<
         public String toString() {
             return "request: " + request + ", target allocation id: " + targetAllocationID + ", primary term: " + primaryTerm;
         }
+
+        public static <R extends TransportRequest> Writeable.Reader<ConcreteShardRequest<R>> getReader(Writeable.Reader<R> requestReader) {
+            return (in) -> {
+                String targetAllocationID = in.readString();
+                long primaryTerm = in.readVLong();
+                R request = requestReader.read(in);
+                return new ConcreteShardRequest<>(request, targetAllocationID, primaryTerm);
+            };
+        }
     }
 
     protected static final class ConcreteReplicaRequest<R extends TransportRequest> extends ConcreteShardRequest<R> {
 
         private long globalCheckpoint;
-
-        public ConcreteReplicaRequest(final Supplier<R> requestSupplier) {
-            super(requestSupplier);
-        }
 
         public ConcreteReplicaRequest(final R request, final String targetAllocationID, final long primaryTerm,
                                       final long globalCheckpoint) {
@@ -1231,12 +1227,7 @@ public abstract class TransportReplicationAction<
 
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            if (in.getVersion().onOrAfter(Version.V_6_0_0_alpha1)) {
-                globalCheckpoint = in.readZLong();
-            } else {
-                globalCheckpoint = SequenceNumbersService.UNASSIGNED_SEQ_NO;
-            }
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override
@@ -1259,6 +1250,22 @@ public abstract class TransportReplicationAction<
                     ", request=" + getRequest() +
                     ", globalCheckpoint=" + globalCheckpoint +
                     '}';
+        }
+
+        public static <R extends TransportRequest> Writeable.Reader<ConcreteReplicaRequest<R>> getReplicaReader(
+            Writeable.Reader<R> requestReader) {
+            return (in) -> {
+                String targetAllocationID = in.readString();
+                long primaryTerm = in.readVLong();
+                R request = requestReader.read(in);
+                long globalCheckpoint;
+                if (in.getVersion().onOrAfter(Version.V_6_0_0_alpha1)) {
+                    globalCheckpoint = in.readZLong();
+                } else {
+                    globalCheckpoint = SequenceNumbersService.UNASSIGNED_SEQ_NO;
+                }
+                return new ConcreteReplicaRequest<>(request, targetAllocationID, primaryTerm, globalCheckpoint);
+            };
         }
     }
 

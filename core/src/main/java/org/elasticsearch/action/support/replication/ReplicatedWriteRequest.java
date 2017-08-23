@@ -46,6 +46,11 @@ public abstract class ReplicatedWriteRequest<R extends ReplicatedWriteRequest<R>
         super(shardId);
     }
 
+    public ReplicatedWriteRequest(StreamInput in) throws IOException {
+        super(in);
+        refreshPolicy = RefreshPolicy.readFrom(in);
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public R setRefreshPolicy(RefreshPolicy refreshPolicy) {
@@ -60,8 +65,7 @@ public abstract class ReplicatedWriteRequest<R extends ReplicatedWriteRequest<R>
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        refreshPolicy = RefreshPolicy.readFrom(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

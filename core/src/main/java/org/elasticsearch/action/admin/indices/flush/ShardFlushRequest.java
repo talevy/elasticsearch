@@ -40,14 +40,18 @@ public class ShardFlushRequest extends ReplicationRequest<ShardFlushRequest> {
     public ShardFlushRequest() {
     }
 
+    public ShardFlushRequest(StreamInput in) throws IOException {
+        super(in);
+        request = new FlushRequest(in);
+    }
+
     FlushRequest getRequest() {
         return request;
     }
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        request.readFrom(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

@@ -58,6 +58,18 @@ public class PutPipelineRequest extends AcknowledgedRequest<PutPipelineRequest> 
     PutPipelineRequest() {
     }
 
+    PutPipelineRequest(StreamInput in) throws IOException {
+        super(in);
+        id = in.readString();
+        source = in.readBytesReference();
+        if (in.getVersion().onOrAfter(Version.V_5_3_0)) {
+            xContentType = XContentType.readFrom(in);
+        } else {
+            xContentType = XContentFactory.xContentType(source);
+        }
+
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         return null;
@@ -77,14 +89,7 @@ public class PutPipelineRequest extends AcknowledgedRequest<PutPipelineRequest> 
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        id = in.readString();
-        source = in.readBytesReference();
-        if (in.getVersion().onOrAfter(Version.V_5_3_0)) {
-            xContentType = XContentType.readFrom(in);
-        } else {
-            xContentType = XContentFactory.xContentType(source);
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

@@ -54,17 +54,8 @@ public class RecoveryFilesInfoRequest extends TransportRequest {
         this.totalTranslogOps = totalTranslogOps;
     }
 
-    public long recoveryId() {
-        return this.recoveryId;
-    }
-
-    public ShardId shardId() {
-        return shardId;
-    }
-
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
+    RecoveryFilesInfoRequest(StreamInput in) throws IOException {
+        super(in);
         recoveryId = in.readLong();
         shardId = ShardId.readShardId(in);
         int size = in.readVInt();
@@ -91,6 +82,19 @@ public class RecoveryFilesInfoRequest extends TransportRequest {
             phase1ExistingFileSizes.add(in.readVLong());
         }
         totalTranslogOps = in.readVInt();
+    }
+
+    public long recoveryId() {
+        return this.recoveryId;
+    }
+
+    public ShardId shardId() {
+        return shardId;
+    }
+
+    @Override
+    public void readFrom(StreamInput in) throws IOException {
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

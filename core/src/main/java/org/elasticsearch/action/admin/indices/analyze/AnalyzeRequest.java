@@ -107,6 +107,22 @@ public class AnalyzeRequest extends SingleShardRequest<AnalyzeRequest> {
     public AnalyzeRequest() {
     }
 
+    public AnalyzeRequest(StreamInput in) throws IOException {
+        super(in);
+        text = in.readStringArray();
+        analyzer = in.readOptionalString();
+        tokenizer = in.readOptionalWriteable(NameOrDefinition::new);
+        tokenFilters.addAll(in.readList(NameOrDefinition::new));
+        charFilters.addAll(in.readList(NameOrDefinition::new));
+        field = in.readOptionalString();
+        explain = in.readBoolean();
+        attributes = in.readStringArray();
+        if (in.getVersion().onOrAfter(Version.V_6_0_0_beta1)) {
+            normalizer = in.readOptionalString();
+        }
+    }
+
+
     /**
      * Constructs a new analyzer request for the provided index.
      *
@@ -231,18 +247,7 @@ public class AnalyzeRequest extends SingleShardRequest<AnalyzeRequest> {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        text = in.readStringArray();
-        analyzer = in.readOptionalString();
-        tokenizer = in.readOptionalWriteable(NameOrDefinition::new);
-        tokenFilters.addAll(in.readList(NameOrDefinition::new));
-        charFilters.addAll(in.readList(NameOrDefinition::new));
-        field = in.readOptionalString();
-        explain = in.readBoolean();
-        attributes = in.readStringArray();
-        if (in.getVersion().onOrAfter(Version.V_6_0_0_beta1)) {
-            normalizer = in.readOptionalString();
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

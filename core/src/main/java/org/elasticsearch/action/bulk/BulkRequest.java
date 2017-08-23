@@ -86,6 +86,17 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
     public BulkRequest() {
     }
 
+    public BulkRequest(StreamInput in) throws IOException {
+        super(in);
+        waitForActiveShards = ActiveShardCount.readFrom(in);
+        int size = in.readVInt();
+        for (int i = 0; i < size; i++) {
+            requests.add(DocWriteRequest.readDocumentRequest(in));
+        }
+        refreshPolicy = RefreshPolicy.readFrom(in);
+        timeout = new TimeValue(in);
+    }
+
     /**
      * Adds a list of requests to be executed. Either index or delete requests.
      */
@@ -566,14 +577,7 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        waitForActiveShards = ActiveShardCount.readFrom(in);
-        int size = in.readVInt();
-        for (int i = 0; i < size; i++) {
-            requests.add(DocWriteRequest.readDocumentRequest(in));
-        }
-        refreshPolicy = RefreshPolicy.readFrom(in);
-        timeout = new TimeValue(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

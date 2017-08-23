@@ -45,6 +45,14 @@ public class RecoveryCleanFilesRequest extends TransportRequest {
         this.totalTranslogOps = totalTranslogOps;
     }
 
+    RecoveryCleanFilesRequest(StreamInput in) throws IOException {
+        super(in);
+        recoveryId = in.readLong();
+        shardId = ShardId.readShardId(in);
+        snapshotFiles = new Store.MetadataSnapshot(in);
+        totalTranslogOps = in.readVInt();
+    }
+
     public long recoveryId() {
         return this.recoveryId;
     }
@@ -55,11 +63,7 @@ public class RecoveryCleanFilesRequest extends TransportRequest {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        recoveryId = in.readLong();
-        shardId = ShardId.readShardId(in);
-        snapshotFiles = new Store.MetadataSnapshot(in);
-        totalTranslogOps = in.readVInt();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

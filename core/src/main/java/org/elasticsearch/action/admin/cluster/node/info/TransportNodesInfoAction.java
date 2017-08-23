@@ -88,11 +88,15 @@ public class TransportNodesInfoAction extends TransportNodesAction<NodesInfoRequ
             this.request = request;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public NodeInfoRequest(StreamInput in) throws IOException {
+            super(in);
             request = new NodesInfoRequest();
             request.readFrom(in);
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

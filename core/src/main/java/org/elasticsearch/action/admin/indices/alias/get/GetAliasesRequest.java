@@ -46,6 +46,13 @@ public class GetAliasesRequest extends MasterNodeReadRequest<GetAliasesRequest> 
     public GetAliasesRequest() {
     }
 
+    public GetAliasesRequest(StreamInput in) throws IOException {
+        super(in);
+        indices = in.readStringArray();
+        aliases = in.readStringArray();
+        indicesOptions = IndicesOptions.readIndicesOptions(in);
+    }
+
     @Override
     public GetAliasesRequest indices(String... indices) {
         this.indices = indices;
@@ -90,10 +97,7 @@ public class GetAliasesRequest extends MasterNodeReadRequest<GetAliasesRequest> 
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        indices = in.readStringArray();
-        aliases = in.readStringArray();
-        indicesOptions = IndicesOptions.readIndicesOptions(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

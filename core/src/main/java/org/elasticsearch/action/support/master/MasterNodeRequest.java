@@ -38,6 +38,11 @@ public abstract class MasterNodeRequest<Request extends MasterNodeRequest<Reques
     protected MasterNodeRequest() {
     }
 
+    protected MasterNodeRequest(StreamInput in) throws IOException {
+        super(in);
+        masterNodeTimeout = new TimeValue(in);
+    }
+
     /**
      * A timeout value in case the master has not been discovered yet or disconnected.
      */
@@ -60,8 +65,7 @@ public abstract class MasterNodeRequest<Request extends MasterNodeRequest<Reques
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        masterNodeTimeout = new TimeValue(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

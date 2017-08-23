@@ -44,7 +44,7 @@ public class ForceMergeRequest extends BroadcastRequest<ForceMergeRequest> {
         public static final boolean ONLY_EXPUNGE_DELETES = false;
         public static final boolean FLUSH = true;
     }
-    
+
     private int maxNumSegments = Defaults.MAX_NUM_SEGMENTS;
     private boolean onlyExpungeDeletes = Defaults.ONLY_EXPUNGE_DELETES;
     private boolean flush = Defaults.FLUSH;
@@ -60,6 +60,13 @@ public class ForceMergeRequest extends BroadcastRequest<ForceMergeRequest> {
 
     public ForceMergeRequest() {
 
+    }
+
+    public ForceMergeRequest(StreamInput in) throws IOException {
+        super(in);
+        maxNumSegments = in.readInt();
+        onlyExpungeDeletes = in.readBoolean();
+        flush = in.readBoolean();
     }
 
     /**
@@ -113,10 +120,7 @@ public class ForceMergeRequest extends BroadcastRequest<ForceMergeRequest> {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        maxNumSegments = in.readInt();
-        onlyExpungeDeletes = in.readBoolean();
-        flush = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

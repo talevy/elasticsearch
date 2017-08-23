@@ -133,6 +133,12 @@ public class TransportNodesSnapshotsStatus extends TransportNodesAction<Transpor
             super(nodesIds);
         }
 
+        public Request(StreamInput in) throws IOException {
+            // This operation is never executed remotely
+            throw new UnsupportedOperationException("shouldn't be here");
+
+        }
+
         public Request snapshots(Snapshot[] snapshots) {
             this.snapshots = snapshots;
             return this;
@@ -140,8 +146,7 @@ public class TransportNodesSnapshotsStatus extends TransportNodesAction<Transpor
 
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            // This operation is never executed remotely
-            throw new UnsupportedOperationException("shouldn't be here");
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override
@@ -181,10 +186,14 @@ public class TransportNodesSnapshotsStatus extends TransportNodesAction<Transpor
             snapshots = Arrays.asList(request.snapshots);
         }
 
+        NodeRequest(StreamInput in) throws IOException {
+            super(in);
+            snapshots = in.readList(Snapshot::new);
+        }
+
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            snapshots = in.readList(Snapshot::new);
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

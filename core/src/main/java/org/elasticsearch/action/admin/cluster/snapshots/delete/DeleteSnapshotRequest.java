@@ -58,6 +58,12 @@ public class DeleteSnapshotRequest extends MasterNodeRequest<DeleteSnapshotReque
         this.snapshot = snapshot;
     }
 
+    public DeleteSnapshotRequest(StreamInput in) throws IOException {
+        super(in);
+        repository = in.readString();
+        snapshot = in.readString();
+    }
+
     /**
      * Constructs a new delete snapshots request with repository name
      *
@@ -115,9 +121,7 @@ public class DeleteSnapshotRequest extends MasterNodeRequest<DeleteSnapshotReque
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        repository = in.readString();
-        snapshot = in.readString();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

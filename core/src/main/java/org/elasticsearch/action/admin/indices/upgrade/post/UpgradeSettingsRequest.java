@@ -51,6 +51,17 @@ public class UpgradeSettingsRequest extends AcknowledgedRequest<UpgradeSettingsR
         this.versions = versions;
     }
 
+    public UpgradeSettingsRequest(StreamInput in) throws IOException {
+        super(in);
+        int size = in.readVInt();
+        versions = new HashMap<>();
+        for (int i=0; i<size; i++) {
+            String index = in.readString();
+            Version upgradeVersion = Version.readVersion(in);
+            String oldestLuceneSegment = in.readString();
+            versions.put(index, new Tuple<>(upgradeVersion, oldestLuceneSegment));
+        }
+    }
 
     @Override
     public ActionRequestValidationException validate() {
@@ -77,15 +88,7 @@ public class UpgradeSettingsRequest extends AcknowledgedRequest<UpgradeSettingsR
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        int size = in.readVInt();
-        versions = new HashMap<>();
-        for (int i=0; i<size; i++) {
-            String index = in.readString();
-            Version upgradeVersion = Version.readVersion(in);
-            String oldestLuceneSegment = in.readString();
-            versions.put(index, new Tuple<>(upgradeVersion, oldestLuceneSegment));
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

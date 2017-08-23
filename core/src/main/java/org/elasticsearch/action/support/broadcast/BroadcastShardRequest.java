@@ -48,6 +48,12 @@ public abstract class BroadcastShardRequest extends TransportRequest implements 
         this.originalIndices = originalIndices;
     }
 
+    protected BroadcastShardRequest(StreamInput in) throws IOException {
+        super(in);
+        shardId = ShardId.readShardId(in);
+        originalIndices = OriginalIndices.readOriginalIndices(in);
+    }
+
     public ShardId shardId() {
         return this.shardId;
     }
@@ -64,9 +70,7 @@ public abstract class BroadcastShardRequest extends TransportRequest implements 
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        shardId = ShardId.readShardId(in);
-        originalIndices = OriginalIndices.readOriginalIndices(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

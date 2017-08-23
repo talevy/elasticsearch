@@ -43,6 +43,11 @@ public class DeletePipelineRequest extends AcknowledgedRequest<DeletePipelineReq
     DeletePipelineRequest() {
     }
 
+    DeletePipelineRequest(StreamInput in) throws IOException {
+        super(in);
+        id = in.readString();
+    }
+
     public void setId(String id) {
         this.id = Objects.requireNonNull(id);
     }
@@ -58,8 +63,7 @@ public class DeletePipelineRequest extends AcknowledgedRequest<DeletePipelineReq
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        id = in.readString();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

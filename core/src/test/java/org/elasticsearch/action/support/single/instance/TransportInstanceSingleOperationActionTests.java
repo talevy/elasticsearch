@@ -37,6 +37,8 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.shard.ShardId;
@@ -53,6 +55,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -78,6 +81,10 @@ public class TransportInstanceSingleOperationActionTests extends ESTestCase {
     public static class Request extends InstanceShardOperationRequest<Request> {
         public Request() {
         }
+
+        public Request(StreamInput in) throws IOException {
+            super(in);
+        }
     }
 
     public static class Response extends ActionResponse {
@@ -88,8 +95,11 @@ public class TransportInstanceSingleOperationActionTests extends ESTestCase {
     class TestTransportInstanceSingleOperationAction extends TransportInstanceSingleOperationAction<Request, Response> {
         private final Map<ShardId, Object> shards = new HashMap<>();
 
-        TestTransportInstanceSingleOperationAction(Settings settings, String actionName, TransportService transportService, ActionFilters actionFilters, IndexNameExpressionResolver indexNameExpressionResolver, Supplier<Request> request) {
-            super(settings, actionName, THREAD_POOL, TransportInstanceSingleOperationActionTests.this.clusterService, transportService, actionFilters, indexNameExpressionResolver, request);
+        TestTransportInstanceSingleOperationAction(Settings settings, String actionName, TransportService transportService,
+                                                   ActionFilters actionFilters, IndexNameExpressionResolver indexNameExpressionResolver,
+                                                   Writeable.Reader<Request> request) {
+            super(settings, actionName, THREAD_POOL, TransportInstanceSingleOperationActionTests.this.clusterService,
+                transportService, actionFilters, indexNameExpressionResolver, request);
         }
 
         public Map<ShardId, Object> getResults() {

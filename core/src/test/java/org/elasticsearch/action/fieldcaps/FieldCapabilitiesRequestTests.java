@@ -87,8 +87,7 @@ public class FieldCapabilitiesRequestTests extends ESTestCase {
             request.writeTo(output);
             output.flush();
             StreamInput input = output.bytes().streamInput();
-            FieldCapabilitiesRequest deserialized = new FieldCapabilitiesRequest();
-            deserialized.readFrom(input);
+            FieldCapabilitiesRequest deserialized = new FieldCapabilitiesRequest(input);
             assertEquals(deserialized, request);
             assertEquals(deserialized.hashCode(), request.hashCode());
         }

@@ -57,6 +57,19 @@ public class ExplainRequest extends SingleShardRequest<ExplainRequest> {
         this.id = id;
     }
 
+    public ExplainRequest(StreamInput in) throws IOException {
+        super(in);
+        type = in.readString();
+        id = in.readString();
+        routing = in.readOptionalString();
+        preference = in.readOptionalString();
+        query = in.readNamedWriteable(QueryBuilder.class);
+        filteringAlias = new AliasFilter(in);
+        storedFields = in.readOptionalStringArray();
+        fetchSourceContext = in.readOptionalWriteable(FetchSourceContext::new);
+        nowInMillis = in.readVLong();
+    }
+
     public String type() {
         return type;
     }
@@ -161,16 +174,7 @@ public class ExplainRequest extends SingleShardRequest<ExplainRequest> {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        type = in.readString();
-        id = in.readString();
-        routing = in.readOptionalString();
-        preference = in.readOptionalString();
-        query = in.readNamedWriteable(QueryBuilder.class);
-        filteringAlias = new AliasFilter(in);
-        storedFields = in.readOptionalStringArray();
-        fetchSourceContext = in.readOptionalWriteable(FetchSourceContext::new);
-        nowInMillis = in.readVLong();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

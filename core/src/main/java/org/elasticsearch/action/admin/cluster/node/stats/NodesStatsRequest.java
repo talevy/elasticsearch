@@ -55,6 +55,22 @@ public class NodesStatsRequest extends BaseNodesRequest<NodesStatsRequest> {
         super(nodesIds);
     }
 
+    public NodesStatsRequest(StreamInput in) throws IOException {
+        super(in);
+        indices = new CommonStatsFlags(in);
+        os = in.readBoolean();
+        process = in.readBoolean();
+        jvm = in.readBoolean();
+        threadPool = in.readBoolean();
+        fs = in.readBoolean();
+        transport = in.readBoolean();
+        http = in.readBoolean();
+        breaker = in.readBoolean();
+        script = in.readBoolean();
+        discovery = in.readBoolean();
+        ingest = in.readBoolean();
+    }
+
     /**
      * Sets all the request flags.
      */
@@ -267,19 +283,7 @@ public class NodesStatsRequest extends BaseNodesRequest<NodesStatsRequest> {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        indices = new CommonStatsFlags(in);
-        os = in.readBoolean();
-        process = in.readBoolean();
-        jvm = in.readBoolean();
-        threadPool = in.readBoolean();
-        fs = in.readBoolean();
-        transport = in.readBoolean();
-        http = in.readBoolean();
-        breaker = in.readBoolean();
-        script = in.readBoolean();
-        discovery = in.readBoolean();
-        ingest = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

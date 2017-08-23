@@ -61,7 +61,7 @@ public class VerifyNodeRepositoryAction  extends AbstractComponent {
         this.transportService = transportService;
         this.clusterService = clusterService;
         this.repositoriesService = repositoriesService;
-        transportService.registerRequestHandler(ACTION_NAME, VerifyNodeRepositoryRequest::new, ThreadPool.Names.SAME, new VerifyNodeRepositoryRequestHandler());
+        transportService.registerRequestHandler(ACTION_NAME, ThreadPool.Names.SAME, VerifyNodeRepositoryRequest::new, new VerifyNodeRepositoryRequestHandler());
     }
 
     public void verify(String repository, String verificationToken, final ActionListener<VerifyResponse> listener) {
@@ -130,11 +130,15 @@ public class VerifyNodeRepositoryAction  extends AbstractComponent {
             this.verificationToken = verificationToken;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        VerifyNodeRepositoryRequest(StreamInput in) throws IOException {
+            super(in);
             repository = in.readString();
             verificationToken = in.readString();
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

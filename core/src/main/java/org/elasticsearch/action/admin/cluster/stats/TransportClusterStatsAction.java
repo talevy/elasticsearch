@@ -130,11 +130,15 @@ public class TransportClusterStatsAction extends TransportNodesAction<ClusterSta
             this.request = request;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        ClusterStatsNodeRequest(StreamInput in) throws IOException {
+            super(in);
             request = new ClusterStatsRequest();
             request.readFrom(in);
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

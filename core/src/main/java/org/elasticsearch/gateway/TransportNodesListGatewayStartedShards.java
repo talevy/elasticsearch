@@ -184,6 +184,11 @@ public class TransportNodesListGatewayStartedShards extends
             this.shardId = shardId;
         }
 
+        public Request(StreamInput in) throws IOException {
+            super(in);
+            shardId = ShardId.readShardId(in);
+        }
+
 
         public ShardId shardId() {
             return this.shardId;
@@ -191,8 +196,7 @@ public class TransportNodesListGatewayStartedShards extends
 
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            shardId = ShardId.readShardId(in);
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override
@@ -233,10 +237,14 @@ public class TransportNodesListGatewayStartedShards extends
             this.shardId = request.shardId();
         }
 
+        public NodeRequest(StreamInput in) throws IOException {
+            super(in);
+            shardId = ShardId.readShardId(in);
+        }
+
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            shardId = ShardId.readShardId(in);
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

@@ -53,7 +53,7 @@ public class NodeMappingRefreshAction extends AbstractComponent {
         super(settings);
         this.transportService = transportService;
         this.metaDataMappingService = metaDataMappingService;
-        transportService.registerRequestHandler(ACTION_NAME, NodeMappingRefreshRequest::new, ThreadPool.Names.SAME, new NodeMappingRefreshTransportHandler());
+        transportService.registerRequestHandler(ACTION_NAME, ThreadPool.Names.SAME, NodeMappingRefreshRequest::new, new NodeMappingRefreshTransportHandler());
     }
 
     public void nodeMappingRefresh(final DiscoveryNode masterNode, final NodeMappingRefreshRequest request) {
@@ -88,6 +88,13 @@ public class NodeMappingRefreshAction extends AbstractComponent {
             this.nodeId = nodeId;
         }
 
+        public NodeMappingRefreshRequest(StreamInput in) throws IOException {
+            super(in);
+            index = in.readString();
+            nodeId = in.readString();
+            indexUUID = in.readString();
+        }
+
         @Override
         public String[] indices() {
             return new String[]{index};
@@ -120,10 +127,7 @@ public class NodeMappingRefreshAction extends AbstractComponent {
 
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            index = in.readString();
-            nodeId = in.readString();
-            indexUUID = in.readString();
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
     }
 }

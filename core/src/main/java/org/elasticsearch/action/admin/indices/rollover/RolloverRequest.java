@@ -72,6 +72,19 @@ public class RolloverRequest extends AcknowledgedRequest<RolloverRequest> implem
         this.newIndexName = newIndexName;
     }
 
+    public RolloverRequest(StreamInput in) throws IOException {
+        super(in);
+        alias = in.readString();
+        newIndexName = in.readOptionalString();
+        dryRun = in.readBoolean();
+        int size = in.readVInt();
+        for (int i = 0; i < size; i++) {
+            this.conditions.add(in.readNamedWriteable(Condition.class));
+        }
+        createIndexRequest = new CreateIndexRequest();
+        createIndexRequest.readFrom(in);
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = createIndexRequest == null ? null : createIndexRequest.validate();
@@ -86,16 +99,7 @@ public class RolloverRequest extends AcknowledgedRequest<RolloverRequest> implem
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        alias = in.readString();
-        newIndexName = in.readOptionalString();
-        dryRun = in.readBoolean();
-        int size = in.readVInt();
-        for (int i = 0; i < size; i++) {
-            this.conditions.add(in.readNamedWriteable(Condition.class));
-        }
-        createIndexRequest = new CreateIndexRequest();
-        createIndexRequest.readFrom(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

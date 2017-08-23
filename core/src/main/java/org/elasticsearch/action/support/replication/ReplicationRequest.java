@@ -69,6 +69,19 @@ public abstract class ReplicationRequest<Request extends ReplicationRequest<Requ
 
     }
 
+    public ReplicationRequest(StreamInput in) throws IOException {
+        super(in);
+        if (in.readBoolean()) {
+            shardId = ShardId.readShardId(in);
+        } else {
+            shardId = null;
+        }
+        waitForActiveShards = ActiveShardCount.readFrom(in);
+        timeout = new TimeValue(in);
+        index = in.readString();
+        routedBasedOnClusterVersion = in.readVLong();
+    }
+
     /**
      * Creates a new request with resolved shard id
      */
@@ -179,16 +192,7 @@ public abstract class ReplicationRequest<Request extends ReplicationRequest<Requ
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        if (in.readBoolean()) {
-            shardId = ShardId.readShardId(in);
-        } else {
-            shardId = null;
-        }
-        waitForActiveShards = ActiveShardCount.readFrom(in);
-        timeout = new TimeValue(in);
-        index = in.readString();
-        routedBasedOnClusterVersion = in.readVLong();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

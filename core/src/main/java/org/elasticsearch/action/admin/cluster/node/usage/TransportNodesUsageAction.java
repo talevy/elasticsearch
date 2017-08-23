@@ -83,11 +83,15 @@ public class TransportNodesUsageAction
             this.request = request;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        NodeUsageRequest(StreamInput in) throws IOException {
+            super(in);
             request = new NodesUsageRequest();
             request.readFrom(in);
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

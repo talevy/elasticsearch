@@ -41,6 +41,15 @@ public class GetFieldMappingsIndexRequest extends SingleShardRequest<GetFieldMap
     public GetFieldMappingsIndexRequest() {
     }
 
+    public GetFieldMappingsIndexRequest(StreamInput in) throws IOException {
+        super(in);
+        types = in.readStringArray();
+        fields = in.readStringArray();
+        includeDefaults = in.readBoolean();
+        probablySingleFieldRequest = in.readBoolean();
+        originalIndices = OriginalIndices.readOriginalIndices(in);
+    }
+
     GetFieldMappingsIndexRequest(GetFieldMappingsRequest other, String index, boolean probablySingleFieldRequest) {
         this.probablySingleFieldRequest = probablySingleFieldRequest;
         this.includeDefaults = other.includeDefaults();
@@ -94,12 +103,7 @@ public class GetFieldMappingsIndexRequest extends SingleShardRequest<GetFieldMap
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        types = in.readStringArray();
-        fields = in.readStringArray();
-        includeDefaults = in.readBoolean();
-        probablySingleFieldRequest = in.readBoolean();
-        originalIndices = OriginalIndices.readOriginalIndices(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
 }

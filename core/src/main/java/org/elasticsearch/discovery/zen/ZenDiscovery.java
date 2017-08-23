@@ -220,7 +220,7 @@ public class ZenDiscovery extends AbstractLifecycleComponent implements Discover
         masterService.setClusterStateSupplier(this::clusterState);
 
         transportService.registerRequestHandler(
-            DISCOVERY_REJOIN_ACTION_NAME, RejoinClusterRequest::new, ThreadPool.Names.SAME, new RejoinClusterRequestHandler());
+            DISCOVERY_REJOIN_ACTION_NAME, ThreadPool.Names.SAME, RejoinClusterRequest::new, new RejoinClusterRequestHandler());
     }
 
     // protected to allow overriding in tests
@@ -1197,10 +1197,14 @@ public class ZenDiscovery extends AbstractLifecycleComponent implements Discover
         public RejoinClusterRequest() {
         }
 
+        public RejoinClusterRequest(StreamInput in) throws IOException {
+            super(in);
+            fromNodeId = in.readOptionalString();
+        }
+
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            fromNodeId = in.readOptionalString();
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

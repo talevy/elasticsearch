@@ -124,7 +124,7 @@ public class SnapshotShardsService extends AbstractLifecycleComponent implements
 
         if (DiscoveryNode.isMasterNode(settings)) {
             // This needs to run only on nodes that can become masters
-            transportService.registerRequestHandler(UPDATE_SNAPSHOT_ACTION_NAME, UpdateIndexShardSnapshotStatusRequest::new, ThreadPool.Names.SAME, new UpdateSnapshotStateRequestHandler());
+            transportService.registerRequestHandler(UPDATE_SNAPSHOT_ACTION_NAME, ThreadPool.Names.SAME, UpdateIndexShardSnapshotStatusRequest::new, new UpdateSnapshotStateRequestHandler());
         }
 
     }
@@ -464,12 +464,16 @@ public class SnapshotShardsService extends AbstractLifecycleComponent implements
             this.status = status;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public UpdateIndexShardSnapshotStatusRequest(StreamInput in) throws IOException {
+            super(in);
             snapshot = new Snapshot(in);
             shardId = ShardId.readShardId(in);
             status = new ShardSnapshotStatus(in);
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

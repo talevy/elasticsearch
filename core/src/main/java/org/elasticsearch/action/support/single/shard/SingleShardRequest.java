@@ -49,6 +49,15 @@ public abstract class SingleShardRequest<Request extends SingleShardRequest<Requ
     public SingleShardRequest() {
     }
 
+    public SingleShardRequest(StreamInput in) throws IOException {
+        super(in);
+        if (in.readBoolean()) {
+            internalShardId = ShardId.readShardId(in);
+        }
+        index = in.readOptionalString();
+        // no need to pass threading over the network, they are always false when coming through a thread pool
+    }
+
     protected SingleShardRequest(String index) {
         this.index = index;
     }
@@ -112,12 +121,7 @@ public abstract class SingleShardRequest<Request extends SingleShardRequest<Requ
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        if (in.readBoolean()) {
-            internalShardId = ShardId.readShardId(in);
-        }
-        index = in.readOptionalString();
-        // no need to pass threading over the network, they are always false when coming throw a thread pool
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

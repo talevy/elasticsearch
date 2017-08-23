@@ -156,12 +156,16 @@ public class TestTaskPlugin extends Plugin implements ActionPlugin {
             this.shouldBlock = shouldBlock;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public NodeRequest(StreamInput in) throws IOException {
+            super(in);
             requestName = in.readString();
             nodeId = in.readString();
             shouldBlock = in.readBoolean();
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override
@@ -198,6 +202,14 @@ public class TestTaskPlugin extends Plugin implements ActionPlugin {
             this.requestName = requestName;
         }
 
+        public NodesRequest(StreamInput in) throws IOException {
+            super(in);
+            requestName = in.readString();
+            shouldStoreResult = in.readBoolean();
+            shouldBlock = in.readBoolean();
+            shouldFail = in.readBoolean();
+        }
+
         public void setShouldStoreResult(boolean shouldStoreResult) {
             this.shouldStoreResult = shouldStoreResult;
         }
@@ -225,11 +237,7 @@ public class TestTaskPlugin extends Plugin implements ActionPlugin {
 
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            requestName = in.readString();
-            shouldStoreResult = in.readBoolean();
-            shouldBlock = in.readBoolean();
-            shouldFail = in.readBoolean();
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override
@@ -376,6 +384,14 @@ public class TestTaskPlugin extends Plugin implements ActionPlugin {
 
 
     public static class UnblockTestTasksRequest extends BaseTasksRequest<UnblockTestTasksRequest> {
+        public UnblockTestTasksRequest() {
+
+        }
+
+        public UnblockTestTasksRequest(StreamInput in) throws IOException {
+            super(in);
+        }
+
         @Override
         public boolean match(Task task) {
             return task instanceof TestTask && super.match(task);

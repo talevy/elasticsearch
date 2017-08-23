@@ -109,9 +109,13 @@ public class TransportNodesListGatewayMetaState extends TransportNodesAction<Tra
             super(nodesIds);
         }
 
+        public Request(StreamInput in) throws IOException {
+            super(in);
+        }
+
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override
@@ -149,9 +153,13 @@ public class TransportNodesListGatewayMetaState extends TransportNodesAction<Tra
             super(nodeId);
         }
 
+        NodeRequest(StreamInput in) throws IOException {
+            super(in);
+        }
+
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

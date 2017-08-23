@@ -51,6 +51,30 @@ public class ClusterHealthRequest extends MasterNodeReadRequest<ClusterHealthReq
         this.indices = indices;
     }
 
+    public ClusterHealthRequest(StreamInput in) throws IOException {
+        super(in);
+        int size = in.readVInt();
+        if (size == 0) {
+            indices = Strings.EMPTY_ARRAY;
+        } else {
+            indices = new String[size];
+            for (int i = 0; i < indices.length; i++) {
+                indices[i] = in.readString();
+            }
+        }
+        timeout = new TimeValue(in);
+        if (in.readBoolean()) {
+            waitForStatus = ClusterHealthStatus.fromValue(in.readByte());
+        }
+        waitForNoRelocatingShards = in.readBoolean();
+        waitForActiveShards = ActiveShardCount.readFrom(in);
+        waitForNodes = in.readString();
+        if (in.readBoolean()) {
+            waitForEvents = Priority.readFrom(in);
+        }
+
+    }
+
     @Override
     public String[] indices() {
         return indices;
@@ -174,26 +198,7 @@ public class ClusterHealthRequest extends MasterNodeReadRequest<ClusterHealthReq
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        int size = in.readVInt();
-        if (size == 0) {
-            indices = Strings.EMPTY_ARRAY;
-        } else {
-            indices = new String[size];
-            for (int i = 0; i < indices.length; i++) {
-                indices[i] = in.readString();
-            }
-        }
-        timeout = new TimeValue(in);
-        if (in.readBoolean()) {
-            waitForStatus = ClusterHealthStatus.fromValue(in.readByte());
-        }
-        waitForNoRelocatingShards = in.readBoolean();
-        waitForActiveShards = ActiveShardCount.readFrom(in);
-        waitForNodes = in.readString();
-        if (in.readBoolean()) {
-            waitForEvents = Priority.readFrom(in);
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

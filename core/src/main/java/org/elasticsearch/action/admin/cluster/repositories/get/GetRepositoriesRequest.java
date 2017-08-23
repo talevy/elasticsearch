@@ -39,6 +39,11 @@ public class GetRepositoriesRequest extends MasterNodeReadRequest<GetRepositorie
     public GetRepositoriesRequest() {
     }
 
+    public GetRepositoriesRequest(StreamInput in) throws IOException {
+        super(in);
+        repositories = in.readStringArray();
+    }
+
     /**
      * Constructs a new get repositories request with a list of repositories.
      * <p>
@@ -85,8 +90,7 @@ public class GetRepositoriesRequest extends MasterNodeReadRequest<GetRepositorie
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        repositories = in.readStringArray();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

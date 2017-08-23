@@ -96,7 +96,7 @@ public class IndicesStore extends AbstractComponent implements ClusterStateListe
         this.clusterService = clusterService;
         this.transportService = transportService;
         this.threadPool = threadPool;
-        transportService.registerRequestHandler(ACTION_SHARD_EXISTS, ShardActiveRequest::new, ThreadPool.Names.SAME, new ShardActiveRequestHandler());
+        transportService.registerRequestHandler(ACTION_SHARD_EXISTS, ThreadPool.Names.SAME, ShardActiveRequest::new, new ShardActiveRequestHandler());
         this.deleteShardTimeout = INDICES_STORE_DELETE_SHARD_TIMEOUT.get(settings);
         // Doesn't make sense to delete shards on non-data nodes
         if (DiscoveryNode.isDataNode(settings)) {
@@ -396,13 +396,17 @@ public class IndicesStore extends AbstractComponent implements ClusterStateListe
             this.timeout = timeout;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        ShardActiveRequest(StreamInput in) throws IOException {
+            super(in);
             clusterName = new ClusterName(in);
             indexUUID = in.readString();
             shardId = ShardId.readShardId(in);
             timeout = new TimeValue(in.readLong(), TimeUnit.MILLISECONDS);
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

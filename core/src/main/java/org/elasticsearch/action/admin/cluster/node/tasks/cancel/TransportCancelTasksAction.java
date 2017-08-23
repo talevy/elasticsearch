@@ -69,7 +69,7 @@ public class TransportCancelTasksAction extends TransportTasksAction<Cancellable
         super(settings, CancelTasksAction.NAME, threadPool, clusterService, transportService, actionFilters,
             indexNameExpressionResolver, CancelTasksRequest::new, CancelTasksResponse::new,
             ThreadPool.Names.MANAGEMENT);
-        transportService.registerRequestHandler(BAN_PARENT_ACTION_NAME, BanParentTaskRequest::new, ThreadPool.Names.SAME, new
+        transportService.registerRequestHandler(BAN_PARENT_ACTION_NAME, ThreadPool.Names.SAME, BanParentTaskRequest::new, new
             BanParentRequestHandler());
     }
 
@@ -262,17 +262,21 @@ public class TransportCancelTasksAction extends TransportTasksAction<Cancellable
             this.ban = false;
         }
 
-        BanParentTaskRequest() {
-        }
-
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        BanParentTaskRequest(StreamInput in) throws IOException {
+            super(in);
             parentTaskId = TaskId.readFromStream(in);
             ban = in.readBoolean();
             if (ban) {
                 reason = in.readString();
             }
+        }
+
+        BanParentTaskRequest() {
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

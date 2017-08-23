@@ -63,6 +63,23 @@ public class ValidateQueryRequest extends BroadcastRequest<ValidateQueryRequest>
         indicesOptions(IndicesOptions.fromOptions(false, false, true, false));
     }
 
+    public ValidateQueryRequest(StreamInput in) throws IOException {
+        super(in);
+        query = in.readNamedWriteable(QueryBuilder.class);
+        int typesSize = in.readVInt();
+        if (typesSize > 0) {
+            types = new String[typesSize];
+            for (int i = 0; i < typesSize; i++) {
+                types[i] = in.readString();
+            }
+        }
+        explain = in.readBoolean();
+        rewrite = in.readBoolean();
+        if (in.getVersion().onOrAfter(Version.V_5_4_0)) {
+            allShards = in.readBoolean();
+        }
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = super.validate();
@@ -143,20 +160,7 @@ public class ValidateQueryRequest extends BroadcastRequest<ValidateQueryRequest>
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        query = in.readNamedWriteable(QueryBuilder.class);
-        int typesSize = in.readVInt();
-        if (typesSize > 0) {
-            types = new String[typesSize];
-            for (int i = 0; i < typesSize; i++) {
-                types[i] = in.readString();
-            }
-        }
-        explain = in.readBoolean();
-        rewrite = in.readBoolean();
-        if (in.getVersion().onOrAfter(Version.V_5_4_0)) {
-            allShards = in.readBoolean();
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

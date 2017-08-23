@@ -61,6 +61,16 @@ public class GetSnapshotsRequest extends MasterNodeRequest<GetSnapshotsRequest> 
         this.snapshots = snapshots;
     }
 
+    public GetSnapshotsRequest(StreamInput in) throws IOException {
+        super(in);
+        repository = in.readString();
+        snapshots = in.readStringArray();
+        ignoreUnavailable = in.readBoolean();
+        if (in.getVersion().onOrAfter(VERBOSE_INTRODUCED)) {
+            verbose = in.readBoolean();
+        }
+    }
+
     /**
      * Constructs a new get snapshots request with given repository name
      *
@@ -158,13 +168,7 @@ public class GetSnapshotsRequest extends MasterNodeRequest<GetSnapshotsRequest> 
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        repository = in.readString();
-        snapshots = in.readStringArray();
-        ignoreUnavailable = in.readBoolean();
-        if (in.getVersion().onOrAfter(VERBOSE_INTRODUCED)) {
-            verbose = in.readBoolean();
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

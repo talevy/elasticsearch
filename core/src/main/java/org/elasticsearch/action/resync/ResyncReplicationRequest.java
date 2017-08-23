@@ -35,6 +35,11 @@ public final class ResyncReplicationRequest extends ReplicatedWriteRequest<Resyn
         super();
     }
 
+    ResyncReplicationRequest(StreamInput in) throws IOException {
+        super(in);
+        operations = in.readList(Translog.Operation::readType);
+    }
+
     public ResyncReplicationRequest(ShardId shardId, List<Translog.Operation> operations) {
         super(shardId);
         this.operations = operations;
@@ -46,8 +51,7 @@ public final class ResyncReplicationRequest extends ReplicatedWriteRequest<Resyn
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        operations = in.readList(Translog.Operation::readType);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

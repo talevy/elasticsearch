@@ -31,6 +31,7 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -89,7 +90,7 @@ public class TermVectorsRequest extends SingleShardRequest<TermVectorsRequest> i
 
     private FilterSettings filterSettings;
 
-    public static final class FilterSettings {
+    public static final class FilterSettings implements Writeable {
         public Integer maxNumTerms;
         public Integer minTermFreq;
         public Integer maxTermFreq;
@@ -114,7 +115,7 @@ public class TermVectorsRequest extends SingleShardRequest<TermVectorsRequest> i
             this.maxWordLength = maxWordLength;
         }
 
-        public void readFrom(StreamInput in) throws IOException {
+        FilterSettings(StreamInput in) throws IOException {
             maxNumTerms = in.readOptionalVInt();
             minTermFreq = in.readOptionalVInt();
             maxTermFreq = in.readOptionalVInt();
@@ -124,6 +125,7 @@ public class TermVectorsRequest extends SingleShardRequest<TermVectorsRequest> i
             maxWordLength = in.readOptionalVInt();
         }
 
+        @Override
         public void writeTo(StreamOutput out) throws IOException {
             out.writeOptionalVInt(maxNumTerms);
             out.writeOptionalVInt(minTermFreq);
@@ -188,6 +190,48 @@ public class TermVectorsRequest extends SingleShardRequest<TermVectorsRequest> i
         this.selectedFields(item.storedFields());
         this.routing(item.routing());
         this.parent(item.parent());
+    }
+
+    public TermVectorsRequest(StreamInput in) throws IOException {
+        super(in);
+        type = in.readString();
+        id = in.readString();
+
+        if (in.readBoolean()) {
+            doc = in.readBytesReference();
+            if (in.getVersion().onOrAfter(Version.V_5_3_0)) {
+                xContentType = XContentType.readFrom(in);
+            } else {
+                xContentType = XContentFactory.xContentType(doc);
+            }
+        }
+        routing = in.readOptionalString();
+        parent = in.readOptionalString();
+        preference = in.readOptionalString();
+        long flags = in.readVLong();
+
+        flagsEnum.clear();
+        for (Flag flag : Flag.values()) {
+            if ((flags & (1 << flag.ordinal())) != 0) {
+                flagsEnum.add(flag);
+            }
+        }
+        int numSelectedFields = in.readVInt();
+        if (numSelectedFields > 0) {
+            selectedFields = new HashSet<>();
+            for (int i = 0; i < numSelectedFields; i++) {
+                selectedFields.add(in.readString());
+            }
+        }
+        if (in.readBoolean()) {
+            perFieldAnalyzer = readPerFieldAnalyzer(in.readMap());
+        }
+        if (in.readBoolean()) {
+            filterSettings = new FilterSettings(in);
+        }
+        realtime = in.readBoolean();
+        versionType = VersionType.fromValue(in.readByte());
+        version = in.readLong();
     }
 
     public EnumSet<Flag> getFlags() {
@@ -493,46 +537,7 @@ public class TermVectorsRequest extends SingleShardRequest<TermVectorsRequest> i
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        type = in.readString();
-        id = in.readString();
-
-        if (in.readBoolean()) {
-            doc = in.readBytesReference();
-            if (in.getVersion().onOrAfter(Version.V_5_3_0)) {
-                xContentType = XContentType.readFrom(in);
-            } else {
-                xContentType = XContentFactory.xContentType(doc);
-            }
-        }
-        routing = in.readOptionalString();
-        parent = in.readOptionalString();
-        preference = in.readOptionalString();
-        long flags = in.readVLong();
-
-        flagsEnum.clear();
-        for (Flag flag : Flag.values()) {
-            if ((flags & (1 << flag.ordinal())) != 0) {
-                flagsEnum.add(flag);
-            }
-        }
-        int numSelectedFields = in.readVInt();
-        if (numSelectedFields > 0) {
-            selectedFields = new HashSet<>();
-            for (int i = 0; i < numSelectedFields; i++) {
-                selectedFields.add(in.readString());
-            }
-        }
-        if (in.readBoolean()) {
-            perFieldAnalyzer = readPerFieldAnalyzer(in.readMap());
-        }
-        if (in.readBoolean()) {
-            filterSettings = new FilterSettings();
-            filterSettings.readFrom(in);
-        }
-        realtime = in.readBoolean();
-        versionType = VersionType.fromValue(in.readByte());
-        version = in.readLong();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

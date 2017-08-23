@@ -21,7 +21,9 @@ package org.elasticsearch.action.admin.indices.flush;
 
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.support.broadcast.BroadcastRequest;
+import org.elasticsearch.common.io.stream.StreamInput;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 /**
@@ -44,6 +46,9 @@ public class SyncedFlushRequest extends BroadcastRequest<SyncedFlushRequest> {
         super(indices);
     }
 
+    public SyncedFlushRequest(StreamInput in) throws IOException {
+        super(in);
+    }
 
     @Override
     public String toString() {

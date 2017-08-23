@@ -51,8 +51,7 @@ public class PutIndexTemplateRequestTests extends ESTestCase {
 
         try (StreamInput in = bytes.streamInput()) {
             in.setVersion(Version.V_5_0_0);
-            PutIndexTemplateRequest readRequest = new PutIndexTemplateRequest();
-            readRequest.readFrom(in);
+            PutIndexTemplateRequest readRequest = new PutIndexTemplateRequest(in);
             assertEquals(putRequest.patterns(), readRequest.patterns());
             assertEquals(putRequest.order(), readRequest.order());
 
@@ -84,8 +83,7 @@ public class PutIndexTemplateRequestTests extends ESTestCase {
 
             try (StreamInput in = StreamInput.wrap(out.bytes().toBytesRef().bytes)) {
                 in.setVersion(version);
-                PutIndexTemplateRequest serialized = new PutIndexTemplateRequest();
-                serialized.readFrom(in);
+                PutIndexTemplateRequest serialized = new PutIndexTemplateRequest(in);
                 assertEquals(XContentHelper.convertToJson(new BytesArray(mapping), false, XContentType.YAML),
                     serialized.mappings().get("bar"));
             }
@@ -98,8 +96,7 @@ public class PutIndexTemplateRequestTests extends ESTestCase {
             Version.V_5_1_1, Version.V_5_1_2, Version.V_5_2_0);
         try (StreamInput in = StreamInput.wrap(data)) {
             in.setVersion(version);
-            PutIndexTemplateRequest request = new PutIndexTemplateRequest();
-            request.readFrom(in);
+            PutIndexTemplateRequest request = new PutIndexTemplateRequest(in);
             String mapping = YamlXContent.contentBuilder().startObject().field("foo", "bar").endObject().string();
             assertNotEquals(mapping, request.mappings().get("bar"));
             assertEquals(XContentHelper.convertToJson(new BytesArray(mapping), false, XContentType.YAML), request.mappings().get("bar"));

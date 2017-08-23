@@ -40,6 +40,11 @@ public class VerifyRepositoryRequest extends AcknowledgedRequest<VerifyRepositor
     public VerifyRepositoryRequest() {
     }
 
+    public VerifyRepositoryRequest(StreamInput in) throws IOException {
+        super(in);
+        name = in.readString();
+    }
+
     /**
      * Constructs a new unregister repository request with the provided name.
      *
@@ -79,8 +84,7 @@ public class VerifyRepositoryRequest extends AcknowledgedRequest<VerifyRepositor
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        name = in.readString();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

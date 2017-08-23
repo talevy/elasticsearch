@@ -97,6 +97,43 @@ public class PutIndexTemplateRequest extends MasterNodeRequest<PutIndexTemplateR
         this.name = name;
     }
 
+    public PutIndexTemplateRequest(StreamInput in) throws IOException {
+        super(in);
+        cause = in.readString();
+        name = in.readString();
+
+        if (in.getVersion().onOrAfter(Version.V_6_0_0_alpha1)) {
+            indexPatterns = in.readList(StreamInput::readString);
+        } else {
+            indexPatterns = Collections.singletonList(in.readString());
+        }
+        order = in.readInt();
+        create = in.readBoolean();
+        settings = readSettingsFromStream(in);
+        int size = in.readVInt();
+        for (int i = 0; i < size; i++) {
+            final String type = in.readString();
+            String mappingSource = in.readString();
+            if (in.getVersion().before(Version.V_5_3_0)) {
+                // we do not know the incoming type so convert it if needed
+                mappingSource =
+                    XContentHelper.convertToJson(new BytesArray(mappingSource), false, false, XContentFactory.xContentType(mappingSource));
+            }
+            mappings.put(type, mappingSource);
+        }
+        int customSize = in.readVInt();
+        for (int i = 0; i < customSize; i++) {
+            String type = in.readString();
+            IndexMetaData.Custom customIndexMetaData = IndexMetaData.lookupPrototypeSafe(type).readFrom(in);
+            customs.put(type, customIndexMetaData);
+        }
+        int aliasesSize = in.readVInt();
+        for (int i = 0; i < aliasesSize; i++) {
+            aliases.add(Alias.read(in));
+        }
+        version = in.readOptionalVInt();
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = null;
@@ -471,40 +508,7 @@ public class PutIndexTemplateRequest extends MasterNodeRequest<PutIndexTemplateR
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        cause = in.readString();
-        name = in.readString();
-
-        if (in.getVersion().onOrAfter(Version.V_6_0_0_alpha1)) {
-            indexPatterns = in.readList(StreamInput::readString);
-        } else {
-            indexPatterns = Collections.singletonList(in.readString());
-        }
-        order = in.readInt();
-        create = in.readBoolean();
-        settings = readSettingsFromStream(in);
-        int size = in.readVInt();
-        for (int i = 0; i < size; i++) {
-            final String type = in.readString();
-            String mappingSource = in.readString();
-            if (in.getVersion().before(Version.V_5_3_0)) {
-                // we do not know the incoming type so convert it if needed
-                mappingSource =
-                    XContentHelper.convertToJson(new BytesArray(mappingSource), false, false, XContentFactory.xContentType(mappingSource));
-            }
-            mappings.put(type, mappingSource);
-        }
-        int customSize = in.readVInt();
-        for (int i = 0; i < customSize; i++) {
-            String type = in.readString();
-            IndexMetaData.Custom customIndexMetaData = IndexMetaData.lookupPrototypeSafe(type).readFrom(in);
-            customs.put(type, customIndexMetaData);
-        }
-        int aliasesSize = in.readVInt();
-        for (int i = 0; i < aliasesSize; i++) {
-            aliases.add(Alias.read(in));
-        }
-        version = in.readOptionalVInt();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

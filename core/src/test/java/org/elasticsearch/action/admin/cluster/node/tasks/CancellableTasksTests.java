@@ -71,11 +71,15 @@ public class CancellableTasksTests extends TaskManagerTestCase {
             this.nodeId = nodeId;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public CancellableNodeRequest(StreamInput in) throws IOException {
+            super(in);
             requestName = in.readString();
             nodeId = in.readString();
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override
@@ -113,10 +117,14 @@ public class CancellableTasksTests extends TaskManagerTestCase {
             this.requestName = requestName;
         }
 
+        public CancellableNodesRequest(StreamInput in) throws IOException {
+            super(in);
+            requestName = in.readString();
+        }
+
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            requestName = in.readString();
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

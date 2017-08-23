@@ -75,6 +75,22 @@ public class GetRequest extends SingleShardRequest<GetRequest> implements Realti
         this.type = "_all";
     }
 
+    public GetRequest(StreamInput in) throws IOException {
+        super(in);
+        type = in.readString();
+        id = in.readString();
+        routing = in.readOptionalString();
+        parent = in.readOptionalString();
+        preference = in.readOptionalString();
+        refresh = in.readBoolean();
+        storedFields = in.readOptionalStringArray();
+        realtime = in.readBoolean();
+
+        this.versionType = VersionType.fromValue(in.readByte());
+        this.version = in.readLong();
+        fetchSourceContext = in.readOptionalWriteable(FetchSourceContext::new);
+    }
+
     /**
      * Constructs a new get request against the specified index with the type and id.
      *
@@ -256,19 +272,7 @@ public class GetRequest extends SingleShardRequest<GetRequest> implements Realti
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        type = in.readString();
-        id = in.readString();
-        routing = in.readOptionalString();
-        parent = in.readOptionalString();
-        preference = in.readOptionalString();
-        refresh = in.readBoolean();
-        storedFields = in.readOptionalStringArray();
-        realtime = in.readBoolean();
-
-        this.versionType = VersionType.fromValue(in.readByte());
-        this.version = in.readLong();
-        fetchSourceContext = in.readOptionalWriteable(FetchSourceContext::new);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

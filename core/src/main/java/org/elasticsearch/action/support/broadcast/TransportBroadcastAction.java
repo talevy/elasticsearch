@@ -35,6 +35,7 @@ import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -59,13 +60,13 @@ public abstract class TransportBroadcastAction<Request extends BroadcastRequest<
 
     protected TransportBroadcastAction(Settings settings, String actionName, ThreadPool threadPool, ClusterService clusterService,
                                        TransportService transportService, ActionFilters actionFilters, IndexNameExpressionResolver indexNameExpressionResolver,
-                                       Supplier<Request> request, Supplier<ShardRequest> shardRequest, String shardExecutor) {
-        super(settings, actionName, threadPool, transportService, actionFilters, indexNameExpressionResolver, request);
+                                       Writeable.Reader<Request> request, Writeable.Reader<ShardRequest> shardRequest, String shardExecutor) {
+        super(settings, actionName, threadPool, transportService, actionFilters, request, indexNameExpressionResolver);
         this.clusterService = clusterService;
         this.transportService = transportService;
         this.transportShardAction = actionName + "[s]";
 
-        transportService.registerRequestHandler(transportShardAction, shardRequest, shardExecutor, new ShardTransportHandler());
+        transportService.registerRequestHandler(transportShardAction, shardExecutor, shardRequest, new ShardTransportHandler());
     }
 
     @Override

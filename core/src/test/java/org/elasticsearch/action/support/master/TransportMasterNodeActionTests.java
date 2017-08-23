@@ -38,6 +38,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.discovery.Discovery;
@@ -55,6 +56,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -121,6 +123,15 @@ public class TransportMasterNodeActionTests extends ESTestCase {
     }
 
     public static class Request extends MasterNodeRequest<Request> {
+
+        public Request() {
+
+        }
+
+        public Request(StreamInput in) throws IOException {
+            super(in);
+        }
+
         @Override
         public ActionRequestValidationException validate() {
             return null;

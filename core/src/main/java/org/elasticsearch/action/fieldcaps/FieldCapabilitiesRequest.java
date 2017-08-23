@@ -59,6 +59,18 @@ public final class FieldCapabilitiesRequest extends ActionRequest implements Ind
 
     public FieldCapabilitiesRequest() {}
 
+    public FieldCapabilitiesRequest(StreamInput in) throws IOException {
+        super(in);
+        fields = in.readStringArray();
+        if (in.getVersion().onOrAfter(Version.V_5_5_0)) {
+            indices = in.readStringArray();
+            indicesOptions = IndicesOptions.readIndicesOptions(in);
+            mergeResults = in.readBoolean();
+        } else {
+            mergeResults = true;
+        }
+    }
+
     /**
      * Returns <code>true</code> iff the results should be merged.
      */
@@ -76,15 +88,7 @@ public final class FieldCapabilitiesRequest extends ActionRequest implements Ind
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        fields = in.readStringArray();
-        if (in.getVersion().onOrAfter(Version.V_5_5_0)) {
-            indices = in.readStringArray();
-            indicesOptions = IndicesOptions.readIndicesOptions(in);
-            mergeResults = in.readBoolean();
-        } else {
-            mergeResults = true;
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

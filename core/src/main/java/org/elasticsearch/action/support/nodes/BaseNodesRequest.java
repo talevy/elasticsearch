@@ -64,6 +64,13 @@ public abstract class BaseNodesRequest<Request extends BaseNodesRequest<Request>
         this.concreteNodes = concreteNodes;
     }
 
+    protected BaseNodesRequest(StreamInput in) throws IOException {
+        super(in);
+        nodesIds = in.readStringArray();
+        concreteNodes = in.readOptionalArray(DiscoveryNode::new, DiscoveryNode[]::new);
+        timeout = in.readOptionalWriteable(TimeValue::new);
+    }
+
     public final String[] nodesIds() {
         return nodesIds;
     }
@@ -104,10 +111,7 @@ public abstract class BaseNodesRequest<Request extends BaseNodesRequest<Request>
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        nodesIds = in.readStringArray();
-        concreteNodes = in.readOptionalArray(DiscoveryNode::new, DiscoveryNode[]::new);
-        timeout = in.readOptionalWriteable(TimeValue::new);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

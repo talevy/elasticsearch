@@ -41,6 +41,11 @@ public abstract class AcknowledgedRequest<Request extends MasterNodeRequest<Requ
     protected AcknowledgedRequest() {
     }
 
+    protected AcknowledgedRequest(StreamInput in) throws IOException {
+        super(in);
+        timeout = new TimeValue(in);
+    }
+
     /**
      * Allows to set the timeout
      * @param timeout timeout as a string (e.g. 1s)
@@ -78,8 +83,7 @@ public abstract class AcknowledgedRequest<Request extends MasterNodeRequest<Requ
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        timeout = new TimeValue(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

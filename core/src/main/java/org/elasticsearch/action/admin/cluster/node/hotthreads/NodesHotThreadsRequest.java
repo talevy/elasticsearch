@@ -40,6 +40,15 @@ public class NodesHotThreadsRequest extends BaseNodesRequest<NodesHotThreadsRequ
 
     }
 
+    public NodesHotThreadsRequest(StreamInput in) throws IOException {
+        super(in);
+        threads = in.readInt();
+        ignoreIdleThreads = in.readBoolean();
+        type = in.readString();
+        interval = new TimeValue(in);
+        snapshots = in.readInt();
+    }
+
     /**
      * Get hot threads from nodes based on the nodes ids specified. If none are passed, hot
      * threads for all nodes is used.
@@ -95,12 +104,7 @@ public class NodesHotThreadsRequest extends BaseNodesRequest<NodesHotThreadsRequ
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        threads = in.readInt();
-        ignoreIdleThreads = in.readBoolean();
-        type = in.readString();
-        interval = new TimeValue(in);
-        snapshots = in.readInt();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

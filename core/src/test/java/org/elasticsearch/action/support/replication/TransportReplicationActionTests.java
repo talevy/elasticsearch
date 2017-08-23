@@ -1071,6 +1071,10 @@ public class TransportReplicationActionTests extends ESTestCase {
             // keep things simple
         }
 
+        Request(StreamInput in) throws IOException {
+            super(in);
+        }
+
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             super.writeTo(out);
@@ -1078,7 +1082,7 @@ public class TransportReplicationActionTests extends ESTestCase {
 
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

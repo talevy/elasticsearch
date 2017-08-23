@@ -37,6 +37,7 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.routing.TestShardRouting;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.Index;
@@ -62,6 +63,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.mockito.ArgumentCaptor;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -478,6 +480,10 @@ public class TransportWriteActionTests extends ESTestCase {
     private static class TestRequest extends ReplicatedWriteRequest<TestRequest> {
         TestRequest() {
             setShardId(new ShardId("test", "test", 1));
+        }
+
+        TestRequest(StreamInput in) throws IOException {
+            super(in);
         }
 
         @Override

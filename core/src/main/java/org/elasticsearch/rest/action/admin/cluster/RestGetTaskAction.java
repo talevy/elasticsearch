@@ -50,10 +50,7 @@ public class RestGetTaskAction extends BaseRestHandler {
         boolean waitForCompletion = request.paramAsBoolean("wait_for_completion", false);
         TimeValue timeout = request.paramAsTime("timeout", null);
 
-        GetTaskRequest getTaskRequest = new GetTaskRequest();
-        getTaskRequest.setTaskId(taskId);
-        getTaskRequest.setWaitForCompletion(waitForCompletion);
-        getTaskRequest.setTimeout(timeout);
+        GetTaskRequest getTaskRequest = new GetTaskRequest(taskId, timeout, waitForCompletion);
         return channel -> client.admin().cluster().getTask(getTaskRequest, new RestToXContentListener<>(channel));
     }
 }

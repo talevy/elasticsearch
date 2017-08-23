@@ -41,7 +41,7 @@ public class TransportSyncedFlushAction extends HandledTransportAction<SyncedFlu
                                       TransportService transportService, ActionFilters actionFilters,
                                       IndexNameExpressionResolver indexNameExpressionResolver,
                                       SyncedFlushService syncedFlushService) {
-        super(settings, SyncedFlushAction.NAME, threadPool, transportService, actionFilters, indexNameExpressionResolver, SyncedFlushRequest::new);
+        super(settings, SyncedFlushAction.NAME, threadPool, transportService, actionFilters, SyncedFlushRequest::new, indexNameExpressionResolver);
         this.syncedFlushService = syncedFlushService;
     }
 

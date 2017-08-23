@@ -43,6 +43,16 @@ public class RecoveryPrepareForTranslogOperationsRequest extends TransportReques
         this.totalTranslogOps = totalTranslogOps;
     }
 
+    RecoveryPrepareForTranslogOperationsRequest(StreamInput in) throws IOException {
+        super(in);
+        recoveryId = in.readLong();
+        shardId = ShardId.readShardId(in);
+        totalTranslogOps = in.readVInt();
+        if (in.getVersion().before(Version.V_6_0_0_alpha1)) {
+            in.readLong(); // maxUnsafeAutoIdTimestamp
+        }
+    }
+
     public long recoveryId() {
         return this.recoveryId;
     }
@@ -57,13 +67,7 @@ public class RecoveryPrepareForTranslogOperationsRequest extends TransportReques
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        recoveryId = in.readLong();
-        shardId = ShardId.readShardId(in);
-        totalTranslogOps = in.readVInt();
-        if (in.getVersion().before(Version.V_6_0_0_alpha1)) {
-            in.readLong(); // maxUnsafeAutoIdTimestamp
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

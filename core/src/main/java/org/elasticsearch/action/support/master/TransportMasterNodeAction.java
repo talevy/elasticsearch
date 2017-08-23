@@ -34,6 +34,7 @@ import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.discovery.Discovery;
@@ -59,14 +60,14 @@ public abstract class TransportMasterNodeAction<Request extends MasterNodeReques
 
     protected TransportMasterNodeAction(Settings settings, String actionName, TransportService transportService,
                                         ClusterService clusterService, ThreadPool threadPool, ActionFilters actionFilters,
-                                        IndexNameExpressionResolver indexNameExpressionResolver, Supplier<Request> request) {
+                                        IndexNameExpressionResolver indexNameExpressionResolver, Writeable.Reader<Request> request) {
         this(settings, actionName, true, transportService, clusterService, threadPool, actionFilters, indexNameExpressionResolver, request);
     }
 
     protected TransportMasterNodeAction(Settings settings, String actionName, boolean canTripCircuitBreaker,
                                         TransportService transportService, ClusterService clusterService, ThreadPool threadPool,
                                         ActionFilters actionFilters, IndexNameExpressionResolver indexNameExpressionResolver,
-                                        Supplier<Request> request) {
+                                        Writeable.Reader<Request> request) {
         super(settings, actionName, canTripCircuitBreaker, threadPool, transportService, actionFilters, indexNameExpressionResolver,
             request);
         this.transportService = transportService;

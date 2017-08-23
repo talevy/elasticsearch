@@ -88,8 +88,8 @@ public class ShardStateAction extends AbstractComponent {
         this.clusterService = clusterService;
         this.threadPool = threadPool;
 
-        transportService.registerRequestHandler(SHARD_STARTED_ACTION_NAME, ShardEntry::new, ThreadPool.Names.SAME, new ShardStartedTransportHandler(clusterService, new ShardStartedClusterStateTaskExecutor(allocationService, logger), logger));
-        transportService.registerRequestHandler(SHARD_FAILED_ACTION_NAME, ShardEntry::new, ThreadPool.Names.SAME, new ShardFailedTransportHandler(clusterService, new ShardFailedClusterStateTaskExecutor(allocationService, routingService, logger), logger));
+        transportService.registerRequestHandler(SHARD_STARTED_ACTION_NAME, ThreadPool.Names.SAME, ShardEntry::new, new ShardStartedTransportHandler(clusterService, new ShardStartedClusterStateTaskExecutor(allocationService, logger), logger));
+        transportService.registerRequestHandler(SHARD_FAILED_ACTION_NAME, ThreadPool.Names.SAME, ShardEntry::new, new ShardFailedTransportHandler(clusterService, new ShardFailedClusterStateTaskExecutor(allocationService, routingService, logger), logger));
     }
 
     private void sendShardAction(final String actionName, final ClusterState currentState, final ShardEntry shardEntry, final Listener listener) {
@@ -469,6 +469,15 @@ public class ShardStateAction extends AbstractComponent {
             this.failure = failure;
         }
 
+        public ShardEntry(StreamInput in) throws IOException {
+            super(in);
+            shardId = ShardId.readShardId(in);
+            allocationId = in.readString();
+            primaryTerm = in.readVLong();
+            message = in.readString();
+            failure = in.readException();
+        }
+
         public ShardId getShardId() {
             return shardId;
         }
@@ -479,12 +488,7 @@ public class ShardStateAction extends AbstractComponent {
 
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            shardId = ShardId.readShardId(in);
-            allocationId = in.readString();
-            primaryTerm = in.readVLong();
-            message = in.readString();
-            failure = in.readException();
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

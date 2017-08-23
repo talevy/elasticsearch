@@ -73,24 +73,24 @@ public abstract class TransportTasksAction<
 
     protected final ClusterService clusterService;
     protected final TransportService transportService;
-    protected final Supplier<TasksRequest> requestSupplier;
+    protected final Writeable.Reader<TasksRequest> requestReader;
     protected final Supplier<TasksResponse> responseSupplier;
 
     protected final String transportNodeAction;
 
     protected TransportTasksAction(Settings settings, String actionName, ThreadPool threadPool,
                                    ClusterService clusterService, TransportService transportService, ActionFilters actionFilters,
-                                   IndexNameExpressionResolver indexNameExpressionResolver, Supplier<TasksRequest> requestSupplier,
+                                   IndexNameExpressionResolver indexNameExpressionResolver, Writeable.Reader<TasksRequest> requestReader,
                                    Supplier<TasksResponse> responseSupplier,
                                    String nodeExecutor) {
-        super(settings, actionName, threadPool, transportService, actionFilters, indexNameExpressionResolver, requestSupplier);
+        super(settings, actionName, threadPool, transportService, actionFilters, requestReader, indexNameExpressionResolver);
         this.clusterService = clusterService;
         this.transportService = transportService;
         this.transportNodeAction = actionName + "[n]";
-        this.requestSupplier = requestSupplier;
+        this.requestReader = requestReader;
         this.responseSupplier = responseSupplier;
 
-        transportService.registerRequestHandler(transportNodeAction, NodeTaskRequest::new, nodeExecutor, new NodeTransportHandler());
+        transportService.registerRequestHandler(transportNodeAction, nodeExecutor, NodeTaskRequest::new, new NodeTransportHandler());
     }
 
     @Override
@@ -381,11 +381,14 @@ public abstract class TransportTasksAction<
             this.tasksRequest = tasksRequest;
         }
 
+        protected NodeTaskRequest(StreamInput in) throws IOException {
+            super(in);
+            tasksRequest = requestReader.read(in);
+        }
+
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            tasksRequest = requestSupplier.get();
-            tasksRequest.readFrom(in);
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

@@ -40,6 +40,13 @@ public class RecoveryWaitForClusterStateRequest extends TransportRequest {
         this.clusterStateVersion = clusterStateVersion;
     }
 
+    RecoveryWaitForClusterStateRequest(StreamInput in) throws IOException {
+        super(in);
+        recoveryId = in.readLong();
+        shardId = ShardId.readShardId(in);
+        clusterStateVersion = in.readVLong();
+    }
+
     public long recoveryId() {
         return this.recoveryId;
     }
@@ -54,10 +61,7 @@ public class RecoveryWaitForClusterStateRequest extends TransportRequest {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        recoveryId = in.readLong();
-        shardId = ShardId.readShardId(in);
-        clusterStateVersion = in.readVLong();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

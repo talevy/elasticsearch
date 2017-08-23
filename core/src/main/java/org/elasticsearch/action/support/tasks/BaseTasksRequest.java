@@ -55,6 +55,15 @@ public class BaseTasksRequest<Request extends BaseTasksRequest<Request>> extends
     public BaseTasksRequest() {
     }
 
+    public BaseTasksRequest(StreamInput in) throws IOException {
+        super(in);
+        taskId = TaskId.readFromStream(in);
+        parentTaskId = TaskId.readFromStream(in);
+        nodes = in.readStringArray();
+        actions = in.readStringArray();
+        timeout = in.readOptionalWriteable(TimeValue::new);
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = null;
@@ -139,12 +148,7 @@ public class BaseTasksRequest<Request extends BaseTasksRequest<Request>> extends
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        taskId = TaskId.readFromStream(in);
-        parentTaskId = TaskId.readFromStream(in);
-        nodes = in.readStringArray();
-        actions = in.readStringArray();
-        timeout = in.readOptionalWriteable(TimeValue::new);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

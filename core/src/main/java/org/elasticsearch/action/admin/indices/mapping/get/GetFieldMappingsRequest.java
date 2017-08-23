@@ -47,6 +47,16 @@ public class GetFieldMappingsRequest extends ActionRequest implements IndicesReq
 
     }
 
+    public GetFieldMappingsRequest(StreamInput in) throws IOException {
+        super(in);
+        indices = in.readStringArray();
+        types = in.readStringArray();
+        indicesOptions = IndicesOptions.readIndicesOptions(in);
+        local = in.readBoolean();
+        fields = in.readStringArray();
+        includeDefaults = in.readBoolean();
+    }
+
     /**
      * Indicate whether the receiving node should operate based on local index information or forward requests,
      * where needed, to other nodes. If running locally, request will not raise errors if running locally &amp; missing indices.
@@ -128,12 +138,6 @@ public class GetFieldMappingsRequest extends ActionRequest implements IndicesReq
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        indices = in.readStringArray();
-        types = in.readStringArray();
-        indicesOptions = IndicesOptions.readIndicesOptions(in);
-        local = in.readBoolean();
-        fields = in.readStringArray();
-        includeDefaults = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 }

@@ -39,6 +39,14 @@ public class TypesExistsRequest extends MasterNodeReadRequest<TypesExistsRequest
     public TypesExistsRequest() {
     }
 
+    public TypesExistsRequest(StreamInput in) throws IOException {
+        super(in);
+        indices = in.readStringArray();
+        types = in.readStringArray();
+        indicesOptions = IndicesOptions.readIndicesOptions(in);
+    }
+
+
     public TypesExistsRequest(String[] indices, String... types) {
         this.indices = indices;
         this.types = types;
@@ -96,9 +104,6 @@ public class TypesExistsRequest extends MasterNodeReadRequest<TypesExistsRequest
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        indices = in.readStringArray();
-        types = in.readStringArray();
-        indicesOptions = IndicesOptions.readIndicesOptions(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 }

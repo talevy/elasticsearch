@@ -49,6 +49,17 @@ public class IndicesShardStoresRequest extends MasterNodeReadRequest<IndicesShar
     public IndicesShardStoresRequest() {
     }
 
+    public IndicesShardStoresRequest(StreamInput in) throws IOException {
+        super(in);
+        indices = in.readStringArray();
+        int nStatus = in.readVInt();
+        statuses = EnumSet.noneOf(ClusterHealthStatus.class);
+        for (int i = 0; i < nStatus; i++) {
+            statuses.add(ClusterHealthStatus.fromValue(in.readByte()));
+        }
+        indicesOptions = IndicesOptions.readIndicesOptions(in);
+    }
+
     /**
      * Set statuses to filter shards to get stores info on.
      * see {@link ClusterHealthStatus} for details.
@@ -120,13 +131,6 @@ public class IndicesShardStoresRequest extends MasterNodeReadRequest<IndicesShar
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        indices = in.readStringArray();
-        int nStatus = in.readVInt();
-        statuses = EnumSet.noneOf(ClusterHealthStatus.class);
-        for (int i = 0; i < nStatus; i++) {
-            statuses.add(ClusterHealthStatus.fromValue(in.readByte()));
-        }
-        indicesOptions = IndicesOptions.readIndicesOptions(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 }

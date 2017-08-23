@@ -95,6 +95,35 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
         this.id = id;
     }
 
+    public UpdateRequest(StreamInput in) throws IOException {
+        super(in);
+        waitForActiveShards = ActiveShardCount.readFrom(in);
+        type = in.readString();
+        id = in.readString();
+        routing = in.readOptionalString();
+        parent = in.readOptionalString();
+        if (in.readBoolean()) {
+            script = new Script(in);
+        }
+        retryOnConflict = in.readVInt();
+        refreshPolicy = RefreshPolicy.readFrom(in);
+        if (in.readBoolean()) {
+            doc = new IndexRequest();
+            doc.readFrom(in);
+        }
+        fields = in.readOptionalStringArray();
+        fetchSourceContext = in.readOptionalWriteable(FetchSourceContext::new);
+        if (in.readBoolean()) {
+            upsertRequest = new IndexRequest();
+            upsertRequest.readFrom(in);
+        }
+        docAsUpsert = in.readBoolean();
+        version = in.readLong();
+        versionType = VersionType.fromValue(in.readByte());
+        detectNoop = in.readBoolean();
+        scriptedUpsert = in.readBoolean();
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = super.validate();
@@ -783,32 +812,7 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        waitForActiveShards = ActiveShardCount.readFrom(in);
-        type = in.readString();
-        id = in.readString();
-        routing = in.readOptionalString();
-        parent = in.readOptionalString();
-        if (in.readBoolean()) {
-            script = new Script(in);
-        }
-        retryOnConflict = in.readVInt();
-        refreshPolicy = RefreshPolicy.readFrom(in);
-        if (in.readBoolean()) {
-            doc = new IndexRequest();
-            doc.readFrom(in);
-        }
-        fields = in.readOptionalStringArray();
-        fetchSourceContext = in.readOptionalWriteable(FetchSourceContext::new);
-        if (in.readBoolean()) {
-            upsertRequest = new IndexRequest();
-            upsertRequest.readFrom(in);
-        }
-        docAsUpsert = in.readBoolean();
-        version = in.readLong();
-        versionType = VersionType.fromValue(in.readByte());
-        detectNoop = in.readBoolean();
-        scriptedUpsert = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

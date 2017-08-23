@@ -36,6 +36,7 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardsIterator;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.logging.LoggerMessageFormat;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.shard.ShardId;
@@ -67,7 +68,7 @@ public abstract class TransportSingleShardAction<Request extends SingleShardRequ
 
     protected TransportSingleShardAction(Settings settings, String actionName, ThreadPool threadPool, ClusterService clusterService,
                                          TransportService transportService, ActionFilters actionFilters, IndexNameExpressionResolver indexNameExpressionResolver,
-                                         Supplier<Request> request, String executor) {
+                                         Writeable.Reader<Request> request, String executor) {
         super(settings, actionName, threadPool, actionFilters, indexNameExpressionResolver, transportService.getTaskManager());
         this.clusterService = clusterService;
         this.transportService = transportService;
@@ -76,9 +77,9 @@ public abstract class TransportSingleShardAction<Request extends SingleShardRequ
         this.executor = executor;
 
         if (!isSubAction()) {
-            transportService.registerRequestHandler(actionName, request, ThreadPool.Names.SAME, new TransportHandler());
+            transportService.registerRequestHandler(actionName, ThreadPool.Names.SAME, request, new TransportHandler());
         }
-        transportService.registerRequestHandler(transportShardAction, request, executor, new ShardTransportHandler());
+        transportService.registerRequestHandler(transportShardAction, executor, request, new ShardTransportHandler());
     }
 
     /**

@@ -35,6 +35,7 @@ import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
@@ -254,6 +255,12 @@ public class BroadcastReplicationTests extends ESTestCase {
     }
 
     public static class DummyBroadcastRequest extends BroadcastRequest<DummyBroadcastRequest> {
+        public DummyBroadcastRequest() {
 
+        }
+
+        public DummyBroadcastRequest(StreamInput in) throws IOException {
+            super(in);
+        }
     }
 }

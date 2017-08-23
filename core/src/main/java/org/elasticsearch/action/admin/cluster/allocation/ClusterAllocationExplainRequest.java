@@ -68,6 +68,21 @@ public class ClusterAllocationExplainRequest extends MasterNodeRequest<ClusterAl
     }
 
     /**
+     * Creates a new allocation explain request from a specific {@link StreamInput}
+     */
+    public ClusterAllocationExplainRequest(StreamInput in) throws IOException {
+        super(in);
+        checkVersion(in.getVersion());
+        this.index = in.readOptionalString();
+        this.shard = in.readOptionalVInt();
+        this.primary = in.readOptionalBoolean();
+        this.currentNode = in.readOptionalString();
+        this.includeYesDecisions = in.readBoolean();
+        this.includeDiskInfo = in.readBoolean();
+
+    }
+
+    /**
      * Create a new allocation explain request. If {@code primary} is false, the first unassigned replica
      * will be picked for explanation. If no replicas are unassigned, the first assigned replica will
      * be explained.
@@ -226,14 +241,7 @@ public class ClusterAllocationExplainRequest extends MasterNodeRequest<ClusterAl
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        checkVersion(in.getVersion());
-        super.readFrom(in);
-        this.index = in.readOptionalString();
-        this.shard = in.readOptionalVInt();
-        this.primary = in.readOptionalBoolean();
-        this.currentNode = in.readOptionalString();
-        this.includeYesDecisions = in.readBoolean();
-        this.includeDiskInfo = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

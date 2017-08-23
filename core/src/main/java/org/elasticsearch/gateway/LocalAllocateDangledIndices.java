@@ -72,7 +72,7 @@ public class LocalAllocateDangledIndices extends AbstractComponent {
         this.clusterService = clusterService;
         this.allocationService = allocationService;
         this.metaDataIndexUpgradeService = metaDataIndexUpgradeService;
-        transportService.registerRequestHandler(ACTION_NAME, AllocateDangledRequest::new, ThreadPool.Names.SAME, new AllocateDangledRequestHandler());
+        transportService.registerRequestHandler(ACTION_NAME, ThreadPool.Names.SAME, AllocateDangledRequest::new, new AllocateDangledRequestHandler());
     }
 
     public void allocateDangled(Collection<IndexMetaData> indices, final Listener listener) {
@@ -217,14 +217,18 @@ public class LocalAllocateDangledIndices extends AbstractComponent {
             this.indices = indices;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        AllocateDangledRequest(StreamInput in) throws IOException {
+            super(in);
             fromNode = new DiscoveryNode(in);
             indices = new IndexMetaData[in.readVInt()];
             for (int i = 0; i < indices.length; i++) {
                 indices[i] = IndexMetaData.readFrom(in);
             }
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

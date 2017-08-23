@@ -50,6 +50,12 @@ public class RecoveryRequest extends BroadcastRequest<RecoveryRequest> {
         super(indices);
     }
 
+    public RecoveryRequest(StreamInput in) throws IOException {
+        super(in);
+        detailed = in.readBoolean();
+        activeOnly = in.readBoolean();
+    }
+
     /**
      * True if detailed flag is set, false otherwise. This value if false by default.
      *
@@ -97,8 +103,6 @@ public class RecoveryRequest extends BroadcastRequest<RecoveryRequest> {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        detailed = in.readBoolean();
-        activeOnly = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 }

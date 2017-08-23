@@ -38,6 +38,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
@@ -144,8 +145,8 @@ public abstract class TaskManagerTestCase extends ESTestCase {
             extends TransportNodesAction<NodesRequest, NodesResponse, NodeRequest, NodeResponse> {
 
         AbstractTestNodesAction(Settings settings, String actionName, ThreadPool threadPool,
-                                ClusterService clusterService, TransportService transportService, Supplier<NodesRequest> request,
-                                Supplier<NodeRequest> nodeRequest) {
+                                ClusterService clusterService, TransportService transportService, Writeable.Reader<NodesRequest> request,
+                                Writeable.Reader<NodeRequest> nodeRequest) {
             super(settings, actionName, threadPool, clusterService, transportService,
                     new ActionFilters(new HashSet<>()), new IndexNameExpressionResolver(Settings.EMPTY),
                     request, nodeRequest, ThreadPool.Names.GENERIC, NodeResponse.class);

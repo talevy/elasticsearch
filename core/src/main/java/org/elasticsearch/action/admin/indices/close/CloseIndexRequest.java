@@ -42,6 +42,12 @@ public class CloseIndexRequest extends AcknowledgedRequest<CloseIndexRequest> im
     public CloseIndexRequest() {
     }
 
+    public CloseIndexRequest(StreamInput in) throws IOException {
+        super(in);
+        indices = in.readStringArray();
+        indicesOptions = IndicesOptions.readIndicesOptions(in);
+    }
+
     /**
      * Constructs a new close index request for the specified index.
      */
@@ -103,9 +109,7 @@ public class CloseIndexRequest extends AcknowledgedRequest<CloseIndexRequest> im
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        indices = in.readStringArray();
-        indicesOptions = IndicesOptions.readIndicesOptions(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

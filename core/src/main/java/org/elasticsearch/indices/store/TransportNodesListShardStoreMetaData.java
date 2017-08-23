@@ -239,10 +239,14 @@ public class TransportNodesListShardStoreMetaData extends TransportNodesAction<T
             this.shardId = shardId;
         }
 
+        public Request(StreamInput in) throws IOException {
+            super(in);
+            shardId = ShardId.readShardId(in);
+        }
+
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            shardId = ShardId.readShardId(in);
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override
@@ -285,10 +289,14 @@ public class TransportNodesListShardStoreMetaData extends TransportNodesAction<T
             this.shardId = request.shardId;
         }
 
+        NodeRequest(StreamInput in) throws IOException {
+            super(in);
+            shardId = ShardId.readShardId(in);
+        }
+
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            shardId = ShardId.readShardId(in);
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

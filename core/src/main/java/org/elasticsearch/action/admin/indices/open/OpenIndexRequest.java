@@ -49,6 +49,12 @@ public class OpenIndexRequest extends AcknowledgedRequest<OpenIndexRequest> impl
         this.indices = indices;
     }
 
+    public OpenIndexRequest(StreamInput in) throws IOException {
+        super(in);
+        indices = in.readStringArray();
+        indicesOptions = IndicesOptions.readIndicesOptions(in);
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = null;
@@ -103,9 +109,7 @@ public class OpenIndexRequest extends AcknowledgedRequest<OpenIndexRequest> impl
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        indices = in.readStringArray();
-        indicesOptions = IndicesOptions.readIndicesOptions(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

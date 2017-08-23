@@ -162,7 +162,7 @@ public class UnicastZenPing extends AbstractComponent implements ZenPing {
             concurrentConnects,
             resolveTimeout);
 
-        transportService.registerRequestHandler(ACTION_NAME, UnicastPingRequest::new, ThreadPool.Names.SAME,
+        transportService.registerRequestHandler(ACTION_NAME, ThreadPool.Names.SAME, UnicastPingRequest::new,
             new UnicastPingRequestHandler());
 
         final ThreadFactory threadFactory = EsExecutors.daemonThreadFactory(settings, "[unicast_connect]");
@@ -631,12 +631,16 @@ public class UnicastZenPing extends AbstractComponent implements ZenPing {
         public UnicastPingRequest() {
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public UnicastPingRequest(StreamInput in) throws IOException {
+            super(in);
             id = in.readInt();
             timeout = new TimeValue(in);
             pingResponse = readPingResponse(in);
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

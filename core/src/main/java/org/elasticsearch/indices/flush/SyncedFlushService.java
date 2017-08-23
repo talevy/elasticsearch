@@ -85,9 +85,9 @@ public class SyncedFlushService extends AbstractComponent implements IndexEventL
         this.clusterService = clusterService;
         this.transportService = transportService;
         this.indexNameExpressionResolver = indexNameExpressionResolver;
-        transportService.registerRequestHandler(PRE_SYNCED_FLUSH_ACTION_NAME, PreShardSyncedFlushRequest::new, ThreadPool.Names.FLUSH, new PreSyncedFlushTransportHandler());
-        transportService.registerRequestHandler(SYNCED_FLUSH_ACTION_NAME, ShardSyncedFlushRequest::new, ThreadPool.Names.FLUSH, new SyncedFlushTransportHandler());
-        transportService.registerRequestHandler(IN_FLIGHT_OPS_ACTION_NAME, InFlightOpsRequest::new, ThreadPool.Names.SAME, new InFlightOpCountTransportHandler());
+        transportService.registerRequestHandler(PRE_SYNCED_FLUSH_ACTION_NAME, ThreadPool.Names.FLUSH, PreShardSyncedFlushRequest::new, new PreSyncedFlushTransportHandler());
+        transportService.registerRequestHandler(SYNCED_FLUSH_ACTION_NAME, ThreadPool.Names.FLUSH, ShardSyncedFlushRequest::new, new SyncedFlushTransportHandler());
+        transportService.registerRequestHandler(IN_FLIGHT_OPS_ACTION_NAME, ThreadPool.Names.SAME, InFlightOpsRequest::new, new InFlightOpCountTransportHandler());
     }
 
     @Override
@@ -455,6 +455,11 @@ public class SyncedFlushService extends AbstractComponent implements IndexEventL
             this.shardId = shardId;
         }
 
+        public PreShardSyncedFlushRequest(StreamInput in) throws IOException {
+            super(in);
+            this.shardId = ShardId.readShardId(in);
+        }
+
         @Override
         public String toString() {
             return "PreShardSyncedFlushRequest{" +
@@ -470,8 +475,7 @@ public class SyncedFlushService extends AbstractComponent implements IndexEventL
 
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            this.shardId = ShardId.readShardId(in);
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         public ShardId shardId() {
@@ -525,12 +529,16 @@ public class SyncedFlushService extends AbstractComponent implements IndexEventL
             this.syncId = syncId;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public ShardSyncedFlushRequest(StreamInput in) throws IOException {
+            super(in);
             shardId = ShardId.readShardId(in);
             expectedCommitId = new Engine.CommitId(in);
             syncId = in.readString();
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override
@@ -627,10 +635,14 @@ public class SyncedFlushService extends AbstractComponent implements IndexEventL
             this.shardId = shardId;
         }
 
+        public InFlightOpsRequest(StreamInput in) throws IOException {
+            super(in);
+            shardId = ShardId.readShardId(in);
+        }
+
         @Override
         public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
-            shardId = ShardId.readShardId(in);
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override

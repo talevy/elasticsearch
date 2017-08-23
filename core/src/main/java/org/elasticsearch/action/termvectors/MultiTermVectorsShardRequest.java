@@ -48,6 +48,19 @@ public class MultiTermVectorsShardRequest extends SingleShardRequest<MultiTermVe
         requests = new ArrayList<>();
     }
 
+    MultiTermVectorsShardRequest(StreamInput in) throws IOException {
+        super(in);
+        int size = in.readVInt();
+        locations = new IntArrayList(size);
+        requests = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            locations.add(in.readVInt());
+            requests.add(TermVectorsRequest.readTermVectorsRequest(in));
+        }
+
+        preference = in.readOptionalString();
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         return super.validateNonNullIndex();
@@ -88,16 +101,7 @@ public class MultiTermVectorsShardRequest extends SingleShardRequest<MultiTermVe
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        int size = in.readVInt();
-        locations = new IntArrayList(size);
-        requests = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            locations.add(in.readVInt());
-            requests.add(TermVectorsRequest.readTermVectorsRequest(in));
-        }
-
-        preference = in.readOptionalString();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

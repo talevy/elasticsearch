@@ -59,6 +59,14 @@ public class UpdateSettingsRequest extends AcknowledgedRequest<UpdateSettingsReq
         this.indices = indices;
     }
 
+    public UpdateSettingsRequest(StreamInput in) throws IOException {
+        super(in);
+        indices = in.readStringArray();
+        indicesOptions = IndicesOptions.readIndicesOptions(in);
+        settings = readSettingsFromStream(in);
+        preserveExisting = in.readBoolean();
+    }
+
     /**
      * Constructs a new request to update settings for one or more indices
      */
@@ -162,11 +170,7 @@ public class UpdateSettingsRequest extends AcknowledgedRequest<UpdateSettingsReq
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        indices = in.readStringArray();
-        indicesOptions = IndicesOptions.readIndicesOptions(in);
-        settings = readSettingsFromStream(in);
-        preserveExisting = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

@@ -48,6 +48,12 @@ public class ClusterUpdateSettingsRequest extends AcknowledgedRequest<ClusterUpd
     public ClusterUpdateSettingsRequest() {
     }
 
+    public ClusterUpdateSettingsRequest(StreamInput in) throws IOException {
+        super(in);
+        transientSettings = readSettingsFromStream(in);
+        persistentSettings = readSettingsFromStream(in);
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = null;
@@ -145,9 +151,7 @@ public class ClusterUpdateSettingsRequest extends AcknowledgedRequest<ClusterUpd
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        transientSettings = readSettingsFromStream(in);
-        persistentSettings = readSettingsFromStream(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

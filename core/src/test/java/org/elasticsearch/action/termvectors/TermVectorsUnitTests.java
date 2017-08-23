@@ -251,8 +251,7 @@ public class TermVectorsUnitTests extends ESTestCase {
             // read
             ByteArrayInputStream esInBuffer = new ByteArrayInputStream(outBuffer.toByteArray());
             InputStreamStreamInput esBuffer = new InputStreamStreamInput(esInBuffer);
-            TermVectorsRequest req2 = new TermVectorsRequest(null, null, null);
-            req2.readFrom(esBuffer);
+            TermVectorsRequest req2 = new TermVectorsRequest(esBuffer);
 
             assertThat(request.offsets(), equalTo(req2.offsets()));
             assertThat(request.fieldStatistics(), equalTo(req2.fieldStatistics()));
@@ -272,8 +271,7 @@ public class TermVectorsUnitTests extends ESTestCase {
             Version.V_5_1_1, Version.V_5_1_2, Version.V_5_2_0);
         try (StreamInput in = StreamInput.wrap(data)) {
             in.setVersion(version);
-            TermVectorsRequest request = new TermVectorsRequest();
-            request.readFrom(in);
+            TermVectorsRequest request = new TermVectorsRequest(in);
             assertEquals("index", request.index());
             assertEquals("type", request.type());
             assertEquals("id", request.id());

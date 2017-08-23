@@ -36,10 +36,18 @@ public class CancelTasksRequest extends BaseTasksRequest<CancelTasksRequest> {
 
     private String reason = DEFAULT_REASON;
 
+    public CancelTasksRequest() {
+
+    }
+
+    public CancelTasksRequest(StreamInput in) throws IOException {
+        super(in);
+        reason = in.readString();
+    }
+
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        reason = in.readString();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

@@ -78,6 +78,20 @@ public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> im
     public PutMappingRequest() {
     }
 
+    public PutMappingRequest(StreamInput in) throws IOException {
+        super(in);
+        indices = in.readStringArray();
+        indicesOptions = IndicesOptions.readIndicesOptions(in);
+        type = in.readOptionalString();
+        source = in.readString();
+        if (in.getVersion().before(Version.V_5_3_0)) {
+            // we do not know the format from earlier versions so convert if necessary
+            source = XContentHelper.convertToJson(new BytesArray(source), false, false, XContentFactory.xContentType(source));
+        }
+        updateAllTypes = in.readBoolean();
+        concreteIndex = in.readOptionalWriteable(Index::new);
+    }
+
     /**
      * Constructs a new put mapping request against one or more indices. If nothing is set then
      * it will be executed against all indices.
@@ -303,17 +317,7 @@ public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> im
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        indices = in.readStringArray();
-        indicesOptions = IndicesOptions.readIndicesOptions(in);
-        type = in.readOptionalString();
-        source = in.readString();
-        if (in.getVersion().before(Version.V_5_3_0)) {
-            // we do not know the format from earlier versions so convert if necessary
-            source = XContentHelper.convertToJson(new BytesArray(source), false, false, XContentFactory.xContentType(source));
-        }
-        updateAllTypes = in.readBoolean();
-        concreteIndex = in.readOptionalWriteable(Index::new);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

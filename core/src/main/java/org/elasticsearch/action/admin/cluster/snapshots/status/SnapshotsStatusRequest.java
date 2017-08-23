@@ -24,6 +24,7 @@ import org.elasticsearch.action.support.master.MasterNodeRequest;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.index.translog.Translog;
 
 import java.io.IOException;
 
@@ -52,6 +53,13 @@ public class SnapshotsStatusRequest extends MasterNodeRequest<SnapshotsStatusReq
     public SnapshotsStatusRequest(String repository, String[] snapshots) {
         this.repository = repository;
         this.snapshots = snapshots;
+    }
+
+    public SnapshotsStatusRequest(StreamInput in) throws IOException {
+        super(in);
+        repository = in.readString();
+        snapshots = in.readStringArray();
+        ignoreUnavailable = in.readBoolean();
     }
 
     /**
@@ -137,10 +145,7 @@ public class SnapshotsStatusRequest extends MasterNodeRequest<SnapshotsStatusReq
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        repository = in.readString();
-        snapshots = in.readStringArray();
-        ignoreUnavailable = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

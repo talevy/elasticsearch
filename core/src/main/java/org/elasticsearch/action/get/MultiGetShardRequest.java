@@ -53,6 +53,22 @@ public class MultiGetShardRequest extends SingleShardRequest<MultiGetShardReques
         refresh = multiGetRequest.refresh;
     }
 
+    MultiGetShardRequest(StreamInput in) throws IOException {
+        super(in);
+        int size = in.readVInt();
+        locations = new IntArrayList(size);
+        items = new ArrayList<>(size);
+
+        for (int i = 0; i < size; i++) {
+            locations.add(in.readVInt());
+            items.add(new MultiGetRequest.Item(in));
+        }
+
+        preference = in.readOptionalString();
+        refresh = in.readBoolean();
+        realtime = in.readBoolean();
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         return super.validateNonNullIndex();
@@ -110,19 +126,7 @@ public class MultiGetShardRequest extends SingleShardRequest<MultiGetShardReques
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        int size = in.readVInt();
-        locations = new IntArrayList(size);
-        items = new ArrayList<>(size);
-
-        for (int i = 0; i < size; i++) {
-            locations.add(in.readVInt());
-            items.add(MultiGetRequest.Item.readItem(in));
-        }
-
-        preference = in.readOptionalString();
-        refresh = in.readBoolean();
-        realtime = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

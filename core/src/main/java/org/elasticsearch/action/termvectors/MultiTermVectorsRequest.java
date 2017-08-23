@@ -45,6 +45,20 @@ public class MultiTermVectorsRequest extends ActionRequest implements Iterable<T
 
     final Set<String> ids = new HashSet<>();
 
+    public MultiTermVectorsRequest() {
+
+    }
+
+    public MultiTermVectorsRequest(StreamInput in) throws IOException {
+        super(in);
+        preference = in.readOptionalString();
+        int size = in.readVInt();
+        requests = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            requests.add(TermVectorsRequest.readTermVectorsRequest(in));
+        }
+    }
+
     public MultiTermVectorsRequest add(TermVectorsRequest termVectorsRequest) {
         requests.add(termVectorsRequest);
         return this;
@@ -133,13 +147,7 @@ public class MultiTermVectorsRequest extends ActionRequest implements Iterable<T
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        preference = in.readOptionalString();
-        int size = in.readVInt();
-        requests = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            requests.add(TermVectorsRequest.readTermVectorsRequest(in));
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

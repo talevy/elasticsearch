@@ -42,14 +42,18 @@ public class FieldCapabilitiesIndexRequest
         this.fields = fields;
     }
 
+    FieldCapabilitiesIndexRequest(StreamInput in) throws IOException {
+        super(in);
+        fields = in.readStringArray();
+    }
+
     public String[] fields() {
         return fields;
     }
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        fields = in.readStringArray();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

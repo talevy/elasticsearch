@@ -50,6 +50,12 @@ public class FlushRequest extends BroadcastRequest<FlushRequest> {
         super(indices);
     }
 
+    public FlushRequest(StreamInput in) throws IOException {
+        super(in);
+        force = in.readBoolean();
+        waitIfOngoing = in.readBoolean();
+    }
+
     /**
      * Returns <tt>true</tt> iff a flush should block
      * if a another flush operation is already running. Otherwise <tt>false</tt>
@@ -92,9 +98,7 @@ public class FlushRequest extends BroadcastRequest<FlushRequest> {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        force = in.readBoolean();
-        waitIfOngoing = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

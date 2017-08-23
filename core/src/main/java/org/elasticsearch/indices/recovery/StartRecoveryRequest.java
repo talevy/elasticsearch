@@ -77,6 +77,22 @@ public class StartRecoveryRequest extends TransportRequest {
         this.startingSeqNo = startingSeqNo;
     }
 
+    public StartRecoveryRequest(StreamInput in) throws IOException {
+        super(in);
+        recoveryId = in.readLong();
+        shardId = ShardId.readShardId(in);
+        targetAllocationId = in.readString();
+        sourceNode = new DiscoveryNode(in);
+        targetNode = new DiscoveryNode(in);
+        metadataSnapshot = new Store.MetadataSnapshot(in);
+        primaryRelocation = in.readBoolean();
+        if (in.getVersion().onOrAfter(Version.V_6_0_0_alpha1)) {
+            startingSeqNo = in.readLong();
+        } else {
+            startingSeqNo = SequenceNumbersService.UNASSIGNED_SEQ_NO;
+        }
+    }
+
     public long recoveryId() {
         return this.recoveryId;
     }
@@ -111,19 +127,7 @@ public class StartRecoveryRequest extends TransportRequest {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        recoveryId = in.readLong();
-        shardId = ShardId.readShardId(in);
-        targetAllocationId = in.readString();
-        sourceNode = new DiscoveryNode(in);
-        targetNode = new DiscoveryNode(in);
-        metadataSnapshot = new Store.MetadataSnapshot(in);
-        primaryRelocation = in.readBoolean();
-        if (in.getVersion().onOrAfter(Version.V_6_0_0_alpha1)) {
-            startingSeqNo = in.readLong();
-        } else {
-            startingSeqNo = SequenceNumbersService.UNASSIGNED_SEQ_NO;
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

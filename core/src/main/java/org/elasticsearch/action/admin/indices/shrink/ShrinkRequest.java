@@ -57,6 +57,13 @@ public class ShrinkRequest extends AcknowledgedRequest<ShrinkRequest> implements
         this.sourceIndex = sourceindex;
     }
 
+    public ShrinkRequest(StreamInput in) throws IOException {
+        super(in);
+        shrinkIndexRequest = new CreateIndexRequest();
+        shrinkIndexRequest.readFrom(in);
+        sourceIndex = in.readString();
+    }
+
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = shrinkIndexRequest == null ? null : shrinkIndexRequest.validate();
@@ -78,10 +85,7 @@ public class ShrinkRequest extends AcknowledgedRequest<ShrinkRequest> implements
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        shrinkIndexRequest = new CreateIndexRequest();
-        shrinkIndexRequest.readFrom(in);
-        sourceIndex = in.readString();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

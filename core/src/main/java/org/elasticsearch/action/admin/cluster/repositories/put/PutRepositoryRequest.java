@@ -56,6 +56,14 @@ public class PutRepositoryRequest extends AcknowledgedRequest<PutRepositoryReque
     public PutRepositoryRequest() {
     }
 
+    public PutRepositoryRequest(StreamInput in) throws IOException {
+        super(in);
+        name = in.readString();
+        type = in.readString();
+        settings = readSettingsFromStream(in);
+        verify = in.readBoolean();
+    }
+
     /**
      * Constructs a new put repository request with the provided name.
      */
@@ -216,11 +224,7 @@ public class PutRepositoryRequest extends AcknowledgedRequest<PutRepositoryReque
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        name = in.readString();
-        type = in.readString();
-        settings = readSettingsFromStream(in);
-        verify = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

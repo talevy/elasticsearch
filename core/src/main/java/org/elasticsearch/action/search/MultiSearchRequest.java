@@ -42,6 +42,21 @@ public class MultiSearchRequest extends ActionRequest implements CompositeIndice
 
     private IndicesOptions indicesOptions = IndicesOptions.strictExpandOpenAndForbidClosed();
 
+    public MultiSearchRequest() {
+
+    }
+
+    public MultiSearchRequest(StreamInput in) throws IOException {
+        super(in);
+        maxConcurrentSearchRequests = in.readVInt();
+        int size = in.readVInt();
+        for (int i = 0; i < size; i++) {
+            SearchRequest request = new SearchRequest();
+            request.readFrom(in);
+            requests.add(request);
+        }
+    }
+
     /**
      * Add a search request to execute. Note, the order is important, the search response will be returned in the
      * same order as the search requests.
@@ -113,14 +128,7 @@ public class MultiSearchRequest extends ActionRequest implements CompositeIndice
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        maxConcurrentSearchRequests = in.readVInt();
-        int size = in.readVInt();
-        for (int i = 0; i < size; i++) {
-            SearchRequest request = new SearchRequest();
-            request.readFrom(in);
-            requests.add(request);
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

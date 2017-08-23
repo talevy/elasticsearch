@@ -86,6 +86,35 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
     public CreateIndexRequest() {
     }
 
+    public CreateIndexRequest(StreamInput in) throws IOException {
+        super(in);
+        cause = in.readString();
+        index = in.readString();
+        settings = readSettingsFromStream(in);
+        int size = in.readVInt();
+        for (int i = 0; i < size; i++) {
+            final String type = in.readString();
+            String source = in.readString();
+            if (in.getVersion().before(Version.V_6_0_0_alpha1)) { // TODO change to 5.3.0 after backport
+                // we do not know the content type that comes from earlier versions so we autodetect and convert
+                source = XContentHelper.convertToJson(new BytesArray(source), false, false, XContentFactory.xContentType(source));
+            }
+            mappings.put(type, source);
+        }
+        int customSize = in.readVInt();
+        for (int i = 0; i < customSize; i++) {
+            String type = in.readString();
+            IndexMetaData.Custom customIndexMetaData = IndexMetaData.lookupPrototypeSafe(type).readFrom(in);
+            customs.put(type, customIndexMetaData);
+        }
+        int aliasesSize = in.readVInt();
+        for (int i = 0; i < aliasesSize; i++) {
+            aliases.add(Alias.read(in));
+        }
+        updateAllTypes = in.readBoolean();
+        waitForActiveShards = ActiveShardCount.readFrom(in);
+    }
+
     /**
      * Constructs a new request to create an index with the specified name.
      */
@@ -483,32 +512,7 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        cause = in.readString();
-        index = in.readString();
-        settings = readSettingsFromStream(in);
-        int size = in.readVInt();
-        for (int i = 0; i < size; i++) {
-            final String type = in.readString();
-            String source = in.readString();
-            if (in.getVersion().before(Version.V_6_0_0_alpha1)) { // TODO change to 5.3.0 after backport
-                // we do not know the content type that comes from earlier versions so we autodetect and convert
-                source = XContentHelper.convertToJson(new BytesArray(source), false, false, XContentFactory.xContentType(source));
-            }
-            mappings.put(type, source);
-        }
-        int customSize = in.readVInt();
-        for (int i = 0; i < customSize; i++) {
-            String type = in.readString();
-            IndexMetaData.Custom customIndexMetaData = IndexMetaData.lookupPrototypeSafe(type).readFrom(in);
-            customs.put(type, customIndexMetaData);
-        }
-        int aliasesSize = in.readVInt();
-        for (int i = 0; i < aliasesSize; i++) {
-            aliases.add(Alias.read(in));
-        }
-        updateAllTypes = in.readBoolean();
-        waitForActiveShards = ActiveShardCount.readFrom(in);
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

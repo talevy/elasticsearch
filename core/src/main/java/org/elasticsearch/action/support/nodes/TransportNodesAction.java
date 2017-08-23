@@ -29,6 +29,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -64,10 +65,10 @@ public abstract class TransportNodesAction<NodesRequest extends BaseNodesRequest
     protected TransportNodesAction(Settings settings, String actionName, ThreadPool threadPool,
                                    ClusterService clusterService, TransportService transportService, ActionFilters actionFilters,
                                    IndexNameExpressionResolver indexNameExpressionResolver,
-                                   Supplier<NodesRequest> request, Supplier<NodeRequest> nodeRequest,
+                                   Writeable.Reader<NodesRequest> request, Writeable.Reader<NodeRequest> nodeRequest,
                                    String nodeExecutor,
                                    Class<NodeResponse> nodeResponseClass) {
-        super(settings, actionName, threadPool, transportService, actionFilters, indexNameExpressionResolver, request);
+        super(settings, actionName, threadPool, transportService, actionFilters, request, indexNameExpressionResolver);
         this.clusterService = Objects.requireNonNull(clusterService);
         this.transportService = Objects.requireNonNull(transportService);
         this.nodeResponseClass = Objects.requireNonNull(nodeResponseClass);
@@ -75,7 +76,7 @@ public abstract class TransportNodesAction<NodesRequest extends BaseNodesRequest
         this.transportNodeAction = actionName + "[n]";
 
         transportService.registerRequestHandler(
-            transportNodeAction, nodeRequest, nodeExecutor, new NodeTransportHandler());
+            transportNodeAction, nodeExecutor, nodeRequest, new NodeTransportHandler());
     }
 
     @Override

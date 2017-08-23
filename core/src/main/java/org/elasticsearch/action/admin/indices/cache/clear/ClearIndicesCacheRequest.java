@@ -38,6 +38,17 @@ public class ClearIndicesCacheRequest extends BroadcastRequest<ClearIndicesCache
     public ClearIndicesCacheRequest() {
     }
 
+    public ClearIndicesCacheRequest(StreamInput in) throws IOException {
+        super(in);
+        queryCache = in.readBoolean();
+        fieldDataCache = in.readBoolean();
+        if (in.getVersion().before(Version.V_6_0_0_beta1)) {
+            in.readBoolean(); // recycler
+        }
+        fields = in.readStringArray();
+        requestCache = in.readBoolean();
+    }
+
     public ClearIndicesCacheRequest(String... indices) {
         super(indices);
     }
@@ -80,14 +91,7 @@ public class ClearIndicesCacheRequest extends BroadcastRequest<ClearIndicesCache
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        queryCache = in.readBoolean();
-        fieldDataCache = in.readBoolean();
-        if (in.getVersion().before(Version.V_6_0_0_beta1)) {
-            in.readBoolean(); // recycler
-        }
-        fields = in.readStringArray();
-        requestCache = in.readBoolean();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override

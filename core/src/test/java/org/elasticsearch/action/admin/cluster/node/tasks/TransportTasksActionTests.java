@@ -89,11 +89,15 @@ public class TransportTasksActionTests extends TaskManagerTestCase {
             enableTaskManager = request.enableTaskManager;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public NodeRequest(StreamInput in) throws IOException {
+            super(in);
             requestName = in.readString();
             enableTaskManager = in.readBoolean();
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override
@@ -136,11 +140,15 @@ public class TransportTasksActionTests extends TaskManagerTestCase {
             this.enableTaskManager = enableTaskManager;
         }
 
-        @Override
-        public void readFrom(StreamInput in) throws IOException {
-            super.readFrom(in);
+        public NodesRequest(StreamInput in) throws IOException {
+            super(in);
             requestName = in.readString();
             enableTaskManager = in.readBoolean();
+        }
+
+        @Override
+        public void readFrom(StreamInput in) throws IOException {
+            throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
         }
 
         @Override
@@ -209,7 +217,13 @@ public class TransportTasksActionTests extends TaskManagerTestCase {
     }
 
     static class TestTasksRequest extends BaseTasksRequest<TestTasksRequest> {
+        TestTasksRequest() {
 
+        }
+
+        TestTasksRequest(StreamInput in) throws IOException {
+            super(in);
+        }
     }
 
     static class TestTasksResponse extends BaseTasksResponse {

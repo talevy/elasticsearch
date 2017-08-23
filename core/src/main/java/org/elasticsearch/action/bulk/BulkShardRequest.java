@@ -42,6 +42,16 @@ public class BulkShardRequest extends ReplicatedWriteRequest<BulkShardRequest> {
         setRefreshPolicy(refreshPolicy);
     }
 
+    public BulkShardRequest(StreamInput in) throws IOException {
+        super(in);
+        items = new BulkItemRequest[in.readVInt()];
+        for (int i = 0; i < items.length; i++) {
+            if (in.readBoolean()) {
+                items[i] = BulkItemRequest.readBulkItem(in);
+            }
+        }
+    }
+
     public BulkItemRequest[] items() {
         return items;
     }
@@ -73,13 +83,7 @@ public class BulkShardRequest extends ReplicatedWriteRequest<BulkShardRequest> {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        items = new BulkItemRequest[in.readVInt()];
-        for (int i = 0; i < items.length; i++) {
-            if (in.readBoolean()) {
-                items[i] = BulkItemRequest.readBulkItem(in);
-            }
-        }
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override
