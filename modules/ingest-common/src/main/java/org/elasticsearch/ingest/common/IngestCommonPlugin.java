@@ -25,6 +25,9 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
+import org.elasticsearch.common.settings.SecureSetting;
+import org.elasticsearch.common.settings.SecureString;
+import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.grok.Grok;
@@ -44,6 +47,9 @@ import java.util.function.Supplier;
 
 public class IngestCommonPlugin extends Plugin implements ActionPlugin, IngestPlugin {
 
+    public static final String FINGERPRINT_HMAC_KEY = "ingest.fingerprint.key";
+    public static final Setting<SecureString> FINGERPRINT_HMAC_KEY_SETTING =
+        SecureSetting.secureString(FINGERPRINT_HMAC_KEY, null, Setting.Property.NodeScope);
     static final Map<String, String> GROK_PATTERNS = Grok.getBuiltinPatterns();
 
     public IngestCommonPlugin() {
@@ -74,6 +80,7 @@ public class IngestCommonPlugin extends Plugin implements ActionPlugin, IngestPl
         processors.put(JsonProcessor.TYPE, new JsonProcessor.Factory());
         processors.put(KeyValueProcessor.TYPE, new KeyValueProcessor.Factory());
         processors.put(URLDecodeProcessor.TYPE, new URLDecodeProcessor.Factory());
+        processors.put(FingerprintProcessor.TYPE, new FingerprintProcessor.Factory()); // TODO(talevy): read secure settings
         return Collections.unmodifiableMap(processors);
     }
 
@@ -90,4 +97,8 @@ public class IngestCommonPlugin extends Plugin implements ActionPlugin, IngestPl
         return Arrays.asList(new GrokProcessorGetAction.RestAction(settings, restController));
     }
 
+    @Override
+    public List<Setting<?>> getSettings() {
+        return Arrays.asList(FINGERPRINT_HMAC_KEY_SETTING);
+    }
 }
