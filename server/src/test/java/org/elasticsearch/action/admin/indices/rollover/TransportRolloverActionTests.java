@@ -155,21 +155,24 @@ public class TransportRolloverActionTests extends ESTestCase {
 
         List<AliasAction> actions = updateRequest.actions();
         assertThat(actions, hasSize(2));
-        boolean foundAdd = false;
-        boolean foundRemove = false;
+        boolean foundAddWrite = false;
+        boolean foundRemoveWrite = false;
         for (AliasAction action : actions) {
+            AliasAction.Add addAction = (AliasAction.Add) action;
             if (action.getIndex().equals(targetIndex)) {
-                assertEquals(sourceAlias, ((AliasAction.Add) action).getAlias());
-                foundAdd = true;
+                assertEquals(sourceAlias, addAction.getAlias());
+                assertTrue(addAction.isWriteIndex());
+                foundAddWrite = true;
             } else if (action.getIndex().equals(sourceIndex)) {
-                assertEquals(sourceAlias, ((AliasAction.Remove) action).getAlias());
-                foundRemove = true;
+                assertEquals(sourceAlias, addAction.getAlias());
+                assertFalse(addAction.isWriteIndex());
+                foundRemoveWrite = true;
             } else {
                 throw new AssertionError("Unknow index [" + action.getIndex() + "]");
             }
         }
-        assertTrue(foundAdd);
-        assertTrue(foundRemove);
+        assertTrue(foundAddWrite);
+        assertTrue(foundRemoveWrite);
     }
 
     public void testValidation() {
