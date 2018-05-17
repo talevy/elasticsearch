@@ -22,12 +22,15 @@ package org.elasticsearch.action.admin.indices.delete;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.IndicesRequest;
 import org.elasticsearch.action.support.IndicesOptions;
+import org.elasticsearch.action.support.IndicesOptions.Option;
+import org.elasticsearch.action.support.IndicesOptions.WildcardStates;
 import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.util.CollectionUtils;
 
 import java.io.IOException;
+import java.util.EnumSet;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
 
@@ -38,7 +41,8 @@ public class DeleteIndexRequest extends AcknowledgedRequest<DeleteIndexRequest> 
 
     private String[] indices;
     // Delete index should work by default on both open and closed indices.
-    private IndicesOptions indicesOptions = IndicesOptions.fromOptions(false, true, true, true, false, false, true);
+    private IndicesOptions indicesOptions = new IndicesOptions(EnumSet.of(Option.ALLOW_NO_INDICES,
+        Option.FORBID_ALIASES_TO_MULTIPLE_INDICES, Option.IGNORE_ALIASES), EnumSet.of(WildcardStates.OPEN, WildcardStates.CLOSED));
 
     public DeleteIndexRequest() {
     }

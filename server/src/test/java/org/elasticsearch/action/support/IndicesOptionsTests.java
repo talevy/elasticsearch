@@ -24,7 +24,11 @@ import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.EqualsHashCodeTestUtils;
+import org.elasticsearch.action.support.IndicesOptions.Option;
+import org.elasticsearch.action.support.IndicesOptions.WildcardStates;
 
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,13 +36,16 @@ import static org.elasticsearch.test.VersionUtils.randomVersionBetween;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 public class IndicesOptionsTests extends ESTestCase {
+    static IndicesOptions randomIndicesOptions() {
+        return new IndicesOptions(EnumSet.copyOf(randomSubsetOf(Arrays.asList(Option.values()))),
+            EnumSet.copyOf(randomSubsetOf(Arrays.asList(WildcardStates.values()))));
+    }
 
     public void testSerialization() throws Exception {
         int iterations = randomIntBetween(5, 20);
         for (int i = 0; i < iterations; i++) {
             Version version = randomVersionBetween(random(), Version.V_7_0_0_alpha1, null);
-            IndicesOptions indicesOptions = IndicesOptions.fromOptions(
-                randomBoolean(), randomBoolean(), randomBoolean(), randomBoolean(), randomBoolean(), randomBoolean(), randomBoolean());
+            IndicesOptions indicesOptions = randomIndicesOptions();
 
             BytesStreamOutput output = new BytesStreamOutput();
             output.setVersion(version);
@@ -64,8 +71,7 @@ public class IndicesOptionsTests extends ESTestCase {
         int iterations = randomIntBetween(5, 20);
         for (int i = 0; i < iterations; i++) {
             Version version = randomVersionBetween(random(), null, Version.V_6_4_0);
-            IndicesOptions indicesOptions = IndicesOptions.fromOptions(randomBoolean(), randomBoolean(), randomBoolean(), randomBoolean(),
-                    randomBoolean(), randomBoolean(), randomBoolean());
+            IndicesOptions indicesOptions = randomIndicesOptions();
 
             BytesStreamOutput output = new BytesStreamOutput();
             output.setVersion(version);
@@ -96,8 +102,7 @@ public class IndicesOptionsTests extends ESTestCase {
         boolean forbidClosedIndices = randomBoolean();
         boolean ignoreAliases = randomBoolean();
 
-        IndicesOptions indicesOptions = IndicesOptions.fromOptions(ignoreUnavailable, allowNoIndices,expandToOpenIndices,
-                expandToClosedIndices, allowAliasesToMultipleIndices, forbidClosedIndices, ignoreAliases);
+        IndicesOptions indicesOptions = randomIndicesOptions();
 
         assertThat(indicesOptions.ignoreUnavailable(), equalTo(ignoreUnavailable));
         assertThat(indicesOptions.allowNoIndices(), equalTo(allowNoIndices));
@@ -115,8 +120,7 @@ public class IndicesOptionsTests extends ESTestCase {
         boolean expandToOpenIndices = randomBoolean();
         boolean expandToClosedIndices = randomBoolean();
 
-        IndicesOptions defaultOptions = IndicesOptions.fromOptions(randomBoolean(), randomBoolean(), randomBoolean(),
-                randomBoolean(), randomBoolean(), randomBoolean(), randomBoolean());
+        IndicesOptions defaultOptions = randomIndicesOptions();
 
         IndicesOptions indicesOptions = IndicesOptions.fromOptions(ignoreUnavailable, allowNoIndices,expandToOpenIndices,
                 expandToClosedIndices, defaultOptions);
@@ -152,8 +156,7 @@ public class IndicesOptionsTests extends ESTestCase {
         boolean allowNoIndices = randomBoolean();
         String allowNoIndicesString = Boolean.toString(allowNoIndices);
 
-        IndicesOptions defaultOptions = IndicesOptions.fromOptions(randomBoolean(), randomBoolean(), randomBoolean(), randomBoolean(),
-                randomBoolean(), randomBoolean(), randomBoolean());
+        IndicesOptions defaultOptions = randomIndicesOptions();
 
         IndicesOptions updatedOptions = IndicesOptions.fromParameters(expandWildcardsString, ignoreUnavailableString,
                 allowNoIndicesString, defaultOptions);
@@ -170,19 +173,22 @@ public class IndicesOptionsTests extends ESTestCase {
     public void testSimpleByteBWC() {
         Map<Byte, IndicesOptions> old = new HashMap<>();
         // These correspond to each individual option (bit) in the old byte-based IndicesOptions
-        old.put((byte) 0, IndicesOptions.fromOptions(false, false, false, false, true, false, false));
-        old.put((byte) 1, IndicesOptions.fromOptions(true, false, false, false, true, false, false));
-        old.put((byte) 2, IndicesOptions.fromOptions(false, true, false, false, true, false, false));
-        old.put((byte) 4, IndicesOptions.fromOptions(false, false, true, false, true, false, false));
-        old.put((byte) 8, IndicesOptions.fromOptions(false, false, false, true, true, false, false));
-        old.put((byte) 16, IndicesOptions.fromOptions(false, false, false, false, false, false, false));
-        old.put((byte) 32, IndicesOptions.fromOptions(false, false, false, false, true, true, false));
-        old.put((byte) 64, IndicesOptions.fromOptions(false, false, false, false, true, false, true));
+        old.put((byte) 0, new IndicesOptions(EnumSet.noneOf(Option.class), EnumSet.noneOf(WildcardStates.class)));
+        old.put((byte) 1, new IndicesOptions(EnumSet.of(Option.IGNORE_UNAVAILABLE), EnumSet.noneOf(WildcardStates.class)));
+        old.put((byte) 2, new IndicesOptions(EnumSet.of(Option.ALLOW_NO_INDICES), EnumSet.noneOf(WildcardStates.class)));
+        old.put((byte) 4, new IndicesOptions(EnumSet.noneOf(Option.class), EnumSet.of(WildcardStates.OPEN)));
+        old.put((byte) 8, new IndicesOptions(EnumSet.noneOf(Option.class), EnumSet.of(WildcardStates.CLOSED)));
+        old.put((byte) 16, new IndicesOptions(EnumSet.of(Option.FORBID_ALIASES_TO_MULTIPLE_INDICES), EnumSet.noneOf(WildcardStates.class)));
+        old.put((byte) 32, new IndicesOptions(EnumSet.of(Option.FORBID_CLOSED_INDICES), EnumSet.noneOf(WildcardStates.class)));
+        old.put((byte) 64, new IndicesOptions(EnumSet.of(Option.IGNORE_ALIASES), EnumSet.noneOf(WildcardStates.class)));
         // Test a few multi-selected options
-        old.put((byte) 13, IndicesOptions.fromOptions(true, false, true, true, true, false, false));
-        old.put((byte) 19, IndicesOptions.fromOptions(true, true, false, false, false, false, false));
-        old.put((byte) 24, IndicesOptions.fromOptions(false, false, false, true, false, false, false));
-        old.put((byte) 123, IndicesOptions.fromOptions(true, true, false, true, false, true, true));
+        old.put((byte) 13, new IndicesOptions(EnumSet.of(Option.IGNORE_UNAVAILABLE),
+            EnumSet.of(WildcardStates.OPEN, WildcardStates.CLOSED)));
+        old.put((byte) 19, new IndicesOptions(EnumSet.of(Option.IGNORE_UNAVAILABLE, Option.ALLOW_NO_INDICES,
+            Option.FORBID_ALIASES_TO_MULTIPLE_INDICES), EnumSet.noneOf(WildcardStates.class)));
+        old.put((byte) 24, new IndicesOptions(EnumSet.of(Option.FORBID_ALIASES_TO_MULTIPLE_INDICES), EnumSet.of(WildcardStates.CLOSED)));
+        old.put((byte) 123, new IndicesOptions(EnumSet.of(Option.FORBID_ALIASES_TO_MULTIPLE_INDICES, Option.IGNORE_UNAVAILABLE,
+            Option.ALLOW_NO_INDICES, Option.FORBID_CLOSED_INDICES, Option.IGNORE_ALIASES), EnumSet.of(WildcardStates.CLOSED)));
 
         for (Map.Entry<Byte, IndicesOptions> entry : old.entrySet()) {
             IndicesOptions indicesOptions2 = IndicesOptions.fromByte(entry.getKey());
@@ -193,8 +199,7 @@ public class IndicesOptionsTests extends ESTestCase {
     }
 
     public void testEqualityAndHashCode() {
-        IndicesOptions indicesOptions = IndicesOptions.fromOptions(
-            randomBoolean(), randomBoolean(), randomBoolean(), randomBoolean(), randomBoolean(), randomBoolean(), randomBoolean());
+        IndicesOptions indicesOptions = randomIndicesOptions();
 
         EqualsHashCodeTestUtils.checkEqualsAndHashCode(indicesOptions, opts -> {
             return IndicesOptions.fromOptions(opts.ignoreUnavailable(), opts.allowNoIndices(), opts.expandWildcardsOpen(),
