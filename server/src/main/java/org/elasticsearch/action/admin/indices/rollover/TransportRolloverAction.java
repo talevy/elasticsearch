@@ -109,8 +109,8 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
                                    final ActionListener<RolloverResponse> listener) {
         final MetaData metaData = state.metaData();
         validate(metaData, rolloverRequest);
-        final AliasOrIndex aliasOrIndex = metaData.getAliasAndIndexLookup().get(rolloverRequest.getAlias());
-        final IndexMetaData indexMetaData = aliasOrIndex.getIndices().get(0);
+        final AliasOrIndex.Alias alias = (AliasOrIndex.Alias) metaData.getAliasAndIndexLookup().get(rolloverRequest.getAlias());
+        final IndexMetaData indexMetaData = alias.getWriteIndex();
         final String sourceProvidedName = indexMetaData.getSettings().get(IndexMetaData.SETTING_INDEX_PROVIDED_NAME,
             indexMetaData.getIndex().getName());
         final String sourceIndexName = indexMetaData.getIndex().getName();
@@ -196,8 +196,8 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
     static IndicesAliasesClusterStateUpdateRequest prepareRolloverAliasesUpdateRequest(String oldIndex, String newIndex,
                                                                                        RolloverRequest request) {
         List<AliasAction> actions = unmodifiableList(Arrays.asList(
-                new AliasAction.Add(newIndex, request.getAlias(), null, null, null, null),
-                new AliasAction.Remove(oldIndex, request.getAlias())));
+            new AliasAction.Add(newIndex, request.getAlias(), null, null, null, true),
+            new AliasAction.Add(oldIndex, request.getAlias(), null, null, null, false)));
         final IndicesAliasesClusterStateUpdateRequest updateRequest = new IndicesAliasesClusterStateUpdateRequest(actions)
             .ackTimeout(request.ackTimeout())
             .masterNodeTimeout(request.masterNodeTimeout());
@@ -244,8 +244,9 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
         if (aliasOrIndex.isAlias() == false) {
             throw new IllegalArgumentException("source alias is a concrete index");
         }
-        if (aliasOrIndex.getIndices().size() != 1) {
-            throw new IllegalArgumentException("source alias maps to multiple indices");
+        final AliasOrIndex.Alias alias = (AliasOrIndex.Alias) aliasOrIndex;
+        if (alias.getWriteIndex() == null) {
+            throw new IllegalArgumentException("source alias does not map to a write index");
         }
     }
 
@@ -267,15 +268,17 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
 
     /**
      * If the newly created index matches with an index template whose aliases contains the rollover alias,
-     * the rollover alias will point to multiple indices. This causes indexing requests to be rejected.
-     * To avoid this, we make sure that there is no duplicated alias in index templates before creating a new index.
+     * the rollover alias will point to multiple indices. This causes indexing requests to be rejected if any of those
+     * alias definitions have that index set as the write-index. To avoid this, we make sure that there is no duplicated
+     * alias [is_write_index=true] in index templates before creating a new index.
      */
     static void checkNoDuplicatedAliasInIndexTemplate(MetaData metaData, String rolloverIndexName, String rolloverRequestAlias) {
         final List<IndexTemplateMetaData> matchedTemplates = MetaDataIndexTemplateService.findTemplates(metaData, rolloverIndexName);
         for (IndexTemplateMetaData template : matchedTemplates) {
-            if (template.aliases().containsKey(rolloverRequestAlias)) {
+            if (template.aliases().containsKey(rolloverRequestAlias)
+                    && Boolean.TRUE.equals(template.aliases().get(rolloverRequestAlias).writeIndex())) {
                 throw new IllegalArgumentException(String.format(Locale.ROOT,
-                    "Rollover alias [%s] can point to multiple indices, found duplicated alias [%s] in index template [%s]",
+                    "Rollover alias [%s] can point to multiple write-indices, found duplicated alias [%s] in index template [%s]",
                     rolloverRequestAlias, template.aliases().keys(), template.name()));
             }
         }

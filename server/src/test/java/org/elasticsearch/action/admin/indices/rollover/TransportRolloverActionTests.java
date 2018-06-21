@@ -155,21 +155,24 @@ public class TransportRolloverActionTests extends ESTestCase {
 
         List<AliasAction> actions = updateRequest.actions();
         assertThat(actions, hasSize(2));
-        boolean foundAdd = false;
-        boolean foundRemove = false;
+        boolean foundAddWrite = false;
+        boolean foundRemoveWrite = false;
         for (AliasAction action : actions) {
+            AliasAction.Add addAction = (AliasAction.Add) action;
             if (action.getIndex().equals(targetIndex)) {
-                assertEquals(sourceAlias, ((AliasAction.Add) action).getAlias());
-                foundAdd = true;
+                assertEquals(sourceAlias, addAction.getAlias());
+                assertTrue(addAction.writeIndex());
+                foundAddWrite = true;
             } else if (action.getIndex().equals(sourceIndex)) {
-                assertEquals(sourceAlias, ((AliasAction.Remove) action).getAlias());
-                foundRemove = true;
+                assertEquals(sourceAlias, addAction.getAlias());
+                assertFalse(addAction.writeIndex());
+                foundRemoveWrite = true;
             } else {
                 throw new AssertionError("Unknow index [" + action.getIndex() + "]");
             }
         }
-        assertTrue(foundAdd);
-        assertTrue(foundRemove);
+        assertTrue(foundAddWrite);
+        assertTrue(foundRemoveWrite);
     }
 
     public void testValidation() {
@@ -204,6 +207,7 @@ public class TransportRolloverActionTests extends ESTestCase {
             TransportRolloverAction.validate(metaData, new RolloverRequest(randomAlphaOfLength(5),
                 randomAlphaOfLength(10)))
         );
+        // NORELEASE add validation tests for write index
         TransportRolloverAction.validate(metaData, new RolloverRequest(alias, randomAlphaOfLength(10)));
     }
 
@@ -248,14 +252,18 @@ public class TransportRolloverActionTests extends ESTestCase {
     public void testRejectDuplicateAlias() {
         final IndexTemplateMetaData template = IndexTemplateMetaData.builder("test-template")
             .patterns(Arrays.asList("foo-*", "bar-*"))
-            .putAlias(AliasMetaData.builder("foo-write")).putAlias(AliasMetaData.builder("bar-write"))
+            .putAlias(AliasMetaData.builder("foo-write")).putAlias(AliasMetaData.builder("bar-write").writeIndex(true))
             .build();
         final MetaData metaData = MetaData.builder().put(createMetaData(), false).put(template).build();
         String indexName = randomFrom("foo-123", "bar-xyz");
         String aliasName = randomFrom("foo-write", "bar-write");
-        final IllegalArgumentException ex = expectThrows(IllegalArgumentException.class,
-            () -> TransportRolloverAction.checkNoDuplicatedAliasInIndexTemplate(metaData, indexName, aliasName));
-        assertThat(ex.getMessage(), containsString("index template [test-template]"));
+        if ("bar-write".equals(aliasName)) {
+            final IllegalArgumentException ex = expectThrows(IllegalArgumentException.class,
+                () -> TransportRolloverAction.checkNoDuplicatedAliasInIndexTemplate(metaData, indexName, aliasName));
+            assertThat(ex.getMessage(), containsString("index template [test-template]"));
+        } else {
+            TransportRolloverAction.checkNoDuplicatedAliasInIndexTemplate(metaData, indexName, aliasName);
+        }
     }
 
     private IndicesStatsResponse createIndicesStatResponse(long totalDocs, long primaryDocs) {

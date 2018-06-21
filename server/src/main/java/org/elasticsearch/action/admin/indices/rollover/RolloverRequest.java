@@ -135,6 +135,7 @@ public class RolloverRequest extends AcknowledgedRequest<RolloverRequest> implem
 
     @Override
     public IndicesOptions indicesOptions() {
+        // TODO(talevy): update to be strict on write indices
         return IndicesOptions.strictSingleIndexNoExpandForbidClosed();
     }
 

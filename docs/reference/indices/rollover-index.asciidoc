@@ -15,7 +15,7 @@ the new index.
 PUT /logs-000001 <1>
 {
   "aliases": {
-    "logs_write": {}
+    "logs": { is_write_index: true }
   }
 }
 
@@ -102,20 +102,20 @@ over. For instance:
 PUT /%3Clogs-%7Bnow%2Fd%7D-1%3E <1>
 {
   "aliases": {
-    "logs_write": {}
+    "logs": { is_write_index: true }
   }
 }
 
-PUT logs_write/_doc/1
+PUT logs/_doc/1
 {
   "message": "a dummy log"
 }
 
-POST logs_write/_refresh
+POST logs/_refresh
 
 # Wait for a day to pass
 
-POST /logs_write/_rollover <2>
+POST /logs/_rollover <2>
 {
   "conditions": {
     "max_docs":   "1"
@@ -141,11 +141,11 @@ GET _alias
 {
   "logs-2016.10.31-000002": {
     "aliases": {
-      "logs_write": {}
+      "logs_write": { is_write_index: true }
     }
   },
   "logs-2016.10.31-1": {
-    "aliases": {}
+    "aliases": { is_write_index: false }
   }
 }
 --------------------------------------------------
@@ -181,11 +181,11 @@ override any values set in matching index templates. For example, the following
 PUT /logs-000001
 {
   "aliases": {
-    "logs_write": {}
+    "logs": { is_write_index: true }
   }
 }
 
-POST /logs_write/_rollover
+POST /logs/_rollover
 {
   "conditions" : {
     "max_age": "7d",
@@ -210,11 +210,11 @@ checked without performing the actual rollover:
 PUT /logs-000001
 {
   "aliases": {
-    "logs_write": {}
+    "logs": { is_write_index: true }
   }
 }
 
-POST /logs_write/_rollover?dry_run
+POST /logs/_rollover?dry_run
 {
   "conditions" : {
     "max_age": "7d",
