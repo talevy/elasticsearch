@@ -13,6 +13,8 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.codec.CodecService;
+import org.elasticsearch.index.engine.EngineConfig;
 import org.elasticsearch.test.rest.ESRestTestCase;
 import org.elasticsearch.xpack.core.indexlifecycle.AllocateAction;
 import org.elasticsearch.xpack.core.indexlifecycle.DeleteAction;
@@ -110,12 +112,16 @@ public class TimeSeriesLifecycleActionsIT extends ESRestTestCase {
         };
         assertThat(numSegments.get(), greaterThan(1));
 
-        createNewSingletonPolicy("warm", new ForceMergeAction(1, false));
+        boolean bestCompression = randomBoolean();
+        createNewSingletonPolicy("warm", new ForceMergeAction(1, bestCompression));
         updateIndexSettings(index, Settings.builder().put(LifecycleSettings.LIFECYCLE_NAME, policy));
 
         assertBusy(() -> {
             assertThat(getStepKey(getOnlyIndexSettings(index)), equalTo(TerminalPolicyStep.KEY));
             assertThat(numSegments.get(), equalTo(1));
+            Map<String, Object> settings = getOnlyIndexSettings(index);
+            String expectedCodec = bestCompression ? CodecService.BEST_COMPRESSION_CODEC : CodecService.DEFAULT_CODEC;
+            assertThat(settings.get(EngineConfig.INDEX_CODEC_SETTING.getKey()), equalTo(expectedCodec));
         });
     }
 
