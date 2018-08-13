@@ -12,28 +12,27 @@ import org.elasticsearch.xpack.core.indexlifecycle.LifecycleAction;
 import org.elasticsearch.xpack.core.indexlifecycle.LifecyclePolicy;
 import org.elasticsearch.xpack.core.indexlifecycle.LifecycleType;
 import org.elasticsearch.xpack.core.indexlifecycle.TestLifecycleType;
-import org.elasticsearch.xpack.core.indexlifecycle.action.GetLifecycleAction.Response;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class GetLifecycleResponseTests extends AbstractStreamableTestCase<GetLifecycleAction.Response> {
-    
+public class GetLifecycleResponseTests extends AbstractStreamableTestCase<GetIndexLifecyclePolicyResponse> {
+
     @Override
-    protected Response createTestInstance() {
+    protected GetIndexLifecyclePolicyResponse createTestInstance() {
         String randomPrefix = randomAlphaOfLength(5);
         List<LifecyclePolicy> policies = new ArrayList<>();
         for (int i = 0; i < randomIntBetween(0, 2); i++) {
             policies.add(new LifecyclePolicy(TestLifecycleType.INSTANCE, randomPrefix + i, Collections.emptyMap()));
         }
-        return new Response(policies);
+        return new GetIndexLifecyclePolicyResponse(policies);
     }
 
     @Override
-    protected Response createBlankInstance() {
-        return new Response();
+    protected GetIndexLifecyclePolicyResponse createBlankInstance() {
+        return new GetIndexLifecyclePolicyResponse();
     }
 
     protected NamedWriteableRegistry getNamedWriteableRegistry() {
@@ -43,7 +42,7 @@ public class GetLifecycleResponseTests extends AbstractStreamableTestCase<GetLif
     }
 
     @Override
-    protected Response mutateInstance(Response response) {
+    protected GetIndexLifecyclePolicyResponse mutateInstance(GetIndexLifecyclePolicyResponse response) {
         List<LifecyclePolicy> policies = new ArrayList<>(response.getPolicies());
         if (policies.size() > 0) {
             if (randomBoolean()) {
@@ -54,6 +53,6 @@ public class GetLifecycleResponseTests extends AbstractStreamableTestCase<GetLif
         } else {
             policies.add(new LifecyclePolicy(TestLifecycleType.INSTANCE, randomAlphaOfLength(2), Collections.emptyMap()));
         }
-        return new Response(policies);
+        return new GetIndexLifecyclePolicyResponse(policies);
     }
 }

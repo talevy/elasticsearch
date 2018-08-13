@@ -13,6 +13,7 @@ import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.action.RestToXContentListener;
+import org.elasticsearch.protocol.xpack.indexlifecycle.GetIndexLifecyclePolicyRequest;
 import org.elasticsearch.xpack.core.indexlifecycle.action.GetLifecycleAction;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ public class RestGetLifecycleAction extends BaseRestHandler {
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) throws IOException {
         String[] lifecycleNames = Strings.splitStringByCommaToArray(restRequest.param("name"));
-        GetLifecycleAction.Request getLifecycleRequest = new GetLifecycleAction.Request(lifecycleNames);
+        GetIndexLifecyclePolicyRequest getLifecycleRequest = new GetIndexLifecyclePolicyRequest(lifecycleNames);
         getLifecycleRequest.timeout(restRequest.paramAsTime("timeout", getLifecycleRequest.timeout()));
         getLifecycleRequest.masterNodeTimeout(restRequest.paramAsTime("master_timeout", getLifecycleRequest.masterNodeTimeout()));
 

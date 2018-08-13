@@ -5,28 +5,28 @@
  */
 package org.elasticsearch.xpack.core.indexlifecycle.action;
 
+import org.elasticsearch.protocol.xpack.indexlifecycle.GetIndexLifecyclePolicyRequest;
 import org.elasticsearch.test.AbstractStreamableTestCase;
-import org.elasticsearch.xpack.core.indexlifecycle.action.GetLifecycleAction.Request;
 
 import java.util.Arrays;
 
-public class GetLifecycleRequestTests extends AbstractStreamableTestCase<GetLifecycleAction.Request> {
+public class GetLifecycleRequestTests extends AbstractStreamableTestCase<GetIndexLifecyclePolicyRequest> {
 
     @Override
-    protected Request createTestInstance() {
-        return new Request(randomAlphaOfLengthBetween(1, 20));
+    protected GetIndexLifecyclePolicyRequest createTestInstance() {
+        return new GetIndexLifecyclePolicyRequest(randomAlphaOfLengthBetween(1, 20));
     }
 
     @Override
-    protected Request createBlankInstance() {
-        return new Request();
+    protected GetIndexLifecyclePolicyRequest createBlankInstance() {
+        return new GetIndexLifecyclePolicyRequest();
     }
 
     @Override
-    protected Request mutateInstance(Request request) {
+    protected GetIndexLifecyclePolicyRequest mutateInstance(GetIndexLifecyclePolicyRequest request) {
         String[] originalPolicies = request.getPolicyNames();
         String[] newPolicies = Arrays.copyOf(originalPolicies, originalPolicies.length + 1);
         newPolicies[originalPolicies.length] = randomAlphaOfLength(5);
-        return new Request(newPolicies);
+        return new GetIndexLifecyclePolicyRequest(newPolicies);
     }
 }

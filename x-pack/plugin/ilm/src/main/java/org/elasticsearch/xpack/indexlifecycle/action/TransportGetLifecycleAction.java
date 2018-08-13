@@ -22,20 +22,20 @@ import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.core.indexlifecycle.IndexLifecycleMetadata;
 import org.elasticsearch.xpack.core.indexlifecycle.LifecyclePolicy;
 import org.elasticsearch.xpack.core.indexlifecycle.action.GetLifecycleAction;
-import org.elasticsearch.xpack.core.indexlifecycle.action.GetLifecycleAction.Request;
-import org.elasticsearch.xpack.core.indexlifecycle.action.GetLifecycleAction.Response;
+import org.elasticsearch.protocol.xpack.indexlifecycle.GetIndexLifecyclePolicyRequest;
+import org.elasticsearch.xpack.core.indexlifecycle.action.GetIndexLifecyclePolicyResponse;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class TransportGetLifecycleAction extends TransportMasterNodeAction<Request, Response> {
+public class TransportGetLifecycleAction extends TransportMasterNodeAction<GetIndexLifecyclePolicyRequest, GetIndexLifecyclePolicyResponse> {
 
     @Inject
     public TransportGetLifecycleAction(Settings settings, TransportService transportService, ClusterService clusterService,
             ThreadPool threadPool, ActionFilters actionFilters, IndexNameExpressionResolver indexNameExpressionResolver) {
         super(settings, GetLifecycleAction.NAME, transportService, clusterService, threadPool, actionFilters, indexNameExpressionResolver,
-                Request::new);
+                GetIndexLifecyclePolicyRequest::new);
     }
 
     @Override
@@ -44,12 +44,12 @@ public class TransportGetLifecycleAction extends TransportMasterNodeAction<Reque
     }
 
     @Override
-    protected Response newResponse() {
-        return new Response();
+    protected GetIndexLifecyclePolicyResponse newResponse() {
+        return new GetIndexLifecyclePolicyResponse();
     }
 
     @Override
-    protected void masterOperation(Request request, ClusterState state, ActionListener<Response> listener) throws Exception {
+    protected void masterOperation(GetIndexLifecyclePolicyRequest request, ClusterState state, ActionListener<GetIndexLifecyclePolicyResponse> listener) throws Exception {
         IndexLifecycleMetadata metadata = clusterService.state().metaData().custom(IndexLifecycleMetadata.TYPE);
         if (metadata == null) {
             listener.onFailure(new ResourceNotFoundException("Lifecycle policy not found: {}", Arrays.toString(request.getPolicyNames())));
@@ -69,12 +69,12 @@ public class TransportGetLifecycleAction extends TransportMasterNodeAction<Reque
                     requestedPolicies.add(policy);
                 }
             }
-            listener.onResponse(new Response(requestedPolicies));
+            listener.onResponse(new GetIndexLifecyclePolicyResponse(requestedPolicies));
         }
     }
 
     @Override
-    protected ClusterBlockException checkBlock(Request request, ClusterState state) {
+    protected ClusterBlockException checkBlock(GetIndexLifecyclePolicyRequest request, ClusterState state) {
         return state.blocks().globalBlockedException(ClusterBlockLevel.METADATA_WRITE);
     }
 }
