@@ -82,36 +82,18 @@ public class ExecuteStepsUpdateTask extends ClusterStateUpdateTask {
             LifecycleExecutionState.fromIndexMetadata(indexMetaData));
         if (currentStep.equals(registeredCurrentStep)) {
             ClusterState state = currentState;
-            // We can do cluster state steps all together until we
-            // either get to a step that isn't a cluster state step or a
-            // cluster state wait step returns not completed
-            while (currentStep instanceof ClusterStateActionStep || currentStep instanceof ClusterStateWaitStep) {
-                nextStepKey = currentStep.getNextStepKey();
-                if (currentStep instanceof ClusterStateActionStep) {
-                    // cluster state action step so do the action and
-                    // move the cluster state to the next step
-                    logger.trace("[{}] performing cluster state action ({}) [{}], next: [{}]",
-                        index.getName(), currentStep.getClass().getSimpleName(), currentStep.getKey(), currentStep.getNextStepKey());
-                    state = ((ClusterStateActionStep) currentStep).performAction(index, state);
-                    if (currentStep.getNextStepKey() == null) {
-                        return state;
-                    } else {
-                        state = IndexLifecycleRunner.moveClusterStateToNextStep(index, state, currentStep.getKey(),
-                            currentStep.getNextStepKey(), nowSupplier);
-                    }
-                } else {
-                    // cluster state wait step so evaluate the
-                    // condition, if the condition is met move to the
-                    // next step, if its not met return the current
-                    // cluster state so it can be applied and we will
-                    // wait for the next trigger to evaluate the
-                    // condition again
-                    logger.trace("[{}] waiting for cluster state step condition ({}) [{}], next: [{}]",
-                        index.getName(), currentStep.getClass().getSimpleName(), currentStep.getKey(), currentStep.getNextStepKey());
-                    ClusterStateWaitStep.Result result = ((ClusterStateWaitStep) currentStep).isConditionMet(index, state);
-                    if (result.isComplete()) {
-                        logger.trace("[{}] cluster state step condition met successfully ({}) [{}], moving to next step {}",
+            try {
+                // We can do cluster state steps all together until we
+                // either get to a step that isn't a cluster state step or a
+                // cluster state wait step returns not completed
+                while (currentStep instanceof ClusterStateActionStep || currentStep instanceof ClusterStateWaitStep) {
+                    nextStepKey = currentStep.getNextStepKey();
+                    if (currentStep instanceof ClusterStateActionStep) {
+                        // cluster state action step so do the action and
+                        // move the cluster state to the next step
+                        logger.trace("[{}] performing cluster state action ({}) [{}], next: [{}]",
                             index.getName(), currentStep.getClass().getSimpleName(), currentStep.getKey(), currentStep.getNextStepKey());
+                        state = ((ClusterStateActionStep) currentStep).performAction(index, state);
                         if (currentStep.getNextStepKey() == null) {
                             return state;
                         } else {
@@ -119,31 +101,55 @@ public class ExecuteStepsUpdateTask extends ClusterStateUpdateTask {
                                 currentStep.getNextStepKey(), nowSupplier);
                         }
                     } else {
-                        logger.trace("[{}] condition not met ({}) [{}], returning existing state",
-                            index.getName(), currentStep.getClass().getSimpleName(), currentStep.getKey());
-                        // We may have executed a step and set "nextStepKey" to
-                        // a value, but in this case, since the condition was
-                        // not met, we can't advance any way, so don't attempt
-                        // to run the current step
-                        nextStepKey = null;
-                        ToXContentObject stepInfo = result.getInfomationContext();
-                        if (stepInfo == null) {
-                            return state;
+                        // cluster state wait step so evaluate the
+                        // condition, if the condition is met move to the
+                        // next step, if its not met return the current
+                        // cluster state so it can be applied and we will
+                        // wait for the next trigger to evaluate the
+                        // condition again
+                        logger.trace("[{}] waiting for cluster state step condition ({}) [{}], next: [{}]",
+                            index.getName(), currentStep.getClass().getSimpleName(), currentStep.getKey(), currentStep.getNextStepKey());
+                        ClusterStateWaitStep.Result result = ((ClusterStateWaitStep) currentStep).isConditionMet(index, state);
+                        if (result.isComplete()) {
+                            logger.trace("[{}] cluster state step condition met successfully ({}) [{}], moving to next step {}",
+                                index.getName(), currentStep.getClass().getSimpleName(), currentStep.getKey(), currentStep.getNextStepKey());
+                            if (currentStep.getNextStepKey() == null) {
+                                return state;
+                            } else {
+                                state = IndexLifecycleRunner.moveClusterStateToNextStep(index, state, currentStep.getKey(),
+                                    currentStep.getNextStepKey(), nowSupplier);
+                            }
                         } else {
-                            return IndexLifecycleRunner.addStepInfoToClusterState(index, state, stepInfo);
+                            logger.trace("[{}] condition not met ({}) [{}], returning existing state",
+                                index.getName(), currentStep.getClass().getSimpleName(), currentStep.getKey());
+                            // We may have executed a step and set "nextStepKey" to
+                            // a value, but in this case, since the condition was
+                            // not met, we can't advance any way, so don't attempt
+                            // to run the current step
+                            nextStepKey = null;
+                            ToXContentObject stepInfo = result.getInfomationContext();
+                            if (stepInfo == null) {
+                                return state;
+                            } else {
+                                return IndexLifecycleRunner.addStepInfoToClusterState(index, state, stepInfo);
+                            }
                         }
                     }
+                    // There are actions we need to take in the event a phase
+                    // transition happens, so even if we would continue in the while
+                    // loop, if we are about to go into a new phase, return so that
+                    // other processing can occur
+                    if (currentStep.getKey().getPhase().equals(currentStep.getNextStepKey().getPhase()) == false) {
+                        return state;
+                    }
+                    currentStep = policyStepsRegistry.getStep(indexMetaData, currentStep.getNextStepKey());
                 }
-                // There are actions we need to take in the event a phase
-                // transition happens, so even if we would continue in the while
-                // loop, if we are about to go into a new phase, return so that
-                // other processing can occur
-                if (currentStep.getKey().getPhase().equals(currentStep.getNextStepKey().getPhase()) == false) {
-                    return state;
-                }
-                currentStep = policyStepsRegistry.getStep(indexMetaData, currentStep.getNextStepKey());
+                return state;
+            } catch (Exception cause) {
+                MoveToErrorStepUpdateTask moveToError = new MoveToErrorStepUpdateTask(index, policy, currentStep.getKey(),
+                    cause, nowSupplier);
+                return moveToError.execute(state);
             }
-            return state;
         } else {
             // either we are no longer the master or the step is now
             // not the same as when we submitted the update task. In
