@@ -1,0 +1,12 @@
+{
+  "policy": {
+    "phases": {
+      "delete": {
+        "min_age": "${xpack.monitoring.history.duration}",
+        "actions": {
+          "delete": {}
+        }
+      }
+    }
+  }
+}
