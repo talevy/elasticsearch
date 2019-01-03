@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateApplier;
 import org.elasticsearch.cluster.ClusterStateListener;
+import org.elasticsearch.cluster.ClusterStateUpdateTask;
 import org.elasticsearch.cluster.LocalNodeMasterListener;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -21,6 +22,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xpack.core.XPackField;
 import org.elasticsearch.xpack.core.indexlifecycle.IndexLifecycleMetadata;
@@ -34,7 +36,9 @@ import org.elasticsearch.xpack.core.scheduler.SchedulerEngine;
 
 import java.io.Closeable;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.function.LongSupplier;
 
@@ -89,6 +93,27 @@ public class IndexLifecycleService
 
     public ClusterState moveClusterStateToFailedStep(ClusterState currentState, String[] indices) {
         return lifecycleRunner.moveClusterStateToFailedStep(currentState, indices);
+    }
+
+    public void removeLifecyclePolicyFromIndex(Index... indices) {
+        List<String> failedIndices = new ArrayList(1);
+        clusterService.submitStateUpdateTask("remove-lifecycle-for-index",
+            new ClusterStateUpdateTask() {
+                @Override
+                public ClusterState execute(ClusterState currentState) throws Exception {
+                    return IndexLifecycleRunner.removePolicyForIndexes(indices, currentState, failedIndices);
+                }
+
+                @Override
+                public void onFailure(String source, Exception e) {
+
+                }
+            });
+    }
+
+    public boolean canRemoveLifecyclePolicyFromIndex(Index index) {
+        IndexLifecycleRunner.removePolicyForIndexes()
+        clusterService.state()
     }
 
     @Override

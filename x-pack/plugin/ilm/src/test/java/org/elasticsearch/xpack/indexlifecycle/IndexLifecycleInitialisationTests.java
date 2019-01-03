@@ -246,6 +246,24 @@ public class IndexLifecycleInitialisationTests extends ESIntegTestCase {
         }
     }
 
+    public void testPolicySettingsUpdater() throws Exception {
+        // start node
+        logger.info("Starting server1");
+        final String server_1 = internalCluster().startNode();
+        logger.info("Creating lifecycle [test_lifecycle]");
+        PutLifecycleAction.Request putLifecycleRequest = new PutLifecycleAction.Request(lifecyclePolicy);
+        PutLifecycleAction.Response putLifecycleResponse = client().execute(PutLifecycleAction.INSTANCE, putLifecycleRequest).get();
+        assertAcked(putLifecycleResponse);
+
+        logger.info("Creating index [test]");
+        CreateIndexResponse createIndexResponse = client().admin().indices().create(createIndexRequest("test").settings(settings))
+            .actionGet();
+        assertAcked(createIndexResponse);
+        // test remove policy settings updater
+        client().admin().indices().prepareUpdateSettings("test")
+            .setSettings(Collections.singletonMap("index.lifecycle.name", null)).get();
+    }
+
     public void testMasterDedicatedDataDedicated() throws Exception {
         settings = Settings.builder().put(settings).put("index.lifecycle.test.complete", true).build();
         // start master node

@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.ParseField;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry.Entry;
@@ -25,6 +26,7 @@ import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeEnvironment;
+import org.elasticsearch.index.IndexModule;
 import org.elasticsearch.plugins.ActionPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.rest.RestController;
@@ -198,6 +200,20 @@ public class IndexLifecycle extends Plugin implements ActionPlugin {
                 new ActionHandler<>(StartILMAction.INSTANCE, TransportStartILMAction.class),
                 new ActionHandler<>(StopILMAction.INSTANCE, TransportStopILMAction.class),
                 new ActionHandler<>(GetStatusAction.INSTANCE, TransportGetStatusAction.class));
+    }
+
+    @Override
+    public void onIndexModule(IndexModule indexModule) {
+        IndexLifecycleService lifecycleService = indexLifecycleInitialisationService.get();
+        if (lifecycleService != null) {
+            indexModule.addSettingsUpdateConsumer(LifecycleSettings.LIFECYCLE_NAME_SETTING, (value) -> {
+                lifecycleService.removeLifecyclePolicyFromIndex(indexModule.getIndex());
+            }, (value) -> {
+                if (Strings.isNullOrEmpty(value)) {
+                    boolean canRemove = lifecycleService.canRemoveLifecyclePolicyFromIndex(indexModule.getIndex());
+                }
+            });
+        }
     }
 
     @Override
