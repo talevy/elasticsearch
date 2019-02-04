@@ -23,6 +23,7 @@ import org.elasticsearch.test.ESTestCase;
 
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
@@ -160,6 +161,13 @@ public class DateFormattersTests extends ESTestCase {
         // named formats too
         DateFormatter formatter = DateFormatter.forPattern("8date_optional_time||ww-MM-dd");
         assertThat(formatter, instanceOf(JavaDateFormatter.class));
+    }
+
+    public void testYearBoundary() {
+        Instant instant = Instant.ofEpochMilli(1546214400000L); // Dec 31, 2018. 0:00:00
+        DateFormatter formatter = DateFormatters.forPattern("YYYY.MM.dd").withZone(ZoneOffset.UTC);
+        String time = formatter.format(instant);
+        assertThat(time, equalTo("2019.12.31")); // excuse me?
     }
 
     public void testEpochFormatting() {
