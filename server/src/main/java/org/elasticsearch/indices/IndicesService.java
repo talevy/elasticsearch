@@ -811,7 +811,7 @@ public class IndicesService extends AbstractLifecycleComponent
     @Override
     public void deleteShardStore(String reason, ShardLock lock, IndexSettings indexSettings) throws IOException {
         ShardId shardId = lock.getShardId();
-        logger.trace("{} deleting shard reason [{}]", shardId, reason);
+        logger.error("{} deleting shard reason [{}]", shardId, reason);
         nodeEnv.deleteShardDirectoryUnderLock(lock, indexSettings);
     }
 

@@ -592,7 +592,7 @@ public class IndicesClusterStateService extends AbstractLifecycleComponent imple
 
         try {
             final long primaryTerm = state.metaData().index(shardRouting.index()).primaryTerm(shardRouting.id());
-            logger.debug("{} creating shard with primary term [{}]", shardRouting.shardId(), primaryTerm);
+            logger.error("{} creating shard with primary term [{}]", shardRouting.shardId(), primaryTerm);
             RecoveryState recoveryState = new RecoveryState(shardRouting, nodes.getLocalNode(), sourceNode);
             indicesService.createShard(
                     shardRouting,

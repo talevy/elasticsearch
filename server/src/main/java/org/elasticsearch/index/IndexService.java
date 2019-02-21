@@ -367,16 +367,16 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
                     routing.getExpectedShardSize() == ShardRouting.UNAVAILABLE_EXPECTED_SHARD_SIZE
                         ? getAvgShardSizeInBytes() : routing.getExpectedShardSize(),
                     dataPathToShardCount);
-                logger.debug("{} creating using a new path [{}]", shardId, path);
+                logger.error("{} creating using a new path [{}]", shardId, path);
             } else {
-                logger.debug("{} creating using an existing path [{}]", shardId, path);
+                logger.error("{} creating using an existing path [{}]", shardId, path);
             }
 
             if (shards.containsKey(shardId.id())) {
                 throw new IllegalStateException(shardId + " already exists");
             }
 
-            logger.debug("creating shard_id {}", shardId);
+            logger.error("creating shard_id {}", shardId);
             // if we are on a shared FS we only own the shard (ie. we can safely delete it) if we are the primary.
             final Engine.Warmer engineWarmer = (searcher) -> {
                 IndexShard shard =  getShardOrNull(shardId.getId());

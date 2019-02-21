@@ -490,17 +490,19 @@ public final class NodeEnvironment  implements Closeable {
         final ShardId shardId = lock.getShardId();
         assert isShardLocked(shardId) : "shard " + shardId + " is not locked";
         final Path[] paths = availableShardPaths(shardId);
-        logger.trace("acquiring locks for {}, paths: [{}]", shardId, paths);
+        logger.error("acquiring locks for {}, paths: [{}]", shardId, paths);
+        logger.error("wait count1: " + shardLocks.get(shardId).waitCount);
         acquireFSLockForPaths(indexSettings, paths);
+        logger.error("wait count2: " + shardLocks.get(shardId).waitCount);
         IOUtils.rm(paths);
         if (indexSettings.hasCustomDataPath()) {
             Path customLocation = resolveCustomLocation(indexSettings, shardId);
-            logger.trace("acquiring lock for {}, custom path: [{}]", shardId, customLocation);
+            logger.error("acquiring lock for {}, custom path: [{}]", shardId, customLocation);
             acquireFSLockForPaths(indexSettings, customLocation);
-            logger.trace("deleting custom shard {} directory [{}]", shardId, customLocation);
+            logger.error("deleting custom shard {} directory [{}]", shardId, customLocation);
             IOUtils.rm(customLocation);
         }
-        logger.trace("deleted shard {} directory, paths: [{}]", shardId, paths);
+        logger.error("deleted shard {} directory, paths: [{}]", shardId, paths);
         assert assertPathsDoNotExist(paths);
     }
 
@@ -592,19 +594,21 @@ public final class NodeEnvironment  implements Closeable {
         if (numShards <= 0) {
             throw new IllegalArgumentException("settings must contain a non-null > 0 number of shards");
         }
-        logger.trace("locking all shards for index {} - [{}]", index, numShards);
+        logger.error("locking all shards for index {} - [{}]", index, numShards);
         List<ShardLock> allLocks = new ArrayList<>(numShards);
         boolean success = false;
         long startTimeNS = System.nanoTime();
+
         try {
             for (int i = 0; i < numShards; i++) {
                 long timeoutLeftMS = Math.max(0, lockTimeoutMS - TimeValue.nsecToMSec((System.nanoTime() - startTimeNS)));
+                logger.error("timeout left: " + timeoutLeftMS);
                 allLocks.add(shardLock(new ShardId(index, i), timeoutLeftMS, lockDetails));
             }
             success = true;
         } finally {
             if (success == false) {
-                logger.trace("unable to lock all shards for index {}", index);
+                logger.error("unable to lock all shards for index {}", index);
                 IOUtils.closeWhileHandlingException(allLocks);
             }
         }
@@ -638,7 +642,7 @@ public final class NodeEnvironment  implements Closeable {
      * @return the shard lock. Call {@link ShardLock#close()} to release the lock
      */
     public ShardLock shardLock(final ShardId shardId, long lockTimeoutMS, final String details) throws ShardLockObtainFailedException {
-        logger.trace("acquiring node shardlock on [{}], timeout [{}], details [{}]", shardId, lockTimeoutMS, details);
+        logger.error("acquiring node shardlock on [{}], timeout [{}], details [{}]", shardId, lockTimeoutMS, details);
         final InternalShardLock shardLock;
         final boolean acquired;
         synchronized (shardLocks) {
@@ -652,6 +656,7 @@ public final class NodeEnvironment  implements Closeable {
                 acquired = true;
             }
         }
+        logger.error("already aquired: " + acquired);
         if (acquired == false) {
             boolean success = false;
             try {
@@ -663,12 +668,12 @@ public final class NodeEnvironment  implements Closeable {
                 }
             }
         }
-        logger.trace("successfully acquired shardlock for [{}]", shardId);
+        logger.error("successfully acquired shardlock for [{}]", shardId);
         return new ShardLock(shardId) { // new instance prevents double closing
             @Override
             protected void closeInternal() {
                 shardLock.release();
-                logger.trace("released shard lock for [{}]", shardId);
+                logger.error("released shard lock for [{}]", shardId);
             }
         };
     }
@@ -705,6 +710,7 @@ public final class NodeEnvironment  implements Closeable {
         private final ShardId shardId;
 
         InternalShardLock(ShardId shardId) {
+            logger.error("new internalshardlock [" + shardId + "]");
             this.shardId = shardId;
             mutex.acquireUninterruptibly();
             lockDetails = "initial creation lock";
@@ -996,7 +1002,7 @@ public final class NodeEnvironment  implements Closeable {
         if (closed.compareAndSet(false, true) && locks != null) {
             for (Lock lock : locks) {
                 try {
-                    logger.trace("releasing lock [{}]", lock);
+                    logger.error("releasing lock [{}]", lock);
                     lock.close();
                 } catch (IOException e) {
                     logger.trace(() -> new ParameterizedMessage("failed to release lock [{}]", lock), e);
