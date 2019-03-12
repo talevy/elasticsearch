@@ -71,6 +71,7 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
         @Override
         public GeoShapeFieldMapper build(BuilderContext context) {
             setupFieldType(context);
+            // TODO(talevy)  context.indexCreatedVersion() to fetch version
             return new GeoShapeFieldMapper(name, fieldType, defaultFieldType, ignoreMalformed(context), coerce(context),
                 ignoreZValue(), context.indexSettings(), multiFieldsBuilder.build(this, context), copyTo);
         }
@@ -79,6 +80,7 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
     public static final class GeoShapeFieldType extends BaseGeoShapeFieldType {
         public GeoShapeFieldType() {
             super();
+            setHasDocValues(true); // TODO(talevy): version guard this version.onOrAfter(Version.CURRENT)
         }
 
         protected GeoShapeFieldType(GeoShapeFieldType ref) {
@@ -108,7 +110,7 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
     @Override
     public void parse(ParseContext context) throws IOException {
         try {
-            Object shape = context.parseExternalValue(Object.class);
+            Geometry shape = context.parseExternalValue(Geometry.class);
             if (shape == null) {
                 ShapeBuilder shapeBuilder = ShapeParser.parse(context.parser(), this);
                 if (shapeBuilder == null) {
@@ -117,6 +119,17 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
                 shape = shapeBuilder.buildGeometry();
             }
             indexShape(context, shape);
+            // TODO(talevy): currently assumes all shapes are polygons
+            if (fieldType().hasDocValues()) {
+                String name = fieldType().name();
+                BinaryPolygon2DDocValuesField docValuesField = (BinaryPolygon2DDocValuesField) context.doc().getByKey(name);
+                if (docValuesField == null) {
+                    docValuesField = new BinaryPolygon2DDocValuesField(name, shape);
+                    context.doc().addWithKey(name, docValuesField);
+                } else {
+                    docValuesField.add(shape);
+                }
+            }
         } catch (Exception e) {
             if (ignoreMalformed.value() == false) {
                 throw new MapperParsingException("failed to parse field [{}] of type [{}]", e, fieldType().name(),

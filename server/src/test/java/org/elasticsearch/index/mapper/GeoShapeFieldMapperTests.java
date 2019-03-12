@@ -18,13 +18,19 @@
  */
 package org.elasticsearch.index.mapper;
 
+import org.apache.lucene.geo.Polygon2D;
+import org.apache.lucene.geo.Polygon2DUtils;
+import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.Explicit;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.elasticsearch.test.InternalSettingsPlugin;
@@ -282,6 +288,33 @@ public class GeoShapeFieldMapperTests extends ESSingleNodeTestCase {
             String serialized = toXContentString((GeoShapeFieldMapper) defaultMapper.mappers().getMapper("location"));
             assertTrue(serialized, serialized.contains("\"orientation\":\"" + BaseGeoShapeFieldMapper.Defaults.ORIENTATION.value() + "\""));
         }
+    }
+
+    public void testDocValues() throws Exception {
+        DocumentMapperParser parser = createIndex("test").mapperService().documentMapperParser();
+        String mapping = Strings.toString(XContentFactory.jsonBuilder().startObject().startObject("_doc")
+            .startObject("properties")
+            .startObject("location").field("type", "geo_shape").endObject()
+            .startObject("locations").field("type", "geo_shape").endObject()
+            .endObject().endObject().endObject());
+        DocumentMapper mapper = parser.parse("_doc", new CompressedXContent(mapping));
+        ParsedDocument doc1 = mapper.parse(new SourceToParse("test-index", "_doc", "1", BytesReference
+            .bytes(XContentFactory.jsonBuilder()
+                .startObject()
+                .field("location", "POLYGON ((100.0 0.0, 101.0 0.0, 101.0 1.0, 100.0 1.0, 100.0 0.0))")
+                .array("locations", "POLYGON ((100.0 0.0, 101.0 0.0, 101.0 1.0, 100.0 1.0, 100.0 0.0))",
+                    "POLYGON ((100.0 0.0, 101.0 0.0, 101.0 1.0, 100.0 1.0, 100.0 0.0))")
+                .endObject()),
+            XContentType.JSON));
+        BinaryPolygon2DDocValuesField field = (BinaryPolygon2DDocValuesField) doc1.rootDoc().getByKey("location");
+        BytesRef bytesRef = field.binaryValue();
+
+        Polygon2D original = field.polygon2D();
+        Polygon2D fromBytes = Polygon2DUtils.bytesToPolygon2D(bytesRef);
+
+
+        BinaryPolygon2DDocValuesField fields = (BinaryPolygon2DDocValuesField) doc1.rootDoc().getByKey("locations");
+        expectThrows(ElasticsearchException.class, fields::binaryValue);
     }
 
     public String toXContentString(GeoShapeFieldMapper mapper, boolean includeDefaults) throws IOException {
