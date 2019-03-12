@@ -36,8 +36,12 @@ import org.elasticsearch.geo.geometry.MultiLine;
 import org.elasticsearch.geo.geometry.MultiPoint;
 import org.elasticsearch.geo.geometry.MultiPolygon;
 import org.elasticsearch.geo.geometry.Point;
+import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.fielddata.IndexFieldData;
+import org.elasticsearch.index.fielddata.IndexFieldDataCache;
+import org.elasticsearch.index.fielddata.plain.BinaryDVIndexFieldData;
 import org.elasticsearch.index.fielddata.plain.DocValuesIndexFieldData;
+import org.elasticsearch.indices.breaker.CircuitBreakerService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -95,10 +99,20 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
             return new GeoShapeFieldType(this);
         }
 
+//        @Override
+//        public IndexFieldData.Builder fielddataBuilder(String fullyQualifiedIndexName) {
+//            failIfNoDocValues();
+//            return new DocValuesIndexFieldData.Builder();
+//        }
         @Override
         public IndexFieldData.Builder fielddataBuilder(String fullyQualifiedIndexName) {
-            failIfNoDocValues();
-            return new DocValuesIndexFieldData.Builder();
+            return new IndexFieldData.Builder() {
+                @Override
+                public IndexFieldData<?> build(
+                    IndexSettings indexSettings, MappedFieldType fieldType, IndexFieldDataCache cache, CircuitBreakerService breakerService, MapperService mapperService) {
+                    return new BinaryDVIndexFieldData(indexSettings.getIndex(), fieldType.name());
+                }
+            };
         }
     }
 

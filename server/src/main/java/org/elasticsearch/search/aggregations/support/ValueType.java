@@ -103,6 +103,7 @@ public enum ValueType implements Writeable {
             case "date":    return DATE;
             case "ip":      return IP;
             case "boolean": return BOOLEAN;
+            case "geo_shape": return GEOSHAPE;
             default:
                 // TODO: do not be lenient here
                 return null;
