@@ -39,6 +39,7 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.geo.RandomGeoGenerator;
+import org.elasticsearch.test.geo.RandomShapeGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +54,7 @@ public abstract class AbstractGeoTestCase extends ESIntegTestCase {
 
     protected static final String SINGLE_VALUED_FIELD_NAME = "geo_value";
     protected static final String MULTI_VALUED_FIELD_NAME = "geo_values";
+    protected static final String GEO_SHAPE_FIELD_NAME = "geo_shape";
     protected static final String NUMBER_FIELD_NAME = "l_values";
     protected static final String UNMAPPED_IDX_NAME = "idx_unmapped";
     protected static final String IDX_NAME = "idx";
@@ -60,6 +62,7 @@ public abstract class AbstractGeoTestCase extends ESIntegTestCase {
     protected static final String DATELINE_IDX_NAME = "dateline_idx";
     protected static final String HIGH_CARD_IDX_NAME = "high_card_idx";
     protected static final String IDX_ZERO_NAME = "idx_zero";
+    protected static final String IDX_GEO_SHAPE_NAME = "idx_geo_shape";
 
     protected static int numDocs;
     protected static int numUniqueGeoPoints;
@@ -188,8 +191,10 @@ public abstract class AbstractGeoTestCase extends ESIntegTestCase {
                 jsonBuilder().startObject().array(SINGLE_VALUED_FIELD_NAME, 0.0, 1.0).endObject()));
         assertAcked(prepareCreate(IDX_ZERO_NAME).addMapping("type", SINGLE_VALUED_FIELD_NAME, "type=geo_point"));
 
+
         indexRandom(true, builders);
         ensureSearchable();
+
 
         // Added to debug a test failure where the terms aggregation seems to be reporting two documents with the same
         // value for NUMBER_FIELD_NAME. This will check that after random indexing each document only has 1 value for

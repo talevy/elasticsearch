@@ -19,13 +19,17 @@
 
 package org.elasticsearch.search.aggregations.metrics;
 
+import org.apache.lucene.geo.Polygon2D;
+import org.apache.lucene.geo.Polygon2DUtils;
 import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.lease.Releasables;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.DoubleArray;
 import org.elasticsearch.index.fielddata.MultiGeoPointValues;
+import org.elasticsearch.index.fielddata.SortedBinaryDocValues;
 import org.elasticsearch.search.aggregations.Aggregator;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.LeafBucketCollector;
@@ -42,7 +46,7 @@ final class GeoBoundsAggregator extends MetricsAggregator {
 
     static final ParseField WRAP_LONGITUDE_FIELD = new ParseField("wrap_longitude");
 
-    private final ValuesSource.GeoPoint valuesSource;
+    private final ValuesSource valuesSource;
     private final boolean wrapLongitude;
     DoubleArray tops;
     DoubleArray bottoms;
@@ -52,7 +56,7 @@ final class GeoBoundsAggregator extends MetricsAggregator {
     DoubleArray negRights;
 
     GeoBoundsAggregator(String name, SearchContext aggregationContext, Aggregator parent,
-            ValuesSource.GeoPoint valuesSource, boolean wrapLongitude, List<PipelineAggregator> pipelineAggregators,
+            ValuesSource valuesSource, boolean wrapLongitude, List<PipelineAggregator> pipelineAggregators,
             Map<String, Object> metaData) throws IOException {
         super(name, aggregationContext, parent, pipelineAggregators, metaData);
         this.valuesSource = valuesSource;
@@ -75,71 +79,136 @@ final class GeoBoundsAggregator extends MetricsAggregator {
     }
 
     @Override
-    public LeafBucketCollector getLeafCollector(LeafReaderContext ctx,
-            LeafBucketCollector sub) {
+    public LeafBucketCollector getLeafCollector(LeafReaderContext ctx, LeafBucketCollector sub) throws IOException {
         if (valuesSource == null) {
             return LeafBucketCollector.NO_OP_COLLECTOR;
         }
         final BigArrays bigArrays = context.bigArrays();
-        final MultiGeoPointValues values = valuesSource.geoPointValues(ctx);
-        return new LeafBucketCollectorBase(sub, values) {
-            @Override
-            public void collect(int doc, long bucket) throws IOException {
-                if (bucket >= tops.size()) {
-                    long from = tops.size();
-                    tops = bigArrays.grow(tops, bucket + 1);
-                    tops.fill(from, tops.size(), Double.NEGATIVE_INFINITY);
-                    bottoms = bigArrays.resize(bottoms, tops.size());
-                    bottoms.fill(from, bottoms.size(), Double.POSITIVE_INFINITY);
-                    posLefts = bigArrays.resize(posLefts, tops.size());
-                    posLefts.fill(from, posLefts.size(), Double.POSITIVE_INFINITY);
-                    posRights = bigArrays.resize(posRights, tops.size());
-                    posRights.fill(from, posRights.size(), Double.NEGATIVE_INFINITY);
-                    negLefts = bigArrays.resize(negLefts, tops.size());
-                    negLefts.fill(from, negLefts.size(), Double.POSITIVE_INFINITY);
-                    negRights = bigArrays.resize(negRights, tops.size());
-                    negRights.fill(from, negRights.size(), Double.NEGATIVE_INFINITY);
-                }
+        if (valuesSource instanceof ValuesSource.GeoPoint) {
+            final MultiGeoPointValues values = ((ValuesSource.GeoPoint) valuesSource).geoPointValues(ctx);
+            return new LeafBucketCollectorBase(sub, values) {
+                @Override
+                public void collect(int doc, long bucket) throws IOException {
+                    if (bucket >= tops.size()) {
+                        long from = tops.size();
+                        tops = bigArrays.grow(tops, bucket + 1);
+                        tops.fill(from, tops.size(), Double.NEGATIVE_INFINITY);
+                        bottoms = bigArrays.resize(bottoms, tops.size());
+                        bottoms.fill(from, bottoms.size(), Double.POSITIVE_INFINITY);
+                        posLefts = bigArrays.resize(posLefts, tops.size());
+                        posLefts.fill(from, posLefts.size(), Double.POSITIVE_INFINITY);
+                        posRights = bigArrays.resize(posRights, tops.size());
+                        posRights.fill(from, posRights.size(), Double.NEGATIVE_INFINITY);
+                        negLefts = bigArrays.resize(negLefts, tops.size());
+                        negLefts.fill(from, negLefts.size(), Double.POSITIVE_INFINITY);
+                        negRights = bigArrays.resize(negRights, tops.size());
+                        negRights.fill(from, negRights.size(), Double.NEGATIVE_INFINITY);
+                    }
 
-                if (values.advanceExact(doc)) {
-                    final int valuesCount = values.docValueCount();
+                    if (values.advanceExact(doc)) {
+                        final int valuesCount = values.docValueCount();
 
-                    for (int i = 0; i < valuesCount; ++i) {
-                        GeoPoint value = values.nextValue();
-                        double top = tops.get(bucket);
-                        if (value.lat() > top) {
-                            top = value.lat();
+                        for (int i = 0; i < valuesCount; ++i) {
+                            GeoPoint value = values.nextValue();
+                            double top = tops.get(bucket);
+                            if (value.lat() > top) {
+                                top = value.lat();
+                            }
+                            double bottom = bottoms.get(bucket);
+                            if (value.lat() < bottom) {
+                                bottom = value.lat();
+                            }
+                            double posLeft = posLefts.get(bucket);
+                            if (value.lon() >= 0 && value.lon() < posLeft) {
+                                posLeft = value.lon();
+                            }
+                            double posRight = posRights.get(bucket);
+                            if (value.lon() >= 0 && value.lon() > posRight) {
+                                posRight = value.lon();
+                            }
+                            double negLeft = negLefts.get(bucket);
+                            if (value.lon() < 0 && value.lon() < negLeft) {
+                                negLeft = value.lon();
+                            }
+                            double negRight = negRights.get(bucket);
+                            if (value.lon() < 0 && value.lon() > negRight) {
+                                negRight = value.lon();
+                            }
+                            tops.set(bucket, top);
+                            bottoms.set(bucket, bottom);
+                            posLefts.set(bucket, posLeft);
+                            posRights.set(bucket, posRight);
+                            negLefts.set(bucket, negLeft);
+                            negRights.set(bucket, negRight);
                         }
-                        double bottom = bottoms.get(bucket);
-                        if (value.lat() < bottom) {
-                            bottom = value.lat();
-                        }
-                        double posLeft = posLefts.get(bucket);
-                        if (value.lon() >= 0 && value.lon() < posLeft) {
-                            posLeft = value.lon();
-                        }
-                        double posRight = posRights.get(bucket);
-                        if (value.lon() >= 0 && value.lon() > posRight) {
-                            posRight = value.lon();
-                        }
-                        double negLeft = negLefts.get(bucket);
-                        if (value.lon() < 0 && value.lon() < negLeft) {
-                            negLeft = value.lon();
-                        }
-                        double negRight = negRights.get(bucket);
-                        if (value.lon() < 0 && value.lon() > negRight) {
-                            negRight = value.lon();
-                        }
-                        tops.set(bucket, top);
-                        bottoms.set(bucket, bottom);
-                        posLefts.set(bucket, posLeft);
-                        posRights.set(bucket, posRight);
-                        negLefts.set(bucket, negLeft);
-                        negRights.set(bucket, negRight);
                     }
                 }
-            }
-        };
+            };
+        } else if(valuesSource instanceof ValuesSource.Bytes) {
+            final SortedBinaryDocValues values = valuesSource.bytesValues(ctx);
+            return new LeafBucketCollectorBase(sub, values) {
+
+                @Override
+                public void collect(int doc, long bucket) throws IOException {
+                    if (bucket >= tops.size()) {
+                        long from = tops.size();
+                        tops = bigArrays.grow(tops, bucket + 1);
+                        tops.fill(from, tops.size(), Double.NEGATIVE_INFINITY);
+                        bottoms = bigArrays.resize(bottoms, tops.size());
+                        bottoms.fill(from, bottoms.size(), Double.POSITIVE_INFINITY);
+                        posLefts = bigArrays.resize(posLefts, tops.size());
+                        posLefts.fill(from, posLefts.size(), Double.POSITIVE_INFINITY);
+                        posRights = bigArrays.resize(posRights, tops.size());
+                        posRights.fill(from, posRights.size(), Double.NEGATIVE_INFINITY);
+                        negLefts = bigArrays.resize(negLefts, tops.size());
+                        negLefts.fill(from, negLefts.size(), Double.POSITIVE_INFINITY);
+                        negRights = bigArrays.resize(negRights, tops.size());
+                        negRights.fill(from, negRights.size(), Double.NEGATIVE_INFINITY);
+                    }
+
+                    if (values.advanceExact(doc)) {
+                        final int valuesCount = values.docValueCount();
+
+                        for (int i = 0; i < valuesCount; ++i) {
+                            BytesRef bytesRef = values.nextValue();
+                            Polygon2D value = Polygon2DUtils.bytesToPolygon2D(bytesRef);
+                            double top = tops.get(bucket);
+                            if (value.maxLat > top) {
+                                top = value.maxLat;
+                            }
+                            double bottom = bottoms.get(bucket);
+                            if (value.minLat < bottom) {
+                                bottom = value.minLat;
+                            }
+                            double posLeft = posLefts.get(bucket);
+                            if (value.minLon >= 0 && value.minLon < posLeft) {
+                                posLeft = value.minLon;
+                            }
+                            double posRight = posRights.get(bucket);
+                            if (value.maxLon >= 0 && value.maxLon > posRight) {
+                                posRight = value.maxLon;
+                            }
+                            double negLeft = negLefts.get(bucket);
+                            if (value.minLon < 0 && value.minLon < negLeft) {
+                                negLeft = value.minLon;
+                            }
+                            double negRight = negRights.get(bucket);
+                            if (value.maxLon < 0 && value.maxLon > negRight) {
+                                negRight = value.maxLon;
+                            }
+                            tops.set(bucket, top);
+                            bottoms.set(bucket, bottom);
+                            posLefts.set(bucket, posLeft);
+                            posRights.set(bucket, posRight);
+                            negLefts.set(bucket, negLeft);
+                            negRights.set(bucket, negRight);
+                        }
+                    }
+                }
+            };
+        }
+
+        throw new IllegalArgumentException("invalid valuesource");
     }
 
     @Override

@@ -20,20 +20,26 @@
 package org.elasticsearch.search.aggregations.metrics;
 
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.common.geo.GeoPoint;
+import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.util.BigArray;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.bucket.global.Global;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.test.ESIntegTestCase;
+import org.elasticsearch.test.geo.RandomShapeGenerator;
+import org.locationtech.spatial4j.shape.Rectangle;
 
 import java.util.List;
 
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.geoBounds;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.global;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.terms;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchResponse;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.closeTo;
@@ -48,6 +54,7 @@ public class GeoBoundsIT extends AbstractGeoTestCase {
     private static final String aggName = "geoBounds";
 
     public void testSingleValuedField() throws Exception {
+
         SearchResponse response = client().prepareSearch(IDX_NAME)
                 .addAggregation(geoBounds(aggName).field(SINGLE_VALUED_FIELD_NAME)
                         .wrapLongitude(false))
@@ -262,5 +269,37 @@ public class GeoBoundsIT extends AbstractGeoTestCase {
         assertThat(topLeft.lon(), closeTo(0.0, GEOHASH_TOLERANCE));
         assertThat(bottomRight.lat(), closeTo(1.0, GEOHASH_TOLERANCE));
         assertThat(bottomRight.lon(), closeTo(0.0, GEOHASH_TOLERANCE));
+    }
+
+    public void testGeoShape() throws Exception {
+        // geo_shape
+        ShapeBuilder builder = RandomShapeGenerator.createShape(random(), RandomShapeGenerator.ShapeType.POLYGON);
+        Rectangle rect = builder.buildS4J().getBoundingBox();
+        assertAcked(prepareCreate(IDX_GEO_SHAPE_NAME).addMapping("type", GEO_SHAPE_FIELD_NAME, "type=geo_shape"));
+        String geometry = builder.toWKT();
+        client().prepareIndex(IDX_GEO_SHAPE_NAME, "type").setSource(
+            jsonBuilder()
+                .startObject()
+                .field(GEO_SHAPE_FIELD_NAME, geometry)
+                .endObject()
+        ).setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE).get();
+
+        SearchResponse response = client().prepareSearch(IDX_GEO_SHAPE_NAME)
+            .addAggregation(geoBounds(aggName).field(GEO_SHAPE_FIELD_NAME).wrapLongitude(false)).get();
+
+        assertSearchResponse(response);
+
+        GeoPoint geoValuesTopLeft = new GeoPoint(rect.getMaxY(), rect.getMinX());
+        GeoPoint geoValuesBottomRight = new GeoPoint(rect.getMinY(), rect.getMaxX());
+
+        GeoBounds geoBounds = response.getAggregations().get(aggName);
+        assertThat(geoBounds, notNullValue());
+        assertThat(geoBounds.getName(), equalTo(aggName));
+        GeoPoint topLeft = geoBounds.topLeft();
+        GeoPoint bottomRight = geoBounds.bottomRight();
+        assertThat(topLeft.lat(), closeTo(geoValuesTopLeft.lat(), GEOHASH_TOLERANCE));
+        assertThat(topLeft.lon(), closeTo(geoValuesTopLeft.lon(), GEOHASH_TOLERANCE));
+        assertThat(bottomRight.lat(), closeTo(geoValuesBottomRight.lat(), GEOHASH_TOLERANCE));
+        assertThat(bottomRight.lon(), closeTo(geoValuesBottomRight.lon(), GEOHASH_TOLERANCE));
     }
 }

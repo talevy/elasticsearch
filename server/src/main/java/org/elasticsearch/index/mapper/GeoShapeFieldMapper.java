@@ -36,6 +36,8 @@ import org.elasticsearch.geo.geometry.MultiLine;
 import org.elasticsearch.geo.geometry.MultiPoint;
 import org.elasticsearch.geo.geometry.MultiPolygon;
 import org.elasticsearch.geo.geometry.Point;
+import org.elasticsearch.index.fielddata.IndexFieldData;
+import org.elasticsearch.index.fielddata.plain.DocValuesIndexFieldData;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -83,6 +85,7 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
             setHasDocValues(true); // TODO(talevy): version guard this version.onOrAfter(Version.CURRENT)
         }
 
+
         protected GeoShapeFieldType(GeoShapeFieldType ref) {
             super(ref);
         }
@@ -90,6 +93,12 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
         @Override
         public GeoShapeFieldType clone() {
             return new GeoShapeFieldType(this);
+        }
+
+        @Override
+        public IndexFieldData.Builder fielddataBuilder(String fullyQualifiedIndexName) {
+            failIfNoDocValues();
+            return new DocValuesIndexFieldData.Builder();
         }
     }
 
