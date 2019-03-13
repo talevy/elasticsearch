@@ -34,7 +34,7 @@ public class BinaryPolygon2DDocValuesField extends CustomDocValuesField {
 
     private List<org.apache.lucene.geo.Polygon> lucenePolygons;
 
-    BinaryPolygon2DDocValuesField(String name, Geometry geometry) {
+    public BinaryPolygon2DDocValuesField(String name, Geometry geometry) {
         super(name);
         this.lucenePolygons = new ArrayList<>(1);
         lucenePolygons.add(GeoShapeFieldMapper.toLucenePolygon((Polygon) geometry));

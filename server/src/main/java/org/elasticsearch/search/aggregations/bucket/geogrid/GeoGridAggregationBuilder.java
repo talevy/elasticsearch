@@ -43,7 +43,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
-public abstract class GeoGridAggregationBuilder extends ValuesSourceAggregationBuilder<ValuesSource.GeoPoint, GeoGridAggregationBuilder>
+public abstract class GeoGridAggregationBuilder extends ValuesSourceAggregationBuilder<ValuesSource, GeoGridAggregationBuilder>
         implements MultiBucketAggregationBuilder {
     /* recognized field names in JSON */
     static final ParseField FIELD_PRECISION = new ParseField("precision");
@@ -61,7 +61,7 @@ public abstract class GeoGridAggregationBuilder extends ValuesSourceAggregationB
 
     public static ObjectParser<GeoGridAggregationBuilder, Void> createParser(String name, PrecisionParser precisionParser) {
         ObjectParser<GeoGridAggregationBuilder, Void> parser = new ObjectParser<>(name);
-        ValuesSourceParserHelper.declareGeoFields(parser, false, false);
+        ValuesSourceParserHelper.declareAnyFields(parser, false, false);
         parser.declareField((p, builder, context) -> builder.precision(precisionParser.parse(p)), FIELD_PRECISION,
             org.elasticsearch.common.xcontent.ObjectParser.ValueType.INT);
         parser.declareInt(GeoGridAggregationBuilder::size, FIELD_SIZE);
@@ -69,8 +69,8 @@ public abstract class GeoGridAggregationBuilder extends ValuesSourceAggregationB
         return parser;
     }
 
-    public GeoGridAggregationBuilder(String name) {
-        super(name, ValuesSourceType.GEOPOINT, ValueType.GEOPOINT);
+    public GeoGridAggregationBuilder(String name, ValueType targetValueType) {
+        super(name, ValuesSourceType.ANY, targetValueType);
     }
 
     protected GeoGridAggregationBuilder(GeoGridAggregationBuilder clone, Builder factoriesBuilder, Map<String, Object> metaData) {
@@ -85,7 +85,7 @@ public abstract class GeoGridAggregationBuilder extends ValuesSourceAggregationB
      * Read from a stream.
      */
     public GeoGridAggregationBuilder(StreamInput in) throws IOException {
-        super(in, ValuesSourceType.GEOPOINT, ValueType.GEOPOINT);
+        super(in, ValuesSourceType.ANY, null);
         precision = in.readVInt();
         requiredSize = in.readVInt();
         shardSize = in.readVInt();
@@ -108,8 +108,8 @@ public abstract class GeoGridAggregationBuilder extends ValuesSourceAggregationB
     /**
      * Creates a new instance of the {@link ValuesSourceAggregatorFactory}-derived class specific to the geo aggregation.
      */
-    protected abstract ValuesSourceAggregatorFactory<ValuesSource.GeoPoint,?> createFactory(
-        String name, ValuesSourceConfig<ValuesSource.GeoPoint> config, int precision, int requiredSize, int shardSize,
+    protected abstract ValuesSourceAggregatorFactory<ValuesSource,?> createFactory(
+        String name, ValuesSourceConfig<ValuesSource> config, int precision, int requiredSize, int shardSize,
         SearchContext context, AggregatorFactory<?> parent, Builder subFactoriesBuilder, Map<String, Object> metaData
     ) throws IOException;
 
@@ -144,8 +144,8 @@ public abstract class GeoGridAggregationBuilder extends ValuesSourceAggregationB
     }
 
     @Override
-    protected ValuesSourceAggregatorFactory<ValuesSource.GeoPoint, ?> innerBuild(SearchContext context,
-            ValuesSourceConfig<ValuesSource.GeoPoint> config, AggregatorFactory<?> parent, Builder subFactoriesBuilder)
+    protected ValuesSourceAggregatorFactory<ValuesSource, ?> innerBuild(SearchContext context,
+            ValuesSourceConfig<ValuesSource> config, AggregatorFactory<?> parent, Builder subFactoriesBuilder)
                     throws IOException {
         int shardSize = this.shardSize;
 

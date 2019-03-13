@@ -42,7 +42,7 @@ public class GeoHashGridAggregationBuilder extends GeoGridAggregationBuilder {
     private static final ObjectParser<GeoGridAggregationBuilder, Void> PARSER = createParser(NAME, GeoUtils::parsePrecision);
 
     public GeoHashGridAggregationBuilder(String name) {
-        super(name);
+        super(name, null);
         precision(DEFAULT_PRECISION);
         size(DEFAULT_MAX_NUM_CELLS);
         shardSize = -1;
@@ -59,8 +59,8 @@ public class GeoHashGridAggregationBuilder extends GeoGridAggregationBuilder {
     }
 
     @Override
-    protected ValuesSourceAggregatorFactory<ValuesSource.GeoPoint, ?> createFactory(
-        String name, ValuesSourceConfig<ValuesSource.GeoPoint> config, int precision, int requiredSize, int shardSize,
+    protected ValuesSourceAggregatorFactory<ValuesSource, ?> createFactory(
+        String name, ValuesSourceConfig<ValuesSource> config, int precision, int requiredSize, int shardSize,
         SearchContext context, AggregatorFactory<?> parent, AggregatorFactories.Builder subFactoriesBuilder,
         Map<String, Object> metaData
     ) throws IOException {

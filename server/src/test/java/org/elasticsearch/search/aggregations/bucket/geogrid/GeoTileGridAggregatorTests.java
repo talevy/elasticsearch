@@ -19,11 +19,13 @@
 
 package org.elasticsearch.search.aggregations.bucket.geogrid;
 
+import org.elasticsearch.search.aggregations.support.ValueType;
+
 public class GeoTileGridAggregatorTests extends GeoGridAggregatorTestCase<InternalGeoTileGridBucket> {
 
     @Override
     protected int randomPrecision() {
-        return randomIntBetween(0, GeoTileUtils.MAX_ZOOM);
+        return randomIntBetween(0, 12);
     }
 
     @Override
@@ -33,7 +35,7 @@ public class GeoTileGridAggregatorTests extends GeoGridAggregatorTestCase<Intern
 
     @Override
     protected GeoGridAggregationBuilder createBuilder(String name) {
-        return new GeoTileGridAggregationBuilder(name);
+        return new GeoTileGridAggregationBuilder(name, ValueType.GEOSHAPE);
     }
 
     public void testPrecision() {

@@ -31,6 +31,7 @@ import org.elasticsearch.index.fielddata.AtomicGeoPointFieldData;
 import org.elasticsearch.index.fielddata.IndexFieldData;
 import org.elasticsearch.index.fielddata.IndexFieldDataCache;
 import org.elasticsearch.index.fielddata.IndexGeoPointFieldData;
+import org.elasticsearch.index.mapper.BinaryPolygon2DDocValuesField;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
@@ -72,7 +73,8 @@ public abstract class AbstractLatLonPointDVIndexFieldData extends DocValuesIndex
         static void checkCompatible(FieldInfo fieldInfo) {
             // dv properties could be "unset", if you e.g. used only StoredField with this same name in the segment.
             if (fieldInfo.getDocValuesType() != DocValuesType.NONE
-                && fieldInfo.getDocValuesType() != LatLonDocValuesField.TYPE.docValuesType()) {
+                && fieldInfo.getDocValuesType() != LatLonDocValuesField.TYPE.docValuesType()
+                && fieldInfo.getDocValuesType() != BinaryPolygon2DDocValuesField.TYPE.docValuesType()) {
                 throw new IllegalArgumentException("field=\"" + fieldInfo.name + "\" was indexed with docValuesType="
                     + fieldInfo.getDocValuesType() + " but this type has docValuesType="
                     + LatLonDocValuesField.TYPE.docValuesType() + ", is the field really a LatLonDocValuesField?");

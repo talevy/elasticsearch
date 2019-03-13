@@ -28,11 +28,14 @@ import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
 import org.elasticsearch.common.CheckedConsumer;
-import org.elasticsearch.index.mapper.GeoPointFieldMapper;
+import org.elasticsearch.common.geo.builders.ShapeBuilder;
+import org.elasticsearch.index.mapper.BinaryPolygon2DDocValuesField;
+import org.elasticsearch.index.mapper.GeoShapeFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.search.aggregations.Aggregator;
 import org.elasticsearch.search.aggregations.AggregatorTestCase;
 import org.elasticsearch.search.aggregations.support.AggregationInspectionHelper;
+import org.elasticsearch.test.geo.RandomShapeGenerator;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -76,6 +79,41 @@ public abstract class GeoGridAggregatorTestCase<T extends InternalGeoGridBucket>
             iw.addDocument(Collections.singleton(new LatLonDocValuesField(FIELD_NAME, 10D, 10D)));
         }, geoGrid -> {
             assertEquals(0, geoGrid.getBuckets().size());
+        });
+    }
+
+    public void testGeoShape() throws IOException {
+        int precision = randomPrecision();
+        System.out.println("precision: " + precision);
+        int numPoints = 1;
+        Map<String, Integer> expectedCountPerGeoHash = new HashMap<>();
+        testCase(new MatchAllDocsQuery(), FIELD_NAME, precision, iw -> {
+            List<BinaryPolygon2DDocValuesField> shapes = new ArrayList<>();
+            Set<String> distinctHashesPerDoc = new HashSet<>();
+            for (int pointId = 0; pointId < numPoints; pointId++) {
+                ShapeBuilder builder = RandomShapeGenerator.createShape(random(), RandomShapeGenerator.ShapeType.POLYGON);
+                System.out.println(builder.toWKT());
+                shapes.add(new BinaryPolygon2DDocValuesField(FIELD_NAME, builder.buildGeometry()));
+                String hash = "hashh";
+                if (distinctHashesPerDoc.contains(hash) == false) {
+                    expectedCountPerGeoHash.put(hash, expectedCountPerGeoHash.getOrDefault(hash, 0) + 1);
+                }
+                distinctHashesPerDoc.add(hash);
+                if (usually()) {
+                    iw.addDocument(shapes);
+                    shapes.clear();
+                    distinctHashesPerDoc.clear();
+                }
+            }
+            if (shapes.size() != 0) {
+                iw.addDocument(shapes);
+            }
+        }, geoHashGrid -> {
+            assertEquals(expectedCountPerGeoHash.size(), geoHashGrid.getBuckets().size());
+            for (GeoGrid.Bucket bucket : geoHashGrid.getBuckets()) {
+                System.out.println(bucket.getKeyAsString());
+            }
+            assertTrue(AggregationInspectionHelper.hasValue(geoHashGrid));
         });
     }
 
@@ -133,7 +171,7 @@ public abstract class GeoGridAggregatorTestCase<T extends InternalGeoGridBucket>
 
         GeoGridAggregationBuilder aggregationBuilder = createBuilder("_name").field(field);
         aggregationBuilder.precision(precision);
-        MappedFieldType fieldType = new GeoPointFieldMapper.GeoPointFieldType();
+        MappedFieldType fieldType = new GeoShapeFieldMapper.GeoShapeFieldType();
         fieldType.setHasDocValues(true);
         fieldType.setName(FIELD_NAME);
 

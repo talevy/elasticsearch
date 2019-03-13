@@ -25,6 +25,7 @@ import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
 import org.elasticsearch.search.aggregations.AggregatorFactory;
+import org.elasticsearch.search.aggregations.support.ValueType;
 import org.elasticsearch.search.aggregations.support.ValuesSource;
 import org.elasticsearch.search.aggregations.support.ValuesSourceAggregatorFactory;
 import org.elasticsearch.search.aggregations.support.ValuesSourceConfig;
@@ -40,8 +41,8 @@ public class GeoTileGridAggregationBuilder extends GeoGridAggregationBuilder {
 
     private static final ObjectParser<GeoGridAggregationBuilder, Void> PARSER = createParser(NAME, GeoTileUtils::parsePrecision);
 
-    public GeoTileGridAggregationBuilder(String name) {
-        super(name);
+    public GeoTileGridAggregationBuilder(String name, ValueType targetValueType) {
+        super(name, targetValueType);
         precision(DEFAULT_PRECISION);
         size(DEFAULT_MAX_NUM_CELLS);
         shardSize = -1;
@@ -58,8 +59,8 @@ public class GeoTileGridAggregationBuilder extends GeoGridAggregationBuilder {
     }
 
     @Override
-    protected ValuesSourceAggregatorFactory<ValuesSource.GeoPoint, ?> createFactory(
-        String name, ValuesSourceConfig<ValuesSource.GeoPoint> config, int precision, int requiredSize, int shardSize,
+    protected ValuesSourceAggregatorFactory<ValuesSource, ?> createFactory(
+        String name, ValuesSourceConfig<ValuesSource> config, int precision, int requiredSize, int shardSize,
         SearchContext context, AggregatorFactory<?> parent, AggregatorFactories.Builder subFactoriesBuilder,
         Map<String, Object> metaData
     ) throws IOException {
@@ -78,7 +79,7 @@ public class GeoTileGridAggregationBuilder extends GeoGridAggregationBuilder {
     }
 
     public static GeoGridAggregationBuilder parse(String aggregationName, XContentParser parser) throws IOException {
-        return PARSER.parse(parser, new GeoTileGridAggregationBuilder(aggregationName), null);
+        return PARSER.parse(parser, new GeoTileGridAggregationBuilder(aggregationName, null), null);
     }
 
     @Override
