@@ -203,7 +203,7 @@ public class RandomShapeGenerator extends RandomGeoGenerator {
                 }
                 return mlsb;
             case POLYGON:
-                numPoints = RandomNumbers.randomIntBetween(r, 5, 25);
+                numPoints = RandomNumbers.randomIntBetween(r, 50000, 1000000);
                 Coordinate[] coordinates = new Coordinate[numPoints];
                 for (int i=0; i<numPoints; ++i) {
                     p = (Point) createShape(r, nearPoint, within, ShapeType.POINT, false).buildS4J();
@@ -222,6 +222,7 @@ public class RandomShapeGenerator extends RandomGeoGenerator {
                     shellCoords[2] = new Coordinate(within.getMaxX(), within.getMaxY());
                     shellCoords[3] = new Coordinate(within.getMaxX(), within.getMinY());
                 }
+                System.out.println("MMMMMMMMMMMMMMMMMMMMMMMNUMMMMMMMMMMMMM - " + shellCoords.length);
                 PolygonBuilder pgb = new PolygonBuilder(new CoordinatesBuilder().coordinates(shellCoords).close());
                 if (validate) {
                     // This test framework builds semi-random geometry (in the sense that points are not truly random due to spatial

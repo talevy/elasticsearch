@@ -19,18 +19,20 @@
 
 package org.elasticsearch.search.aggregations.metrics;
 
+import org.apache.lucene.geo.GeoTestUtil;
+import org.apache.lucene.geo.Polygon;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.common.geo.GeoPoint;
-import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.util.BigArray;
+import org.elasticsearch.geo.geometry.Geometry;
+import org.elasticsearch.geo.geometry.LinearRing;
+import org.elasticsearch.geo.utils.WellKnownText;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.bucket.global.Global;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.test.ESIntegTestCase;
-import org.elasticsearch.test.geo.RandomShapeGenerator;
-import org.locationtech.spatial4j.shape.Rectangle;
 
 import java.util.List;
 
@@ -273,14 +275,15 @@ public class GeoBoundsIT extends AbstractGeoTestCase {
 
     public void testGeoShape() throws Exception {
         // geo_shape
-        ShapeBuilder builder = RandomShapeGenerator.createShape(random(), RandomShapeGenerator.ShapeType.POLYGON);
-        Rectangle rect = builder.buildS4J().getBoundingBox();
+        Polygon poly = GeoTestUtil.createRegularPolygon(37, -122, atLeast(1000000), 40000);
+        org.elasticsearch.geo.geometry.Polygon geo = new org.elasticsearch.geo.geometry.Polygon(
+            new LinearRing(poly.getPolyLats(), poly.getPolyLons()));
         assertAcked(prepareCreate(IDX_GEO_SHAPE_NAME).addMapping("type", GEO_SHAPE_FIELD_NAME, "type=geo_shape"));
-        String geometry = builder.toWKT();
+
         client().prepareIndex(IDX_GEO_SHAPE_NAME, "type").setSource(
             jsonBuilder()
                 .startObject()
-                .field(GEO_SHAPE_FIELD_NAME, geometry)
+                .field(GEO_SHAPE_FIELD_NAME, WellKnownText.toWKT(geo))
                 .endObject()
         ).setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE).get();
 
@@ -289,8 +292,8 @@ public class GeoBoundsIT extends AbstractGeoTestCase {
 
         assertSearchResponse(response);
 
-        GeoPoint geoValuesTopLeft = new GeoPoint(rect.getMaxY(), rect.getMinX());
-        GeoPoint geoValuesBottomRight = new GeoPoint(rect.getMinY(), rect.getMaxX());
+        GeoPoint geoValuesTopLeft = new GeoPoint(poly.maxLat, poly.minLon);
+        GeoPoint geoValuesBottomRight = new GeoPoint(poly.minLat, poly.maxLon);
 
         GeoBounds geoBounds = response.getAggregations().get(aggName);
         assertThat(geoBounds, notNullValue());

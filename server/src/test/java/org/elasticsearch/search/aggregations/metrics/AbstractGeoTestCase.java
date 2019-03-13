@@ -75,6 +75,8 @@ public abstract class AbstractGeoTestCase extends ESIntegTestCase {
 
     @Override
     public void setupSuiteScopeCluster() throws Exception {
+        return;
+        /**
         createIndex(UNMAPPED_IDX_NAME);
         assertAcked(prepareCreate(IDX_NAME)
                 .addMapping("type", SINGLE_VALUED_FIELD_NAME, "type=geo_point",
@@ -218,6 +220,7 @@ public abstract class AbstractGeoTestCase extends ESIntegTestCase {
             assertThat("Hit " + i + " has wrong value", value.intValue(), equalTo(i));
         }
         assertThat(totalHits, equalTo(2000L));
+         */
     }
 
     private void updateGeohashBucketsCentroid(final GeoPoint location) {
