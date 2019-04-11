@@ -48,7 +48,8 @@ public enum ValueType implements Writeable {
     // TODO: what is the difference between "number" and "numeric"?
     NUMERIC((byte) 7, "numeric", "numeric", ValuesSourceType.NUMERIC, IndexNumericFieldData.class, DocValueFormat.RAW),
     GEOPOINT((byte) 8, "geo_point", "geo_point", ValuesSourceType.GEOPOINT, IndexGeoPointFieldData.class, DocValueFormat.GEOHASH),
-    BOOLEAN((byte) 9, "boolean", "boolean", ValuesSourceType.NUMERIC, IndexNumericFieldData.class, DocValueFormat.BOOLEAN);
+    BOOLEAN((byte) 9, "boolean", "boolean", ValuesSourceType.NUMERIC, IndexNumericFieldData.class, DocValueFormat.BOOLEAN),
+    GEOSHAPE((byte) 10, "geo_shape", "geo_shape", ValuesSourceType.BYTES, IndexFieldData.class, DocValueFormat.RAW);
 
     final String description;
     final ValuesSourceType valuesSourceType;
@@ -102,6 +103,7 @@ public enum ValueType implements Writeable {
             case "date":    return DATE;
             case "ip":      return IP;
             case "boolean": return BOOLEAN;
+            case "geo_shape": return GEOSHAPE;
             default:
                 // TODO: do not be lenient here
                 return null;

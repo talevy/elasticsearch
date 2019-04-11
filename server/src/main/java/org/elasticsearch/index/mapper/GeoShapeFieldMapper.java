@@ -24,6 +24,7 @@ import org.apache.lucene.geo.Line;
 import org.apache.lucene.geo.Polygon;
 import org.apache.lucene.index.IndexableField;
 import org.elasticsearch.common.Explicit;
+import org.elasticsearch.common.geo.GeometryTreeWriter;
 import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.geo.parsers.ShapeParser;
 import org.elasticsearch.common.settings.Settings;
@@ -36,6 +37,11 @@ import org.elasticsearch.geo.geometry.MultiLine;
 import org.elasticsearch.geo.geometry.MultiPoint;
 import org.elasticsearch.geo.geometry.MultiPolygon;
 import org.elasticsearch.geo.geometry.Point;
+import org.elasticsearch.index.IndexSettings;
+import org.elasticsearch.index.fielddata.IndexFieldData;
+import org.elasticsearch.index.fielddata.IndexFieldDataCache;
+import org.elasticsearch.index.fielddata.plain.BinaryDVIndexFieldData;
+import org.elasticsearch.indices.breaker.CircuitBreakerService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,6 +77,7 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
         @Override
         public GeoShapeFieldMapper build(BuilderContext context) {
             setupFieldType(context);
+            // TODO(talevy)  context.indexCreatedVersion() to fetch version
             return new GeoShapeFieldMapper(name, fieldType, defaultFieldType, ignoreMalformed(context), coerce(context),
                 ignoreZValue(), context.indexSettings(), multiFieldsBuilder.build(this, context), copyTo);
         }
@@ -79,6 +86,7 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
     public static final class GeoShapeFieldType extends BaseGeoShapeFieldType {
         public GeoShapeFieldType() {
             super();
+            setHasDocValues(true); // TODO(talevy): version guard this version.onOrAfter(Version.CURRENT)
         }
 
         protected GeoShapeFieldType(GeoShapeFieldType ref) {
@@ -88,6 +96,11 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
         @Override
         public GeoShapeFieldType clone() {
             return new GeoShapeFieldType(this);
+        }
+
+        public IndexFieldData.Builder fielddataBuilder(String fullyQualifiedIndexName) {
+            return (indexSettings, fieldType, cache, breakerService, mapperService)  ->
+                new BinaryDVIndexFieldData(indexSettings.getIndex(), fieldType.name());
         }
     }
 
@@ -128,7 +141,18 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
 
     private void indexShape(ParseContext context, Object luceneShape) {
         if (luceneShape instanceof Geometry) {
-            ((Geometry) luceneShape).visit(new LuceneGeometryIndexer(context));
+            Geometry shape = (Geometry) luceneShape;
+            shape.visit(new LuceneGeometryIndexer(context));
+            if (fieldType().hasDocValues()) {
+                String name = fieldType().name();
+                BinaryGeoShapeDocValueField docValueField = (BinaryGeoShapeDocValueField) context.doc().getByKey(name);
+                if (docValueField == null) {
+                    docValueField = new BinaryGeoShapeDocValueField(name, shape);
+                    context.doc().addWithKey(name, docValueField);
+                } else {
+                    docValueField.add(shape);
+                }
+            }
         } else {
             throw new IllegalArgumentException("invalid shape type found [" + luceneShape.getClass() + "] while indexing shape");
         }

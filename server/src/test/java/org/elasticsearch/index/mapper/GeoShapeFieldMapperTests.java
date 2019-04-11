@@ -18,13 +18,17 @@
  */
 package org.elasticsearch.index.mapper;
 
+import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Explicit;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
+import org.elasticsearch.common.geo.GeometryTreeReader;
 import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.elasticsearch.test.InternalSettingsPlugin;
@@ -282,6 +286,25 @@ public class GeoShapeFieldMapperTests extends ESSingleNodeTestCase {
             String serialized = toXContentString((GeoShapeFieldMapper) defaultMapper.mappers().getMapper("location"));
             assertTrue(serialized, serialized.contains("\"orientation\":\"" + BaseGeoShapeFieldMapper.Defaults.ORIENTATION.value() + "\""));
         }
+    }
+
+    public void testDocValues() throws Exception {
+        DocumentMapperParser parser = createIndex("test").mapperService().documentMapperParser();
+        String mapping = Strings.toString(XContentFactory.jsonBuilder().startObject().startObject("_doc")
+            .startObject("properties")
+            .startObject("location").field("type", "geo_shape").endObject()
+            .endObject().endObject().endObject());
+        DocumentMapper mapper = parser.parse("_doc", new CompressedXContent(mapping));
+        ParsedDocument doc1 = mapper.parse(new SourceToParse("test-index", "_doc", "1", BytesReference
+            .bytes(XContentFactory.jsonBuilder()
+                .startObject()
+                .field("location", "POLYGON ((100.0 0.0, 110.0 0.0, 110.0 10.0, 100.0 10.0, 100.0 0.0))")
+                .endObject()),
+            XContentType.JSON));
+        BinaryGeoShapeDocValueField field = (BinaryGeoShapeDocValueField) doc1.rootDoc().getByKey("location");
+        BytesRef bytesRef = field.binaryValue();
+        GeometryTreeReader reader = new GeometryTreeReader(bytesRef);
+        assertTrue(reader.containedInOrCrosses(101, 2, 105, 8));
     }
 
     public String toXContentString(GeoShapeFieldMapper mapper, boolean includeDefaults) throws IOException {
