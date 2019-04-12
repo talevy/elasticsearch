@@ -49,10 +49,14 @@ public class GeometryTreeWriter {
 
     public BytesRef toBytesRef() throws IOException {
         BytesStreamOutput output = new BytesStreamOutput();
-        output.writeInt(builder.minLon);
-        output.writeInt(builder.minLat);
-        output.writeInt(builder.maxLon);
-        output.writeInt(builder.maxLat);
+        boolean prependExtent = builder.shapeWriters.size() > 1;
+        output.writeBoolean(prependExtent);
+        if (prependExtent) {
+            output.writeInt(builder.minLon);
+            output.writeInt(builder.minLat);
+            output.writeInt(builder.maxLon);
+            output.writeInt(builder.maxLat);
+        }
         output.writeVInt(builder.shapeWriters.size());
         for (EdgeTreeWriter writer : builder.shapeWriters) {
             output.writeEnum(ShapeType.POLYGON);

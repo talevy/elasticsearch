@@ -36,17 +36,20 @@ public class GeometryTreeReader {
     public boolean containedInOrCrosses(int minLon, int minLat, int maxLon, int maxLat) throws IOException {
         ByteBufferStreamInput input = new ByteBufferStreamInput(
             ByteBuffer.wrap(bytesRef.bytes, bytesRef.offset, bytesRef.length));
-        int thisMinLon = input.readInt();
-        int thisMinLat = input.readInt();
-        int thisMaxLon = input.readInt();
-        int thisMaxLat = input.readInt();
+        boolean hasExtent = input.readBoolean();
+        if (hasExtent) {
+            int thisMinLon = input.readInt();
+            int thisMinLat = input.readInt();
+            int thisMaxLon = input.readInt();
+            int thisMaxLat = input.readInt();
 
-        if (thisMinLat > maxLat || thisMaxLon < minLon || thisMaxLat < minLat || thisMinLon > maxLon) {
-            return false; // tree and bbox-query are disjoint
-        }
+            if (thisMinLat > maxLat || thisMaxLon < minLon || thisMaxLat < minLat || thisMinLon > maxLon) {
+                return false; // tree and bbox-query are disjoint
+            }
 
-        if (minLon <= thisMinLon && minLat <= thisMinLat && maxLon >= thisMaxLon && maxLat >= thisMaxLat) {
-            return true; // bbox-query fully contains tree's extent.
+            if (minLon <= thisMinLon && minLat <= thisMinLat && maxLon >= thisMaxLon && maxLat >= thisMaxLat) {
+                return true; // bbox-query fully contains tree's extent.
+            }
         }
 
         int numTrees = input.readVInt();
