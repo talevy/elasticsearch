@@ -35,42 +35,31 @@ public class EdgeTreeReader {
     }
 
     public boolean containedInOrCrosses(int minX, int minY, int maxX, int maxY) throws IOException {
+        ByteBufferStreamInput input = new ByteBufferStreamInput(ByteBuffer.wrap(bytesRef.bytes, bytesRef.offset, bytesRef.length));
+        int thisMinX = input.readInt();
+        int thisMinY = input.readInt();
+        int thisMaxX = input.readInt();
+        int thisMaxY = input.readInt();
+
+        if (thisMinY > maxY || thisMaxX < minX || thisMaxY < minY || thisMinX > maxX) {
+            return false; // tree and bbox-query are disjoint
+        }
+        if (minX <= thisMinX && minY <= thisMinY && maxX >= thisMaxX && maxY >= thisMaxY) {
+            return true; // bbox-query fully contains tree's extent.
+        }
+
         return this.containsBottomLeft(minX, minY, maxX, maxY) || this.crosses(minX, minY, maxX, maxY);
     }
 
     boolean containsBottomLeft(int minX, int minY, int maxX, int maxY) throws IOException {
         ByteBufferStreamInput input = new ByteBufferStreamInput(ByteBuffer.wrap(bytesRef.bytes, bytesRef.offset, bytesRef.length));
-        int thisMinX = input.readInt();
-        int thisMinY = input.readInt();
-        int thisMaxX = input.readInt();
-        int thisMaxY = input.readInt();
-
-        if (thisMinY > maxY || thisMaxX < minX || thisMaxY < minY || thisMinX > maxX) {
-            return false; // tree and bbox-query are disjoint
-        }
-
-        if (minX <= thisMinX && minY <= thisMinY && maxX >= thisMaxX && maxY >= thisMaxY) {
-            return true; // bbox-query fully contains tree's extent.
-        }
-
+        input.skip(16);
         return containsBottomLeft(input, readRoot(input, input.position()), minX, minY, maxX, maxY);
     }
 
     public boolean crosses(int minX, int minY, int maxX, int maxY) throws IOException {
         ByteBufferStreamInput input = new ByteBufferStreamInput(ByteBuffer.wrap(bytesRef.bytes, bytesRef.offset, bytesRef.length));
-        int thisMinX = input.readInt();
-        int thisMinY = input.readInt();
-        int thisMaxX = input.readInt();
-        int thisMaxY = input.readInt();
-
-        if (thisMinY > maxY || thisMaxX < minX || thisMaxY < minY || thisMinX > maxX) {
-            return false; // tree and bbox-query are disjoint
-        }
-
-        if (minX <= thisMinX && minY <= thisMinY && maxX >= thisMaxX && maxY >= thisMaxY) {
-            return true; // bbox-query fully contains tree's extent.
-        }
-
+        input.skip(16);
         return crosses(input, readRoot(input, input.position()), minX, minY, maxX, maxY);
     }
 
