@@ -25,6 +25,7 @@ import org.elasticsearch.index.mapper.FieldNamesFieldMapper;
 import org.elasticsearch.index.mapper.IdFieldMapper;
 import org.elasticsearch.index.mapper.IgnoredFieldMapper;
 import org.elasticsearch.index.mapper.IndexFieldMapper;
+import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MapperParsingException;
@@ -49,8 +50,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 
 public class IndicesModuleTests extends ESTestCase {
@@ -310,5 +313,22 @@ public class IndicesModuleTests extends ESTestCase {
         assertSame(MapperPlugin.NOOP_FIELD_PREDICATE, fieldFilter.apply(randomAlphaOfLengthBetween(3, 7)));
         assertNotSame(MapperPlugin.NOOP_FIELD_PREDICATE, fieldFilter.apply("hidden_index"));
         assertNotSame(MapperPlugin.NOOP_FIELD_PREDICATE, fieldFilter.apply("filtered"));
+    }
+
+    public void testMultiFieldMappers() {
+        List<MapperPlugin> plugins = Collections.singletonList(new MapperPlugin() {
+            @Override
+            public Map<String, List<Mapper.Builder>> getMultifieldMappers() {
+                return Collections.singletonMap(KeywordFieldMapper.CONTENT_TYPE,
+                    Collections.singletonList(new TextFieldMapper.Builder("text")));
+            }
+        });
+        IndicesModule indicesModule = new IndicesModule(plugins);
+        Map<String, List<Supplier<Mapper.Builder>>> builders = indicesModule.getMapperRegistry().multiFieldMappers();
+        assertThat(builders.size(), equalTo(1));
+        List<Supplier<Mapper.Builder>> keywordBuilders = builders.get(KeywordFieldMapper.CONTENT_TYPE);
+        assertThat(keywordBuilders.size(), equalTo(1));
+        assertThat(keywordBuilders.get(0).get().getClass(), equalTo(TextFieldMapper.Builder.class));
+        assertThat(keywordBuilders.get(0).get().name(), equalTo("text"));
     }
 }

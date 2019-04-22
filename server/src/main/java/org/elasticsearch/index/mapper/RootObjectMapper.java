@@ -132,6 +132,8 @@ public class RootObjectMapper extends ObjectMapper {
                     iterator.remove();
                 }
             }
+
+            // TODO(talevy): check same-name conflicts
             return builder;
         }
 

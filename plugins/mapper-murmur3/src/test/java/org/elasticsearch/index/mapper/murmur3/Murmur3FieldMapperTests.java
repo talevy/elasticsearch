@@ -59,7 +59,7 @@ public class Murmur3FieldMapperTests extends ESSingleNodeTestCase {
         indexService = createIndex("test");
         mapperRegistry = new MapperRegistry(
                 Collections.singletonMap(Murmur3FieldMapper.CONTENT_TYPE, new Murmur3FieldMapper.TypeParser()),
-                Collections.emptyMap(), MapperPlugin.NOOP_FIELD_FILTER);
+                Collections.emptyMap(), MapperPlugin.NOOP_FIELD_FILTER, Collections.emptyMap());
         Supplier<QueryShardContext> queryShardContext = () -> {
             return indexService.newQueryShardContext(0, null, () -> { throw new UnsupportedOperationException(); }, null);
         };

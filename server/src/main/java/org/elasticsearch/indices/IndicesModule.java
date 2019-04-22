@@ -75,6 +75,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * Configures classes and services that are shared by indices on each node.
@@ -85,7 +86,7 @@ public class IndicesModule extends AbstractModule {
 
     public IndicesModule(List<MapperPlugin> mapperPlugins) {
         this.mapperRegistry = new MapperRegistry(getMappers(mapperPlugins), getMetadataMappers(mapperPlugins),
-                getFieldFilter(mapperPlugins));
+                getFieldFilter(mapperPlugins), getMultifieldMappers(mapperPlugins));
         registerBuiltinWritables();
     }
 
@@ -205,6 +206,24 @@ public class IndicesModule extends AbstractModule {
      */
     public static Set<String> getBuiltInMetaDataFields() {
         return builtInMetadataMappers.keySet();
+    }
+
+    public static Map<String, List<Supplier<Mapper.Builder>>> getMultifieldMappers(List<MapperPlugin> mapperPlugins) {
+        Map<String, List<Supplier<Mapper.Builder>>> multiFieldMappers = new LinkedHashMap<>();
+        for (MapperPlugin mapperPlugin : mapperPlugins) {
+            for (Map.Entry<String, List<Supplier<Mapper.Builder>>> entry : mapperPlugin.getMultifieldMappers().entrySet()) {
+                List<Supplier<Mapper.Builder>> existing = multiFieldMappers.get(entry.getKey());
+                if (existing != null) {
+                    for (Supplier<Mapper.Builder> newBuilder : entry.getValue()) {
+                        // TODO(talevy): check duplicates, needs new datastructure
+                        existing.add(newBuilder);
+                    }
+                } else {
+                    multiFieldMappers.put(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+        return multiFieldMappers;
     }
 
     private static Function<String, Predicate<String>> getFieldFilter(List<MapperPlugin> mapperPlugins) {

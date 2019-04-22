@@ -69,7 +69,7 @@ public class ExternalFieldMapperTests extends ESSingleNodeTestCase {
         IndexService indexService = createIndex("test", settings);
         MapperRegistry mapperRegistry = new MapperRegistry(
                 singletonMap(ExternalMapperPlugin.EXTERNAL, new ExternalMapper.TypeParser(ExternalMapperPlugin.EXTERNAL, "foo")),
-                singletonMap(ExternalMetadataMapper.CONTENT_TYPE, new ExternalMetadataMapper.TypeParser()), MapperPlugin.NOOP_FIELD_FILTER);
+                singletonMap(ExternalMetadataMapper.CONTENT_TYPE, new ExternalMetadataMapper.TypeParser()), MapperPlugin.NOOP_FIELD_FILTER, Collections.emptyMap());
 
         Supplier<QueryShardContext> queryShardContext = () -> {
             return indexService.newQueryShardContext(0, null, () -> { throw new UnsupportedOperationException(); }, null);
@@ -116,7 +116,7 @@ public class ExternalFieldMapperTests extends ESSingleNodeTestCase {
         mapperParsers.put(ExternalMapperPlugin.EXTERNAL, new ExternalMapper.TypeParser(ExternalMapperPlugin.EXTERNAL, "foo"));
         mapperParsers.put(TextFieldMapper.CONTENT_TYPE, new TextFieldMapper.TypeParser());
         mapperParsers.put(KeywordFieldMapper.CONTENT_TYPE, new KeywordFieldMapper.TypeParser());
-        MapperRegistry mapperRegistry = new MapperRegistry(mapperParsers, Collections.emptyMap(), MapperPlugin.NOOP_FIELD_FILTER);
+        MapperRegistry mapperRegistry = new MapperRegistry(mapperParsers, Collections.emptyMap(), MapperPlugin.NOOP_FIELD_FILTER, Collections.emptyMap());
 
         Supplier<QueryShardContext> queryShardContext = () -> {
             return indexService.newQueryShardContext(0, null, () -> { throw new UnsupportedOperationException(); }, null);
@@ -178,7 +178,7 @@ public class ExternalFieldMapperTests extends ESSingleNodeTestCase {
         mapperParsers.put(ExternalMapperPlugin.EXTERNAL, new ExternalMapper.TypeParser(ExternalMapperPlugin.EXTERNAL, "foo"));
         mapperParsers.put(ExternalMapperPlugin.EXTERNAL_BIS, new ExternalMapper.TypeParser(ExternalMapperPlugin.EXTERNAL, "bar"));
         mapperParsers.put(TextFieldMapper.CONTENT_TYPE, new TextFieldMapper.TypeParser());
-        MapperRegistry mapperRegistry = new MapperRegistry(mapperParsers, Collections.emptyMap(), MapperPlugin.NOOP_FIELD_FILTER);
+        MapperRegistry mapperRegistry = new MapperRegistry(mapperParsers, Collections.emptyMap(), MapperPlugin.NOOP_FIELD_FILTER, Collections.emptyMap());
 
         Supplier<QueryShardContext> queryShardContext = () -> {
             return indexService.newQueryShardContext(0, null, () -> { throw new UnsupportedOperationException(); }, null);

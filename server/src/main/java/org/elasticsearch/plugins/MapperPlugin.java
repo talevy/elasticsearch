@@ -23,9 +23,11 @@ import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MetadataFieldMapper;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * An extension point for {@link Plugin} implementations to add custom mappers
@@ -62,6 +64,13 @@ public interface MapperPlugin {
      */
     default Function<String, Predicate<String>> getFieldFilter() {
         return NOOP_FIELD_FILTER;
+    }
+
+    /**
+     * Returns dynamic multifield mappings for existing mapping field types
+     */
+    default Map<String, List<Supplier<Mapper.Builder>>> getMultifieldMappers() {
+        return Collections.emptyMap();
     }
 
     /**

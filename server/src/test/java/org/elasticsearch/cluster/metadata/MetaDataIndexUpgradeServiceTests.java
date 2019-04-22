@@ -121,7 +121,7 @@ public class MetaDataIndexUpgradeServiceTests extends ESTestCase {
 
     public void testPluginUpgrade() {
         MetaDataIndexUpgradeService service = new MetaDataIndexUpgradeService(Settings.EMPTY, xContentRegistry(),
-            new MapperRegistry(Collections.emptyMap(), Collections.emptyMap(), MapperPlugin.NOOP_FIELD_FILTER),
+            new MapperRegistry(Collections.emptyMap(), Collections.emptyMap(), MapperPlugin.NOOP_FIELD_FILTER, Collections.emptyMap()),
                 IndexScopedSettings.DEFAULT_SCOPED_SETTINGS, Collections.singletonList(
                         indexMetaData -> IndexMetaData.builder(indexMetaData).settings(
                             Settings.builder()
@@ -138,7 +138,7 @@ public class MetaDataIndexUpgradeServiceTests extends ESTestCase {
 
     public void testPluginUpgradeFailure() {
         MetaDataIndexUpgradeService service = new MetaDataIndexUpgradeService(Settings.EMPTY, xContentRegistry(),
-            new MapperRegistry(Collections.emptyMap(), Collections.emptyMap(), MapperPlugin.NOOP_FIELD_FILTER),
+            new MapperRegistry(Collections.emptyMap(), Collections.emptyMap(), MapperPlugin.NOOP_FIELD_FILTER, Collections.emptyMap()),
                 IndexScopedSettings.DEFAULT_SCOPED_SETTINGS, Collections.singletonList(
                     indexMetaData -> {
                         throw new IllegalStateException("Cannot upgrade index " + indexMetaData.getIndex().getName());
@@ -154,7 +154,7 @@ public class MetaDataIndexUpgradeServiceTests extends ESTestCase {
         return new MetaDataIndexUpgradeService(
             Settings.EMPTY,
             xContentRegistry(),
-            new MapperRegistry(Collections.emptyMap(), Collections.emptyMap(), MapperPlugin.NOOP_FIELD_FILTER),
+            new MapperRegistry(Collections.emptyMap(), Collections.emptyMap(), MapperPlugin.NOOP_FIELD_FILTER, Collections.emptyMap()),
             IndexScopedSettings.DEFAULT_SCOPED_SETTINGS,
             Collections.emptyList());
     }

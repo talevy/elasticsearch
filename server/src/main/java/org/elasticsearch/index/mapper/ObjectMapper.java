@@ -37,12 +37,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class ObjectMapper extends Mapper implements Cloneable {
     private static final DeprecationLogger deprecationLogger = new DeprecationLogger(LogManager.getLogger(ObjectMapper.class));
@@ -278,6 +280,13 @@ public class ObjectMapper extends Mapper implements Cloneable {
                         ObjectMapper.Builder<?, ?> intermediate = new ObjectMapper.Builder<>(fieldNameParts[i]);
                         intermediate.add(fieldBuilder);
                         fieldBuilder = intermediate;
+                    }
+                    // TODO(talevy): add multifields here?
+                    if (fieldBuilder instanceof FieldMapper.Builder) {
+                        for (Supplier<Mapper.Builder> newMultifield : parserContext.mapperService().mapperRegistry.multiFieldMappers()
+                            .getOrDefault(type, Collections.emptyList())) {
+                            ((FieldMapper.Builder) fieldBuilder).addMultiField(newMultifield.get());
+                        }
                     }
                     objBuilder.add(fieldBuilder);
                     propNode.remove("type");

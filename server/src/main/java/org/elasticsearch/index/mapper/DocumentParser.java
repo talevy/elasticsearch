@@ -20,6 +20,7 @@
 package org.elasticsearch.index.mapper;
 
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.FieldType;
 import org.apache.lucene.index.IndexableField;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.common.Strings;
@@ -485,6 +486,7 @@ final class DocumentParser {
         } else if (mapper instanceof FieldMapper) {
             FieldMapper fieldMapper = (FieldMapper) mapper;
             fieldMapper.parse(context);
+            // TODO(talevy): search mapperservice for stuff
             parseCopyFields(context, fieldMapper.copyTo().copyToFields());
         } else if (mapper instanceof FieldAliasMapper) {
             throw new IllegalArgumentException("Cannot write to a field alias [" + mapper.name() + "].");
@@ -678,6 +680,7 @@ final class DocumentParser {
             }
             builder = typeParser.parse(currentFieldName, new HashMap<>(), parserContext);
         }
+
         return builder;
     }
 

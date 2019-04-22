@@ -27,9 +27,11 @@ import org.elasticsearch.plugins.MapperPlugin;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * A registry for all field mappers.
@@ -39,11 +41,13 @@ public final class MapperRegistry {
     private final Map<String, Mapper.TypeParser> mapperParsers;
     private final Map<String, MetadataFieldMapper.TypeParser> metadataMapperParsers;
     private final Map<String, MetadataFieldMapper.TypeParser> metadataMapperParsers6x;
+    private final Map<String, List<Supplier<Mapper.Builder>>> multiFieldMappers;
     private final Function<String, Predicate<String>> fieldFilter;
 
 
     public MapperRegistry(Map<String, Mapper.TypeParser> mapperParsers,
-            Map<String, MetadataFieldMapper.TypeParser> metadataMapperParsers, Function<String, Predicate<String>> fieldFilter) {
+                          Map<String, MetadataFieldMapper.TypeParser> metadataMapperParsers,
+                          Function<String, Predicate<String>> fieldFilter, Map<String, List<Supplier<Mapper.Builder>>> multiFieldMappers) {
         this.mapperParsers = Collections.unmodifiableMap(new LinkedHashMap<>(mapperParsers));
         this.metadataMapperParsers = Collections.unmodifiableMap(new LinkedHashMap<>(metadataMapperParsers));
         // add the _all field mapper for indices created in 6x
@@ -52,6 +56,7 @@ public final class MapperRegistry {
         metadata6x.putAll(metadataMapperParsers);
         this.metadataMapperParsers6x = Collections.unmodifiableMap(metadata6x);
         this.fieldFilter = fieldFilter;
+        this.multiFieldMappers = multiFieldMappers;
     }
 
     /**
@@ -86,5 +91,13 @@ public final class MapperRegistry {
      */
     public Function<String, Predicate<String>> getFieldFilter() {
         return fieldFilter;
+    }
+
+    /**
+     * Returns a map of the multifield mappers that have been registered. The
+     * returned map uses the name of the field-type as a key
+     */
+    public Map<String, List<Supplier<Mapper.Builder>>> multiFieldMappers() {
+        return multiFieldMappers;
     }
 }
