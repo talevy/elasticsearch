@@ -22,6 +22,8 @@ package org.elasticsearch.plugin.wordcount;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.elasticsearch.index.mapper.Mapper;
@@ -40,6 +42,11 @@ public class WordCountPlugin extends Plugin implements MapperPlugin, SearchPlugi
         return Collections.singletonMap(WordCountFieldMapper.CONTENT_TYPE, new WordCountFieldMapper.TypeParser());
     }
 
+    public Function<String, Predicate<String>> getFieldFilter() {
+        return index -> field -> !field.contains(WORDCOUNT_FIELD);
+    }
+
+    @SuppressWarnings("rawtypes")
     public Map<String, List<Supplier<Mapper.Builder>>> getMultifieldMappers() {
         return Collections.singletonMap(TextFieldMapper.CONTENT_TYPE,
             Collections.singletonList(() -> new WordCountFieldMapper.Builder(WORDCOUNT_FIELD)));

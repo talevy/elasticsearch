@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.plugin.wordcount;
 
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -54,5 +55,8 @@ public class WordCountIT extends ESIntegTestCase {
             .addAggregation(new WordCountSumAggregationBuilder("word_count").field("body")).get();
         InternalSum agg = searchResponse.getAggregations().get("word_count");
         assertThat(agg.value(), equalTo(4.0));
+
+        GetMappingsResponse e = client().admin().indices().prepareGetMappings("test").get();
+        e.getMappings();
     }
 }
