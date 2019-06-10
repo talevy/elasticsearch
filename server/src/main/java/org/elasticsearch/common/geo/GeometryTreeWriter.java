@@ -104,7 +104,8 @@ public class GeometryTreeWriter implements Writeable {
 
         @Override
         public Void visit(Line line) {
-            throw new UnsupportedOperationException("support for Line is a TODO");
+            addWriter(new EdgeTreeWriter(asIntArray(line.getLons()), asIntArray(line.getLats())));
+            return null;
         }
 
         @Override
@@ -153,7 +154,7 @@ public class GeometryTreeWriter implements Writeable {
 
         @Override
         public Void visit(LinearRing ring) {
-            throw new IllegalArgumentException("invalid shape type found [Circle]");
+            throw new IllegalArgumentException("invalid shape type found [LinearRing]");
         }
 
         @Override

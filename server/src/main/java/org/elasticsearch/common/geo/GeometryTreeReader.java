@@ -47,13 +47,20 @@ public class GeometryTreeReader {
             return new Extent(input);
         }
         assert input.readVInt() == 1;
+        final EdgeTreeReader reader;
         ShapeType shapeType = input.readEnum(ShapeType.class);
-        if (ShapeType.POLYGON.equals(shapeType)) {
-            EdgeTreeReader reader = new EdgeTreeReader(input);
-            return reader.getExtent();
-        } else {
-            throw new UnsupportedOperationException("only polygons supported -- TODO");
+        switch (shapeType) {
+            case POLYGON:
+                // TODO: user to-be polygonTreeReader...
+                reader = new EdgeTreeReader.LinearRingEdgeTreeReader(input);
+                break;
+            case LINESTRING:
+                reader = new EdgeTreeReader.LineEdgeTreeReader(input);
+                break;
+            default:
+                throw new UnsupportedOperationException("unsupported shape-type [" + shapeType + "]");
         }
+        return reader.getExtent();
     }
 
     public boolean containedInOrCrosses(int minLon, int minLat, int maxLon, int maxLat) throws IOException {
@@ -69,12 +76,20 @@ public class GeometryTreeReader {
 
         int numTrees = input.readVInt();
         for (int i = 0; i < numTrees; i++) {
+            final EdgeTreeReader reader;
             ShapeType shapeType = input.readEnum(ShapeType.class);
-            if (ShapeType.POLYGON.equals(shapeType)) {
-                EdgeTreeReader reader = new EdgeTreeReader(input);
-                if (reader.containedInOrCrosses(minLon, minLat, maxLon, maxLat)) {
-                    return true;
-                }
+            switch (shapeType) {
+                case POLYGON:
+                    reader = new EdgeTreeReader.LinearRingEdgeTreeReader(input);
+                    break;
+                case LINESTRING:
+                    reader = new EdgeTreeReader.LineEdgeTreeReader(input);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("unsupported shape-type [" + shapeType + "]");
+            }
+            if (reader.containedInOrCrosses(minLon, minLat, maxLon, maxLat)) {
+                return true;
             }
         }
         return false;

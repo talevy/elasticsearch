@@ -26,7 +26,7 @@ import java.util.Optional;
 
 import static org.apache.lucene.geo.GeoUtils.lineCrossesLineWithBoundary;
 
-public class EdgeTreeReader {
+public abstract class EdgeTreeReader {
     final ByteBufferStreamInput input;
     final int startPosition;
 
@@ -43,10 +43,7 @@ public class EdgeTreeReader {
     /**
      * Returns true if the rectangle query and the edge tree's shape overlap
      */
-    public boolean containedInOrCrosses(int minX, int minY, int maxX, int maxY) throws IOException {
-        Extent extent = new Extent(minX, minY, maxX, maxY);
-        return this.containsBottomLeft(extent) || this.crosses(extent);
-    }
+    public abstract boolean containedInOrCrosses(int minX, int minY, int maxX, int maxY) throws IOException;
 
     static Optional<Boolean> checkExtent(StreamInput input, Extent extent) throws IOException {
         Extent edgeExtent = new Extent(input);
@@ -61,17 +58,6 @@ public class EdgeTreeReader {
             return Optional.of(true); // bbox-query fully contains tree's extent.
         }
         return Optional.empty();
-    }
-
-    boolean containsBottomLeft(Extent extent) throws IOException {
-        resetInputPosition();
-
-        Optional<Boolean> extentCheck = checkExtent(input, extent);
-        if (extentCheck.isPresent()) {
-            return extentCheck.get();
-        }
-
-        return containsBottomLeft(readRoot(input.position()), extent);
     }
 
     public boolean crosses(Extent extent) throws IOException {
@@ -101,7 +87,6 @@ public class EdgeTreeReader {
         return new Edge(input.position(), x1, y1, x2, y2, minY, maxY, rightOffset);
     }
 
-
     Edge readLeft(Edge root) throws IOException {
         return readEdge(root.streamOffset);
     }
@@ -110,29 +95,6 @@ public class EdgeTreeReader {
         return readEdge(root.streamOffset + root.rightOffset);
     }
 
-    /**
-     * Returns true if the bottom-left point of the rectangle query is contained within the
-     * tree's edges.
-     */
-    private boolean containsBottomLeft(Edge root, Extent extent) throws IOException {
-        boolean res = false;
-        if (root.maxY >= extent.minY) {
-            // is bbox-query contained within linearRing
-            // cast infinite ray to the right from bottom-left of bbox-query to see if it intersects edge
-            if (lineCrossesLineWithBoundary(root.x1, root.y1, root.x2, root.y2, extent.minX, extent.minY, Integer.MAX_VALUE, extent.minY)) {
-                res = true;
-            }
-
-            if (root.rightOffset > 0) { /* has left node */
-                res ^= containsBottomLeft(readLeft(root), extent);
-            }
-
-            if (root.rightOffset > 0 && extent.maxY >= root.minY) { /* no right node if rightOffset == -1 */
-                res ^= containsBottomLeft(readRight(root), extent);
-            }
-        }
-        return res;
-    }
 
     /**
      * Returns true if the box crosses any edge in this edge subtree
@@ -165,8 +127,70 @@ public class EdgeTreeReader {
         return false;
     }
 
-    private void resetInputPosition() throws IOException {
+    protected void resetInputPosition() throws IOException {
         input.position(startPosition);
+    }
+
+    public static final class LineEdgeTreeReader extends EdgeTreeReader {
+
+        public LineEdgeTreeReader(ByteBufferStreamInput input) throws IOException {
+            super(input);
+        }
+
+        @Override
+        public boolean containedInOrCrosses(int minX, int minY, int maxX, int maxY) throws IOException {
+            return crosses(new Extent(minX, minY, maxX, maxY));
+        }
+    }
+
+    public static final class LinearRingEdgeTreeReader extends EdgeTreeReader {
+
+        public LinearRingEdgeTreeReader(ByteBufferStreamInput input) throws IOException {
+            super(input);
+        }
+
+        /**
+         * Returns true if the rectangle query and the edge tree's shape overlap
+         */
+        public boolean containedInOrCrosses(int minX, int minY, int maxX, int maxY) throws IOException {
+            Extent extent = new Extent(minX, minY, maxX, maxY);
+            return this.containsBottomLeft(extent) || this.crosses(extent);
+        }
+
+        boolean containsBottomLeft(Extent extent) throws IOException {
+            resetInputPosition();
+
+            Optional<Boolean> extentCheck = checkExtent(input, extent);
+            if (extentCheck.isPresent()) {
+                return extentCheck.get();
+            }
+
+            return containsBottomLeft(readRoot(input.position()), extent);
+        }
+
+        /**
+         * Returns true if the bottom-left point of the rectangle query is contained within the
+         * tree's edges.
+         */
+        private boolean containsBottomLeft(Edge root, Extent extent) throws IOException {
+            boolean res = false;
+            if (root.maxY >= extent.minY) {
+                // is bbox-query contained within linearRing
+                // cast infinite ray to the right from bottom-left of bbox-query to see if it intersects edge
+                if (lineCrossesLineWithBoundary(root.x1, root.y1, root.x2, root.y2, extent.minX, extent.minY, Integer.MAX_VALUE, extent.minY)) {
+                    res = true;
+                }
+
+                if (root.rightOffset > 0) { /* has left node */
+                    res ^= containsBottomLeft(readLeft(root), extent);
+                }
+
+                if (root.rightOffset > 0 && extent.maxY >= root.minY) { /* no right node if rightOffset == -1 */
+                    res ^= containsBottomLeft(readRight(root), extent);
+                }
+            }
+            return res;
+        }
     }
 
     private static final class Edge {

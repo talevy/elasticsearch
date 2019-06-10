@@ -69,7 +69,6 @@ public class EdgeTreeWriter implements Writeable {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        //out.writeVInt(4 * 4 + EDGE_SIZE_IN_BYTES * tree.size);
         extent.writeTo(out);
         tree.writeTo(out);
     }
