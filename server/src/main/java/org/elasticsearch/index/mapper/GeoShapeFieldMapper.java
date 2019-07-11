@@ -283,11 +283,11 @@ public class GeoShapeFieldMapper extends BaseGeoShapeFieldMapper {
         }
     }
 
-    static class BinaryGeoShapeDocValuesField extends CustomDocValuesField {
+    public static class BinaryGeoShapeDocValuesField extends CustomDocValuesField {
 
         private List<Geometry> geometries;
 
-        BinaryGeoShapeDocValuesField(String name, Geometry geometry) {
+        public BinaryGeoShapeDocValuesField(String name, Geometry geometry) {
             super(name);
             this.geometries = new ArrayList<>(1);
             add(geometry);

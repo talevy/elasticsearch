@@ -41,7 +41,7 @@ final class GeoBoundsAggregator extends MetricsAggregator {
 
     static final ParseField WRAP_LONGITUDE_FIELD = new ParseField("wrap_longitude");
 
-    private final ValuesSource.GeoPoint valuesSource;
+    private final ValuesSource.Geo valuesSource;
     private final boolean wrapLongitude;
     DoubleArray tops;
     DoubleArray bottoms;
@@ -51,7 +51,7 @@ final class GeoBoundsAggregator extends MetricsAggregator {
     DoubleArray negRights;
 
     GeoBoundsAggregator(String name, SearchContext aggregationContext, Aggregator parent,
-            ValuesSource.GeoPoint valuesSource, boolean wrapLongitude, List<PipelineAggregator> pipelineAggregators,
+            ValuesSource.Geo valuesSource, boolean wrapLongitude, List<PipelineAggregator> pipelineAggregators,
             Map<String, Object> metaData) throws IOException {
         super(name, aggregationContext, parent, pipelineAggregators, metaData);
         this.valuesSource = valuesSource;
@@ -106,29 +106,41 @@ final class GeoBoundsAggregator extends MetricsAggregator {
                     for (int i = 0; i < valuesCount; ++i) {
                         MultiGeoValues.GeoValue value = values.nextValue();
 
+                        if (valuesCount == 1) {
+                            System.out.println("HERE");
+                            System.out.println("[" + value.minLon() + "," + value.maxLat() + "], [" + value.maxLon() + "," + value.minLat() + "]");
+                        }
+
                         double top = tops.get(bucket);
-                        if (value.lat() > top) {
-                            top = value.lat();
+                        if (value.maxLat() > top) {
+                            top = value.maxLat();
+                        }
+                        if (value.minLat() > top) {
+                            top = value.minLat();
                         }
                         double bottom = bottoms.get(bucket);
-                        if (value.lat() < bottom) {
-                            bottom = value.lat();
+                        if (value.minLat() < bottom) {
+                            bottom = value.minLat();
                         }
+                        if (value.maxLat() < bottom) {
+                            bottom = value.maxLat();
+                        }
+
                         double posLeft = posLefts.get(bucket);
-                        if (value.lon() >= 0 && value.lon() < posLeft) {
-                            posLeft = value.lon();
+                        if (value.minLon() >= 0 && value.minLon() < posLeft) {
+                            posLeft = value.minLon();
                         }
                         double posRight = posRights.get(bucket);
-                        if (value.lon() >= 0 && value.lon() > posRight) {
-                            posRight = value.lon();
+                        if (value.maxLon() >= 0 && value.maxLon() > posRight) {
+                            posRight = value.maxLon();
                         }
                         double negLeft = negLefts.get(bucket);
-                        if (value.lon() < 0 && value.lon() < negLeft) {
-                            negLeft = value.lon();
+                        if (value.minLon() < 0 && value.minLon() < negLeft) {
+                            negLeft = value.minLon();
                         }
                         double negRight = negRights.get(bucket);
-                        if (value.lon() < 0 && value.lon() > negRight) {
-                            negRight = value.lon();
+                        if (value.maxLon() < 0 && value.maxLon() > negRight) {
+                            negRight = value.maxLon();
                         }
                         tops.set(bucket, top);
                         bottoms.set(bucket, bottom);

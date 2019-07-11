@@ -51,9 +51,9 @@ public class Point2DWriter extends ShapeTreeWriter {
             int x = GeoEncodingUtils.encodeLongitude(point.getLon());
             int y = GeoEncodingUtils.encodeLatitude(point.getLat());
             minX = Math.min(minX, x);
+            maxY = Math.max(maxY, y);
             minY = Math.min(minY, y);
             maxX = Math.max(maxX, x);
-            maxY = Math.max(maxY, y);
             coords[2 * i] = x;
             coords[2 * i + 1] = y;
             i++;

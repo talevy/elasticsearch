@@ -73,6 +73,50 @@ public class GeometryTreeReader {
         return false;
     }
 
+    public Iterator iterator() throws IOException {
+        return new Iterator(input);
+    }
+
+    public static class Iterator implements Iterable<ShapeTreeReader> {
+
+        ByteBufferStreamInput input;
+        int numTrees;
+        int i;
+
+        protected Iterator(ByteBufferStreamInput input) throws IOException {
+            this.input = input;
+            input.position(0);
+            boolean hasExtent = input.readBoolean();
+            if (hasExtent) {
+                new Extent(input);
+            }
+            this.numTrees = input.readVInt();
+            this.i = 1;
+        }
+
+        @Override
+        public java.util.Iterator<ShapeTreeReader> iterator() {
+            return new java.util.Iterator<>() {
+                @Override
+                public boolean hasNext() {
+                    return i < numTrees;
+                }
+
+                @Override
+                public ShapeTreeReader next() {
+                    try {
+                        ShapeType shapeType = input.readEnum(ShapeType.class);
+                        return getReader(shapeType, input);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        i += 1;
+                    }
+                }
+            };
+        }
+    }
+
     private static ShapeTreeReader getReader(ShapeType shapeType, ByteBufferStreamInput input) throws IOException {
         switch (shapeType) {
             case POLYGON:

@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.common.geo;
 
+import org.apache.lucene.geo.GeoEncodingUtils;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.geo.geometry.Circle;
@@ -104,7 +105,7 @@ public class GeometryTreeWriter implements Writeable {
 
         @Override
         public Void visit(Line line) {
-            addWriter(new EdgeTreeWriter(asIntArray(line.getLons()), asIntArray(line.getLats()), false));
+            addWriter(new EdgeTreeWriter(asEncodedLonArray(line.getLons()), asEncodedLatArray(line.getLats()), false));
             return null;
         }
 
@@ -114,8 +115,8 @@ public class GeometryTreeWriter implements Writeable {
             List<int[]> x = new ArrayList<>(size);
             List<int[]> y = new ArrayList<>(size);
             for (Line line : multiLine) {
-                x.add(asIntArray(line.getLons()));
-                y.add(asIntArray(line.getLats()));
+                x.add(asEncodedLonArray(line.getLons()));
+                y.add(asEncodedLatArray(line.getLats()));
             }
             addWriter(new EdgeTreeWriter(x, y, false));
             return null;
@@ -125,7 +126,7 @@ public class GeometryTreeWriter implements Writeable {
         public Void visit(Polygon polygon) {
             // TODO (support holes)
             LinearRing outerShell = polygon.getPolygon();
-            addWriter(new EdgeTreeWriter(asIntArray(outerShell.getLons()), asIntArray(outerShell.getLats()), true));
+            addWriter(new EdgeTreeWriter(asEncodedLonArray(outerShell.getLons()), asEncodedLatArray(outerShell.getLats()), true));
             return null;
         }
 
@@ -139,10 +140,12 @@ public class GeometryTreeWriter implements Writeable {
 
         @Override
         public Void visit(Rectangle r) {
-            int[] lats = new int[] { (int) r.getMinLat(), (int) r.getMinLat(), (int) r.getMaxLat(), (int) r.getMaxLat(),
-                (int) r.getMinLat()};
-            int[] lons = new int[] { (int) r.getMinLon(), (int) r.getMaxLon(), (int) r.getMaxLon(), (int) r.getMinLon(),
-                (int) r.getMinLon()};
+            int minLat = GeoEncodingUtils.encodeLatitude(r.getMinLat());
+            int maxLat = GeoEncodingUtils.encodeLatitude(r.getMinLat());
+            int minLon = GeoEncodingUtils.encodeLongitude(r.getMinLon());
+            int maxLon = GeoEncodingUtils.encodeLongitude(r.getMaxLon());
+            int[] lats = new int[] { minLat, maxLat, maxLat, minLat };
+            int[] lons = new int[] { minLon, maxLon, maxLon, minLon };
             addWriter(new EdgeTreeWriter(lons, lats, true));
             return null;
         }
@@ -171,10 +174,18 @@ public class GeometryTreeWriter implements Writeable {
             throw new IllegalArgumentException("invalid shape type found [Circle]");
         }
 
-        private int[] asIntArray(double[] doub) {
+        private int[] asEncodedLonArray(double[] doub) {
             int[] intArr = new int[doub.length];
             for (int i = 0; i < intArr.length; i++) {
-                intArr[i] = (int) doub[i];
+                intArr[i] = GeoEncodingUtils.encodeLongitude(doub[i]);
+            }
+            return intArr;
+        }
+
+        private int[] asEncodedLatArray(double[] doub) {
+            int[] intArr = new int[doub.length];
+            for (int i = 0; i < intArr.length; i++) {
+                intArr[i] = GeoEncodingUtils.encodeLatitude(doub[i]);
             }
             return intArr;
         }
