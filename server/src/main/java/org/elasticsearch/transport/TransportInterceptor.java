@@ -20,6 +20,7 @@
 package org.elasticsearch.transport;
 
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.common.io.stream.Writeable;
 
 import java.util.function.Supplier;
 
@@ -29,8 +30,7 @@ import java.util.function.Supplier;
 public interface TransportInterceptor {
     /**
      * This is called for each handler that is registered via
-     * {@link TransportService#registerRequestHandler(String, Supplier, String, boolean, boolean, TransportRequestHandler)} or
-     * {@link TransportService#registerRequestHandler(String, Supplier, String, TransportRequestHandler)}. The returned handler is
+     * {@link TransportService#registerRequestHandler(String, String, Writeable.Reader, TransportRequestHandler)}. The returned handler is
      * used instead of the passed in handler. By default the provided handler is returned.
      */
     default <T extends TransportRequest> TransportRequestHandler<T> interceptHandler(String action, String executor,
