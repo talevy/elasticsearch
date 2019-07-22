@@ -1,0 +1,286 @@
+[role="xpack"]
+[testenv="basic"]
+[[circle-processor]]
+=== Circle Processor
+
+[[using-ingest-circle]]
+==== Using the `circle` Processor in a Pipeline
+
+[[ingest-circle-options]]
+.`circle` options
+[options="header"]
+|======
+| Name                   | Required  | Default      | Description
+| `field`                | yes       | -            | The field to extract the circle shape from.
+| `target_field`         | no        | geoip        | The field that will hold a polygon representation of the circle.
+| `ignore_missing`       | no        | `false`      | If `true` and `field` does not exist, the processor quietly exits without modifying the document
+| `error_in_meters`      | no        | 0.1          |
+| `max_sides`            | no        | 500          |
+|======
+
+
+[source,js]
+--------------------------------------------------
+PUT _ingest/pipeline/circle
+{
+  "description" : "Add geoip info",
+  "processors" : [
+    {
+      "geoip" : {
+        "field" : "ip"
+      }
+    }
+  ]
+}
+PUT my_index/_doc/my_id?pipeline=geoip
+{
+  "ip": "8.8.8.8"
+}
+GET my_index/_doc/my_id
+--------------------------------------------------
+// CONSOLE
+
+Which returns:
+
+[source,js]
+--------------------------------------------------
+{
+  "found": true,
+  "_index": "my_index",
+  "_type": "_doc",
+  "_id": "my_id",
+  "_version": 1,
+  "_seq_no": 55,
+  "_primary_term": 1,
+  "_source": {
+    "ip": "8.8.8.8",
+    "geoip": {
+      "continent_name": "North America",
+      "country_iso_code": "US",
+      "location": { "lat": 37.751, "lon": -97.822 }
+    }
+  }
+}
+--------------------------------------------------
+// TESTRESPONSE[s/"_seq_no": \d+/"_seq_no" : $body._seq_no/ s/"_primary_term":1/"_primary_term" : $body._primary_term/]
+
+Here is an example that uses the default country database and adds the
+geographical information to the `geo` field based on the `ip` field`. Note that
+this database is included in the module. So this:
+
+[source,js]
+--------------------------------------------------
+PUT _ingest/pipeline/geoip
+{
+  "description" : "Add geoip info",
+  "processors" : [
+    {
+      "geoip" : {
+        "field" : "ip",
+        "target_field" : "geo",
+        "database_file" : "GeoLite2-Country.mmdb"
+      }
+    }
+  ]
+}
+PUT my_index/_doc/my_id?pipeline=geoip
+{
+  "ip": "8.8.8.8"
+}
+GET my_index/_doc/my_id
+--------------------------------------------------
+// CONSOLE
+
+returns this:
+
+[source,js]
+--------------------------------------------------
+{
+  "found": true,
+  "_index": "my_index",
+  "_type": "_doc",
+  "_id": "my_id",
+  "_version": 1,
+  "_seq_no": 65,
+  "_primary_term": 1,
+  "_source": {
+    "ip": "8.8.8.8",
+    "geo": {
+      "continent_name": "North America",
+      "country_iso_code": "US",
+    }
+  }
+}
+--------------------------------------------------
+// TESTRESPONSE[s/"_seq_no": \d+/"_seq_no" : $body._seq_no/ s/"_primary_term" : 1/"_primary_term" : $body._primary_term/]
+
+
+Not all IP addresses find geo information from the database, When this
+occurs, no `target_field` is inserted into the document.
+
+Here is an example of what documents will be indexed as when information for "80.231.5.0"
+cannot be found:
+
+[source,js]
+--------------------------------------------------
+PUT _ingest/pipeline/geoip
+{
+  "description" : "Add geoip info",
+  "processors" : [
+    {
+      "geoip" : {
+        "field" : "ip"
+      }
+    }
+  ]
+}
+
+PUT my_index/_doc/my_id?pipeline=geoip
+{
+  "ip": "80.231.5.0"
+}
+
+GET my_index/_doc/my_id
+--------------------------------------------------
+// CONSOLE
+
+Which returns:
+
+[source,js]
+--------------------------------------------------
+{
+  "_index" : "my_index",
+  "_type" : "_doc",
+  "_id" : "my_id",
+  "_version" : 1,
+  "_seq_no" : 71,
+  "_primary_term": 1,
+  "found" : true,
+  "_source" : {
+    "ip" : "80.231.5.0"
+  }
+}
+--------------------------------------------------
+// TESTRESPONSE[s/"_seq_no" : \d+/"_seq_no" : $body._seq_no/ s/"_primary_term" : 1/"_primary_term" : $body._primary_term/]
+
+[[ingest-geoip-mappings-note]]
+===== Recognizing Location as a Geopoint
+Although this processor enriches your document with a `location` field containing
+the estimated latitude and longitude of the IP address, this field will not be
+indexed as a {ref}/geo-point.html[`geo_point`] type in Elasticsearch without explicitly defining it
+as such in the mapping.
+
+You can use the following mapping for the example index above:
+
+[source,js]
+--------------------------------------------------
+PUT my_ip_locations
+{
+  "mappings": {
+    "properties": {
+      "geoip": {
+        "properties": {
+          "location": { "type": "geo_point" }
+        }
+      }
+    }
+  }
+}
+--------------------------------------------------
+// CONSOLE
+
+////
+[source,js]
+--------------------------------------------------
+PUT _ingest/pipeline/geoip
+{
+  "description" : "Add geoip info",
+  "processors" : [
+    {
+      "geoip" : {
+        "field" : "ip"
+      }
+    }
+  ]
+}
+
+PUT my_ip_locations/_doc/1?refresh=true&pipeline=geoip
+{
+  "ip": "8.8.8.8"
+}
+
+GET /my_ip_locations/_search
+{
+    "query": {
+        "bool" : {
+            "must" : {
+                "match_all" : {}
+            },
+            "filter" : {
+                "geo_distance" : {
+                    "distance" : "1m",
+                    "geoip.location" : {
+                        "lon" : -97.822,
+                        "lat" : 37.751
+                    }
+                }
+            }
+        }
+    }
+}
+--------------------------------------------------
+// CONSOLE
+// TEST[continued]
+
+[source,js]
+--------------------------------------------------
+{
+  "took" : 3,
+  "timed_out" : false,
+  "_shards" : {
+    "total" : 1,
+    "successful" : 1,
+    "skipped" : 0,
+    "failed" : 0
+  },
+  "hits" : {
+    "total" : {
+      "value": 1,
+      "relation": "eq"
+    },
+    "max_score" : 1.0,
+    "hits" : [
+      {
+        "_index" : "my_ip_locations",
+        "_type" : "_doc",
+        "_id" : "1",
+        "_score" : 1.0,
+        "_source" : {
+          "geoip" : {
+            "continent_name" : "North America",
+            "country_iso_code" : "US",
+            "location" : {
+              "lon" : -97.822,
+              "lat" : 37.751
+            }
+          },
+          "ip" : "8.8.8.8"
+        }
+      }
+    ]
+  }
+}
+--------------------------------------------------
+// TESTRESPONSE[s/"took" : 3/"took" : $body.took/]
+////
+
+[[ingest-geoip-settings]]
+===== Node Settings
+
+The `geoip` processor supports the following setting:
+
+`ingest.geoip.cache_size`::
+
+    The maximum number of results that should be cached. Defaults to `1000`.
+
+Note that these settings are node settings and apply to all `geoip` processors, i.e. there is one cache for all defined `geoip` processors.

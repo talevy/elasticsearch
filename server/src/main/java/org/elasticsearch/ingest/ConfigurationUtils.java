@@ -190,6 +190,26 @@ public final class ConfigurationUtils {
     }
 
     /**
+     * Returns and removes the specified property from the specified configuration map.
+     *
+     * If the property value isn't of type double a {@link ElasticsearchParseException} is thrown.
+     * If the property is missing an {@link ElasticsearchParseException} is thrown
+     */
+    public static Double readDoubleProperty(String processorType, String processorTag, Map<String, Object> configuration,
+                                            String propertyName, Double defaultValue) {
+        Object value = configuration.remove(propertyName);
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            return Double.parseDouble(value.toString());
+        } catch (Exception e) {
+            throw newConfigurationException(processorType, processorTag, propertyName,
+                "property cannot be converted to a double [" + value.toString() + "]");
+        }
+    }
+
+    /**
      * Returns and removes the specified property of type list from the specified configuration map.
      *
      * If the property value isn't of type list an {@link ElasticsearchParseException} is thrown.
