@@ -103,6 +103,8 @@ public class ValuesSourceConfig<VS extends ValuesSource> {
                 config = new ValuesSourceConfig<>(ValuesSourceType.NUMERIC);
             } else if (indexFieldData instanceof IndexGeoPointFieldData) {
                 config = new ValuesSourceConfig<>(ValuesSourceType.GEOPOINT);
+            } else if (indexFieldData instanceof IndexGeoShapeFieldData) {
+                config = new ValuesSourceConfig<>(ValuesSourceType.GEOSHAPE);
             } else {
                 config = new ValuesSourceConfig<>(ValuesSourceType.BYTES);
             }

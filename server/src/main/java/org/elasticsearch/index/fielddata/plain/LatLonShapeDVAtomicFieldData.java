@@ -74,6 +74,7 @@ final class LatLonShapeDVAtomicFieldData extends AbstractAtomicGeoShapeFieldData
                 @Override
                 public GeoValue nextValue() throws IOException {
                     final BytesRef encoded = binaryValues.binaryValue();
+                    // TODO (talevy): re-use object like in LatLonPoint?
                     return new GeoShapeValue(new GeometryTreeReader(encoded));
                 }
             };
