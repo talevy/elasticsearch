@@ -486,11 +486,11 @@ public abstract class ValuesSource {
         }
     }
 
-    public interface Geo {
-        MultiGeoValues geoValues(LeafReaderContext context);
+    public abstract static class Geo extends ValuesSource {
+        public abstract MultiGeoValues geoValues(LeafReaderContext context);
     }
 
-    public abstract static class GeoPoint extends ValuesSource implements Geo {
+    public abstract static class GeoPoint extends Geo {
 
         public static final GeoPoint EMPTY = new GeoPoint() {
 
@@ -531,7 +531,7 @@ public abstract class ValuesSource {
         }
     }
 
-    public abstract static class GeoShape extends ValuesSource implements Geo {
+    public abstract static class GeoShape extends Geo {
 
         public static final GeoShape EMPTY = new GeoShape() {
 
