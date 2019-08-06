@@ -48,7 +48,7 @@ public class Point2DWriter extends ShapeTreeWriter {
         for (int i = 0; i < x.length; i++) {
             int xi = x[i];
             int yi = y[i];
-            top = Math.max(top, xi);
+            top = Math.max(top, yi);
             bottom = Math.min(bottom, yi);
             if (xi >= 0 && xi < posLeft) {
                 posLeft = xi;
