@@ -75,10 +75,12 @@ public abstract class GeoGridAggregator<T extends InternalGeoGrid> extends Bucke
             public void collect(int doc, long bucket) throws IOException {
                 assert bucket == 0;
                 if (values.advanceExact(doc)) {
+                    // docValueCount accounts for values in the array, can be more than than the number of doc-values with shapes
                     final int valuesCount = values.docValueCount();
 
                     long previous = Long.MAX_VALUE;
                     for (int i = 0; i < valuesCount; ++i) {
+                        // TODO (talevy): push CellIdSource logic here
                         final long val = values.nextValue();
                         if (previous != val || i == 0) {
                             long bucketOrdinal = bucketOrds.add(val);

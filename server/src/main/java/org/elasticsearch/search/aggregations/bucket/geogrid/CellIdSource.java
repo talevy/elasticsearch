@@ -28,16 +28,19 @@ import org.elasticsearch.search.aggregations.support.ValuesSource;
 
 import java.io.IOException;
 
+import static org.elasticsearch.search.aggregations.bucket.geogrid.GeoTileUtils.MAX_ZOOM;
+import static org.elasticsearch.search.aggregations.bucket.geogrid.GeoTileUtils.ZOOM_SHIFT;
+
 /**
  * Wrapper class to help convert {@link MultiGeoValues}
  * to numeric long values for bucketing.
  */
 class CellIdSource extends ValuesSource.Numeric {
-    private final ValuesSource.GeoPoint valuesSource;
+    private final Geo valuesSource;
     private final int precision;
     private final GeoPointLongEncoder encoder;
 
-    CellIdSource(GeoPoint valuesSource, int precision, GeoPointLongEncoder encoder) {
+    CellIdSource(Geo valuesSource, int precision, GeoPointLongEncoder encoder) {
         this.valuesSource = valuesSource;
         //different GeoPoints could map to the same or different hashing cells.
         this.precision = precision;
@@ -93,8 +96,36 @@ class CellIdSource extends ValuesSource.Numeric {
             if (geoValues.advanceExact(docId)) {
                 resize(geoValues.docValueCount());
                 for (int i = 0; i < docValueCount(); ++i) {
+                    // TODO(talevy): make more generic for tile/hash
                     MultiGeoValues.GeoValue target = geoValues.nextValue();
-                    values[i] = encoder.encode(target.lon(), target.lat(), precision);
+                    MultiGeoValues.BoundingBox box = target.boundingBox();
+                    org.elasticsearch.common.geo.GeoPoint topLeft = box.topLeft();
+                    org.elasticsearch.common.geo.GeoPoint bottomRight = box.bottomRight();
+                    int[] topLeftTile = GeoTileUtils.parseHash(GeoTileUtils.longEncode(topLeft.getLon(), topLeft.getLat(), precision));
+                    int[] bottomRightTile = GeoTileUtils.parseHash(GeoTileUtils.longEncode(bottomRight.getLon(), bottomRight.getLat(), precision));
+                    int minX = topLeftTile[1];
+                    int minY = topLeftTile[2];
+                    int maxX = bottomRightTile[1];
+                    int maxY = bottomRightTile[2];
+                    int candidateBucketCount = (1 + maxX - minX) * (1 + maxY - minY);
+                    // resize values to contain all matches for a shape
+                    int size = docValueCount();
+                    resize(size + candidateBucketCount);
+
+                    int actualBucketsMatched = 0;
+                    for (int x = minX; x <= maxX; x++) {
+                        for (int y = minY; y <= maxY; y++) {
+                            long hash = ((long) precision << ZOOM_SHIFT) | (x << MAX_ZOOM) | y;
+                            GeoTileUtils.hashToGeoPoint(hash);
+                            if (target.intersects())
+                            values[i + actualBucketsMatched] = hash;
+                            actualBucketsMatched++;
+                        }
+                    }
+
+                    // resize down to actual size
+                    resize(size + (idx - i));
+                    //values[i] = encoder.encode(target.lon(), target.lat(), precision);
                 }
                 sort();
                 return true;

@@ -189,5 +189,41 @@ public abstract class MultiGeoValues {
                 this.posRight = point.lon();
             }
         }
+
+        public GeoPoint topLeft() {
+            if (Double.isInfinite(top)) {
+                return null;
+            } else if (Double.isInfinite(posLeft)) {
+                return new GeoPoint(top, negLeft);
+            } else if (Double.isInfinite(negLeft)) {
+                return new GeoPoint(top, posLeft);
+            } else {
+                double unwrappedWidth = posRight - negLeft;
+                double wrappedWidth = (180 - posLeft) - (-180 - negRight);
+                if (unwrappedWidth <= wrappedWidth) {
+                    return new GeoPoint(top, negLeft);
+                } else {
+                    return new GeoPoint(top, posLeft);
+                }
+            }
+        }
+
+        public GeoPoint bottomRight() {
+            if (Double.isInfinite(top)) {
+                return null;
+            } else if (Double.isInfinite(posLeft)) {
+                return new GeoPoint(bottom, negRight);
+            } else if (Double.isInfinite(negLeft)) {
+                return new GeoPoint(bottom, posRight);
+            } else {
+                double unwrappedWidth = posRight - negLeft;
+                double wrappedWidth = (180 - posLeft) - (-180 - negRight);
+                if (unwrappedWidth <= wrappedWidth) {
+                    return new GeoPoint(bottom, posRight);
+                } else {
+                    return new GeoPoint(bottom, negRight);
+                }
+            }
+        }
     }
 }

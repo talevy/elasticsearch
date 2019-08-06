@@ -55,7 +55,7 @@ final class GeoTileUtils {
     /**
      * Bit position of the zoom value within hash - zoom is stored in the most significant 6 bits of a long number.
      */
-    private static final int ZOOM_SHIFT = MAX_ZOOM * 2;
+    static final int ZOOM_SHIFT = MAX_ZOOM * 2;
 
     /**
      * Bit mask to extract just the lowest 29 bits of a long
