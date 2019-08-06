@@ -30,29 +30,85 @@ import java.util.Objects;
  * {@link GeometryTreeWriter} and {@link EdgeTreeWriter};
  */
 public class Extent implements Writeable {
-    static final int WRITEABLE_SIZE_IN_BYTES = 16;
-    public final int minX;
-    public final int minY;
-    public final int maxX;
-    public final int maxY;
+    static final int WRITEABLE_SIZE_IN_BYTES = 24;
 
-    Extent(int minX, int minY, int maxX, int maxY) {
-        this.minX = minX;
-        this.minY = minY;
-        this.maxX = maxX;
-        this.maxY = maxY;
+    public final int top;
+    public final int bottom;
+    public final int negLeft;
+    public final int negRight;
+    public final int posLeft;
+    public final int posRight;
+
+    Extent(int top, int bottom, int negLeft, int negRight, int posLeft, int posRight) {
+        this.top = top;
+        this.bottom = bottom;
+        this.negLeft = negLeft;
+        this.negRight = negRight;
+        this.posLeft = posLeft;
+        this.posRight = posRight;
+    }
+
+    static Extent fromPoint(int x, int y) {
+        return new Extent(y, y,
+            x < 0 ? x : Integer.MAX_VALUE,
+            x < 0 ? x : Integer.MIN_VALUE,
+            x >= 0 ? x : Integer.MAX_VALUE,
+            x >= 0 ? x : Integer.MIN_VALUE);
+    }
+
+    static Extent fromPoints(int bottomLeftX, int bottomLeftY, int topRightX, int topRightY) {
+        int negLeft = Integer.MAX_VALUE;
+        int negRight = Integer.MIN_VALUE;
+        int posLeft = Integer.MAX_VALUE;
+        int posRight = Integer.MIN_VALUE;
+        if (bottomLeftX < 0 && topRightX < 0) {
+            negLeft = bottomLeftX;
+            negRight = topRightX;
+        } else if (bottomLeftX < 0) {
+            negLeft = negRight = bottomLeftX;
+            posLeft = posRight = topRightX;
+        } else {
+            posLeft = bottomLeftX;
+            posRight = topRightX;
+        }
+        return new Extent(topRightY, bottomLeftY, negLeft, negRight, posLeft, posRight);
     }
 
     Extent(StreamInput input) throws IOException {
-        this(input.readInt(), input.readInt(), input.readInt(), input.readInt());
+        this(input.readInt(), input.readInt(), input.readInt(), input.readInt(), input.readInt(), input.readInt());
     }
+
+    public Extent merge(Extent a, Extent b) {
+        return new Extent(Math.max(a.top, b.top), Math.min(a.bottom, b.bottom),
+            Math.min(a.negLeft, b.negLeft), Math.max(a.negRight, b.negRight),
+            Math.min(a.posLeft, b.posLeft), Math.max(a.posRight, b.posRight));
+    }
+
+    public int minY() {
+        return bottom;
+    }
+
+    public int maxY() {
+        return top;
+    }
+
+    public int minX() {
+        return Math.min(negLeft, posLeft);
+    }
+
+    public int maxX() {
+        return Math.max(negRight, posRight);
+    }
+
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeInt(minX);
-        out.writeInt(minY);
-        out.writeInt(maxX);
-        out.writeInt(maxY);
+        out.writeInt(top);
+        out.writeInt(bottom);
+        out.writeInt(negLeft);
+        out.writeInt(negRight);
+        out.writeInt(posLeft);
+        out.writeInt(posRight);
     }
 
     @Override
@@ -60,14 +116,16 @@ public class Extent implements Writeable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Extent extent = (Extent) o;
-        return minX == extent.minX &&
-            minY == extent.minY &&
-            maxX == extent.maxX &&
-            maxY == extent.maxY;
+        return top == extent.top &&
+            bottom == extent.bottom &&
+            negLeft == extent.negLeft &&
+            negRight == extent.negRight &&
+            posLeft == extent.posLeft &&
+            posRight == extent.posRight;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(minX, minY, maxX, maxY);
+        return Objects.hash(top, bottom, negLeft, negRight, posLeft, posRight);
     }
 }
