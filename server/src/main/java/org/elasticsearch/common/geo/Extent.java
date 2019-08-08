@@ -30,7 +30,7 @@ import java.util.Objects;
  * {@link GeometryTreeWriter} and {@link EdgeTreeWriter}.
  */
 public class Extent implements Writeable {
-    static final int WRITEABLE_SIZE_IN_BYTES = 24;
+    static final int WRITEABLE_SIZE_IN_BYTES = 32;
 
     public final int top;
     public final int bottom;
@@ -38,18 +38,23 @@ public class Extent implements Writeable {
     public final int negRight;
     public final int posLeft;
     public final int posRight;
+    public final int centroidX;
+    public final int centroidY;
 
-    Extent(int top, int bottom, int negLeft, int negRight, int posLeft, int posRight) {
+    Extent(int top, int bottom, int negLeft, int negRight, int posLeft, int posRight, int centroidX, int centroidY) {
         this.top = top;
         this.bottom = bottom;
         this.negLeft = negLeft;
         this.negRight = negRight;
         this.posLeft = posLeft;
         this.posRight = posRight;
+        this.centroidX = centroidX;
+        this.centroidY = centroidY;
     }
 
     Extent(StreamInput input) throws IOException {
-        this(input.readInt(), input.readInt(), input.readInt(), input.readInt(), input.readInt(), input.readInt());
+        this(input.readInt(), input.readInt(), input.readInt(), input.readInt(), input.readInt(),
+            input.readInt(), input.readInt(), input.readInt());
     }
 
     /**
@@ -63,7 +68,7 @@ public class Extent implements Writeable {
             x < 0 ? x : Integer.MAX_VALUE,
             x < 0 ? x : Integer.MIN_VALUE,
             x >= 0 ? x : Integer.MAX_VALUE,
-            x >= 0 ? x : Integer.MIN_VALUE);
+            x >= 0 ? x : Integer.MIN_VALUE,x, y);
     }
 
     /**
@@ -92,7 +97,9 @@ public class Extent implements Writeable {
             posLeft = bottomLeftX;
             posRight = topRightX;
         }
-        return new Extent(topRightY, bottomLeftY, negLeft, negRight, posLeft, posRight);
+        int centroidX = (bottomLeftX + topRightX) / 2;
+        int centroidY = (bottomLeftY + topRightY) / 2;
+        return new Extent(topRightY, bottomLeftY, negLeft, negRight, posLeft, posRight, centroidX, centroidY);
     }
 
     /**
@@ -132,6 +139,8 @@ public class Extent implements Writeable {
         out.writeInt(negRight);
         out.writeInt(posLeft);
         out.writeInt(posRight);
+        out.writeInt(centroidX);
+        out.writeInt(centroidY);
     }
 
     @Override
@@ -144,11 +153,13 @@ public class Extent implements Writeable {
             negLeft == extent.negLeft &&
             negRight == extent.negRight &&
             posLeft == extent.posLeft &&
-            posRight == extent.posRight;
+            posRight == extent.posRight &&
+            centroidX == extent.centroidX &&
+            centroidY == extent.centroidY;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(top, bottom, negLeft, negRight, posLeft, posRight);
+        return Objects.hash(top, bottom, negLeft, negRight, posLeft, posRight, centroidX, centroidY);
     }
 }

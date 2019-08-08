@@ -48,6 +48,11 @@ public class PolygonTreeWriter extends ShapeTreeWriter {
     }
 
     @Override
+    public int numPoints() {
+        return outerShell.numPoints();
+    }
+
+    @Override
     public void writeTo(StreamOutput out) throws IOException {
         // calculate size of outerShell's tree to make it easy to jump to the holes tree quickly when querying
         int size = outerShell.tree.size * EdgeTreeWriter.EDGE_SIZE_IN_BYTES + Extent.WRITEABLE_SIZE_IN_BYTES + 1;

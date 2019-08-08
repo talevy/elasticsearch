@@ -39,6 +39,7 @@ public class EdgeTreeWriter extends ShapeTreeWriter {
 
     private final Extent extent;
     private final int numShapes;
+    private final int numPoints;
     final Edge tree;
 
 
@@ -58,13 +59,19 @@ public class EdgeTreeWriter extends ShapeTreeWriter {
         int negRight = Integer.MIN_VALUE;
         int posLeft = Integer.MAX_VALUE;
         int posRight = Integer.MIN_VALUE;
+        int cumsumX = 0;
+        int cumsumY = 0;
+        int numPoints = 0;
         List<Edge> edges = new ArrayList<>();
         for (int i = 0; i < y.size(); i++) {
-            for (int j = 1; j < y.get(i).length; j++) {
-                int y1 = y.get(i)[j - 1];
-                int x1 = x.get(i)[j - 1];
-                int y2 = y.get(i)[j];
-                int x2 = x.get(i)[j];
+            int[] xi = x.get(i);
+            int[] yi = y.get(i);
+            boolean openLinearRing = xi[0] != xi[xi.length - 1] && yi[0] != yi[yi.length - 1];
+            for (int j = 1; j < yi.length; j++) {
+                int y1 = yi[j - 1];
+                int x1 = xi[j - 1];
+                int y2 = yi[j];
+                int x2 = xi[j];
                 int edgeMinY, edgeMaxY;
                 if (y1 < y2) {
                     edgeMinY = y1;
@@ -74,6 +81,16 @@ public class EdgeTreeWriter extends ShapeTreeWriter {
                     edgeMaxY = y1;
                 }
                 edges.add(new Edge(x1, y1, x2, y2, edgeMinY, edgeMaxY));
+
+                if (j < yi.length - 1 || (openLinearRing && j == yi.length - 1)) {
+                    cumsumX += x1 + x2;
+                    cumsumY += y1 + y2;
+                    numPoints += 2;
+                } else if (openLinearRing == false && j == 1) {
+                    cumsumX += x1;
+                    cumsumY += y1;
+                    numPoints += 1;
+                }
 
                 top = Math.max(top, Math.max(y1, y2));
                 bottom = Math.min(bottom, Math.min(y1, y2));
@@ -108,7 +125,8 @@ public class EdgeTreeWriter extends ShapeTreeWriter {
             }
         }
         edges.sort(Edge::compareTo);
-        this.extent = new Extent(top, bottom, negLeft, negRight, posLeft, posRight);
+        this.numPoints = numPoints;
+        this.extent = new Extent(top, bottom, negLeft, negRight, posLeft, posRight, cumsumX / numPoints, cumsumY / numPoints);
         this.tree = createTree(edges, 0, edges.size() - 1);
     }
 
@@ -120,6 +138,11 @@ public class EdgeTreeWriter extends ShapeTreeWriter {
     @Override
     public ShapeType getShapeType() {
         return numShapes > 1 ? ShapeType.MULTILINESTRING: ShapeType.LINESTRING;
+    }
+
+    @Override
+    public int numPoints() {
+        return numPoints;
     }
 
     @Override

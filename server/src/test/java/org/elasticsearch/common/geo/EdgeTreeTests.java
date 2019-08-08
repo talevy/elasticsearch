@@ -162,11 +162,14 @@ public class EdgeTreeTests extends ESTestCase {
         writer.writeTo(output);
         output.close();
         EdgeTreeReader reader = new EdgeTreeReader(new ByteBufferStreamInput(ByteBuffer.wrap(output.bytes().toBytesRef().bytes)), true);
+        assertThat(reader.getExtent(), equalTo(writer.getExtent()));
         assertTrue(reader.containsBottomLeft(Extent.fromPoints(xMin, yMin, xMax, yMax)));
+        assertThat(writer.getExtent().centroidX, equalTo(1));
+        assertThat(writer.getExtent().centroidY, equalTo(0));
     }
 
     public void testGetShapeType() {
-        int[] pointCoord = new int[] { 0 };
+        int[] pointCoord = new int[] { 0, 0 };
         assertThat(new EdgeTreeWriter(pointCoord, pointCoord).getShapeType(), equalTo(ShapeType.LINESTRING));
         assertThat(new EdgeTreeWriter(List.of(pointCoord, pointCoord), List.of(pointCoord, pointCoord)).getShapeType(),
             equalTo(ShapeType.MULTILINESTRING));

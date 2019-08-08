@@ -60,7 +60,13 @@ public class GeometryTreeTests extends ESTestCase {
             output.close();
             GeometryTreeReader reader = new GeometryTreeReader(output.bytes().toBytesRef());
 
-            assertThat(geoExtent(minX, minY, maxX, maxY), equalTo(reader.getExtent()));
+            Extent geoExtent = geoExtent(minX, minY, maxX, maxY);
+            assertThat(geoExtent.minX(), equalTo(reader.getExtent().minX()));
+            assertThat(geoExtent.maxX(), equalTo(reader.getExtent().maxX()));
+            assertThat(geoExtent.minY(), equalTo(reader.getExtent().minY()));
+            assertThat(geoExtent.maxY(), equalTo(reader.getExtent().maxY()));
+            assertThat(geoExtent.centroidX, equalTo(reader.getExtent().centroidX));
+            assertThat(geoExtent.centroidY, equalTo(reader.getExtent().centroidY));
 
             // box-query touches bottom-left corner
             assertTrue(reader.intersects(geoExtent(minX - randomIntBetween(1, 10), minY - randomIntBetween(1, 10), minX, minY)));

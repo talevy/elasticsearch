@@ -36,6 +36,8 @@ public class ExtentTests extends AbstractWireSerializingTestCase {
         assertThat(extent.maxX(), equalTo(x));
         assertThat(extent.minY(), equalTo(y));
         assertThat(extent.maxY(), equalTo(y));
+        assertThat(extent.centroidX, equalTo(x));
+        assertThat(extent.centroidY, equalTo(y));
     }
 
     public void testFromPoints() {
@@ -48,6 +50,8 @@ public class ExtentTests extends AbstractWireSerializingTestCase {
         assertThat(extent.maxX(), equalTo(topRightX));
         assertThat(extent.minY(), equalTo(bottomLeftY));
         assertThat(extent.maxY(), equalTo(topRightY));
+        assertThat(extent.centroidX, equalTo((bottomLeftX + topRightX) / 2));
+        assertThat(extent.centroidY, equalTo((bottomLeftY + topRightY) / 2));
         assertThat(extent.top, equalTo(topRightY));
         assertThat(extent.bottom, equalTo(bottomLeftY));
         if (bottomLeftX < 0 && topRightX < 0) {
@@ -71,7 +75,8 @@ public class ExtentTests extends AbstractWireSerializingTestCase {
     @Override
     protected Extent createTestInstance() {
         return new Extent(randomIntBetween(-10, 10), randomIntBetween(-10, 10), randomIntBetween(-10, 10),
-            randomIntBetween(-10, 10), randomIntBetween(-10, 10), randomIntBetween(-10, 10));
+            randomIntBetween(-10, 10), randomIntBetween(-10, 10), randomIntBetween(-10, 10),
+            randomIntBetween(-10, 10), randomIntBetween(-10, 10));
     }
 
     @Override
@@ -82,6 +87,7 @@ public class ExtentTests extends AbstractWireSerializingTestCase {
     @Override
     protected Object copyInstance(Object instance, Version version) throws IOException {
         Extent other = (Extent) instance;
-        return new Extent(other.top, other.bottom, other.negLeft, other.negRight, other.posLeft, other.posRight);
+        return new Extent(other.top, other.bottom, other.negLeft, other.negRight, other.posLeft, other.posRight,
+            other.centroidX, other.centroidY);
     }
 }

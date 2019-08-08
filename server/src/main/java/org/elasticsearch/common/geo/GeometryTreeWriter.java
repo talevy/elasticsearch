@@ -60,7 +60,8 @@ public class GeometryTreeWriter implements Writeable {
         boolean prependExtent = builder.shapeWriters.size() > 1;
         Extent extent = null;
         if (prependExtent) {
-            extent = new Extent(builder.top, builder.bottom, builder.negLeft, builder.negRight, builder.posLeft, builder.posRight);
+            extent = new Extent(builder.top, builder.bottom, builder.negLeft, builder.negRight, builder.posLeft, builder.posRight,
+                builder.cumsumX / builder.numPoints, builder.cumsumY / builder.numPoints);
         }
         out.writeOptionalWriteable(extent);
         out.writeVInt(builder.shapeWriters.size());
@@ -80,6 +81,9 @@ public class GeometryTreeWriter implements Writeable {
         int negRight = Integer.MIN_VALUE;
         int posLeft = Integer.MAX_VALUE;
         int posRight = Integer.MIN_VALUE;
+        int numPoints = 0;
+        int cumsumX = 0;
+        int cumsumY = 0;
 
         GeometryTreeBuilder() {
             shapeWriters = new ArrayList<>();
@@ -93,6 +97,10 @@ public class GeometryTreeWriter implements Writeable {
             negRight = Math.max(negRight, extent.negRight);
             posLeft = Math.min(posLeft, extent.posLeft);
             posRight = Math.max(posRight, extent.posRight);
+            int shapePoints = writer.numPoints();
+            cumsumX += extent.centroidX * shapePoints;
+            cumsumY += extent.centroidY * shapePoints;
+            numPoints += shapePoints;
             shapeWriters.add(writer);
         }
 

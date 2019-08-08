@@ -33,17 +33,21 @@ public class Point2DWriter extends ShapeTreeWriter {
     private static final int K = 2;
     private final Extent extent;
     private final int[] coords;
+    private final int numPoints;
     // size of a leaf node where searches are done sequentially.
     static final int LEAF_SIZE = 64;
 
     Point2DWriter(int[] x, int[] y) {
         assert x.length == y.length;
+        numPoints = x.length;
         int top = Integer.MIN_VALUE;
         int bottom = Integer.MAX_VALUE;
         int negLeft = Integer.MAX_VALUE;
         int negRight = Integer.MIN_VALUE;
         int posLeft = Integer.MAX_VALUE;
         int posRight = Integer.MIN_VALUE;
+        int cumsumX = 0;
+        int cumsumY = 0;
         coords = new int[x.length * K];
         for (int i = 0; i < x.length; i++) {
             int xi = x[i];
@@ -64,13 +68,16 @@ public class Point2DWriter extends ShapeTreeWriter {
             }
             coords[2 * i] = xi;
             coords[2 * i + 1] = yi;
+            cumsumX += xi;
+            cumsumY += yi;
         }
         sort(0, x.length - 1, 0);
-        this.extent = new Extent(top, bottom, negLeft, negRight, posLeft, posRight);
+        this.extent = new Extent(top, bottom, negLeft, negRight, posLeft, posRight, cumsumX / numPoints, cumsumY / numPoints);
     }
 
     Point2DWriter(int x, int y) {
         coords = new int[] {x, y};
+        numPoints = 1;
         this.extent = Extent.fromPoint(x, y);
     }
 
@@ -82,6 +89,11 @@ public class Point2DWriter extends ShapeTreeWriter {
     @Override
     public ShapeType getShapeType() {
         return ShapeType.MULTIPOINT;
+    }
+
+    @Override
+    public int numPoints() {
+        return numPoints;
     }
 
     @Override

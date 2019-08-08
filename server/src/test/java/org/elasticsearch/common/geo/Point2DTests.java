@@ -60,9 +60,13 @@ public class Point2DTests extends ESTestCase {
 
             int[] x = new int[numPoints];
             int[] y = new int[numPoints];
+            int cumsumX = 0;
+            int cumsumY = 0;
             for (int j = 0; j < numPoints; j++) {
                 x[j] = randomIntBetween(minX, maxX);
                 y[j] = randomIntBetween(minY, maxY);
+                cumsumX += x[j];
+                cumsumY += y[j];
             }
             Point2DWriter writer = new Point2DWriter(x, y);
 
@@ -72,6 +76,8 @@ public class Point2DTests extends ESTestCase {
             Point2DReader reader = new Point2DReader(new ByteBufferStreamInput(ByteBuffer.wrap(output.bytes().toBytesRef().bytes)));
             assertThat(reader.getExtent(), equalTo(reader.getExtent()));
             assertThat(reader.getExtent(), equalTo(writer.getExtent()));
+            assertThat(writer.getExtent().centroidX, equalTo(cumsumX / numPoints));
+            assertThat(writer.getExtent().centroidY, equalTo(cumsumY / numPoints));
             assertTrue(reader.intersects(extent));
         }
     }
