@@ -41,7 +41,7 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.fielddata.FieldData;
-import org.elasticsearch.index.fielddata.IndexGeoPointFieldData;
+import org.elasticsearch.index.fielddata.IndexGeoFieldData;
 import org.elasticsearch.index.fielddata.IndexNumericFieldData;
 import org.elasticsearch.index.fielddata.MultiGeoValues;
 import org.elasticsearch.index.fielddata.NumericDoubleValues;
@@ -286,7 +286,7 @@ public abstract class DecayFunctionBuilder<DFB extends DecayFunctionBuilder<DFB>
         }
         double scale = DistanceUnit.DEFAULT.parse(scaleString, DistanceUnit.DEFAULT);
         double offset = DistanceUnit.DEFAULT.parse(offsetString, DistanceUnit.DEFAULT);
-        IndexGeoPointFieldData indexFieldData = context.getForField(fieldType);
+        IndexGeoFieldData.IndexGeoPointFieldData indexFieldData = context.getForField(fieldType);
         return new GeoFieldDataScoreFunction(origin, scale, decay, offset, getDecayFunction(), indexFieldData, mode);
 
     }
@@ -336,12 +336,12 @@ public abstract class DecayFunctionBuilder<DFB extends DecayFunctionBuilder<DFB>
     static class GeoFieldDataScoreFunction extends AbstractDistanceScoreFunction {
 
         private final GeoPoint origin;
-        private final IndexGeoPointFieldData fieldData;
+        private final IndexGeoFieldData.IndexGeoPointFieldData fieldData;
 
         private static final GeoDistance distFunction = GeoDistance.ARC;
 
         GeoFieldDataScoreFunction(GeoPoint origin, double scale, double decay, double offset, DecayFunction func,
-                                         IndexGeoPointFieldData fieldData, MultiValueMode mode) {
+                                  IndexGeoFieldData.IndexGeoPointFieldData fieldData, MultiValueMode mode) {
             super(scale, decay, offset, func, mode);
             this.origin = origin;
             this.fieldData = fieldData;

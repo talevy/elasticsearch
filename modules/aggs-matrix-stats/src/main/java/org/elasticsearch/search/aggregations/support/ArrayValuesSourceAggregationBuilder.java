@@ -24,7 +24,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.fielddata.IndexFieldData;
-import org.elasticsearch.index.fielddata.IndexGeoPointFieldData;
+import org.elasticsearch.index.fielddata.IndexGeoFieldData;
 import org.elasticsearch.index.fielddata.IndexNumericFieldData;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.script.Script;
@@ -297,7 +297,7 @@ public abstract class ArrayValuesSourceAggregationBuilder<VS extends ValuesSourc
         if (valuesSourceType == ValuesSourceType.ANY) {
             if (indexFieldData instanceof IndexNumericFieldData) {
                 config = new ValuesSourceConfig<>(ValuesSourceType.NUMERIC);
-            } else if (indexFieldData instanceof IndexGeoPointFieldData) {
+            } else if (indexFieldData instanceof IndexGeoFieldData.IndexGeoPointFieldData) {
                 config = new ValuesSourceConfig<>(ValuesSourceType.GEOPOINT);
             } else {
                 config = new ValuesSourceConfig<>(ValuesSourceType.BYTES);

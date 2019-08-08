@@ -19,12 +19,11 @@
 package org.elasticsearch.search.aggregations.support;
 
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.index.fielddata.IndexFieldData;
-import org.elasticsearch.index.fielddata.IndexGeoPointFieldData;
-import org.elasticsearch.index.fielddata.IndexGeoShapeFieldData;
+import org.elasticsearch.index.fielddata.IndexGeoFieldData;
 import org.elasticsearch.index.fielddata.IndexNumericFieldData;
 import org.elasticsearch.index.fielddata.IndexOrdinalsFieldData;
 import org.elasticsearch.index.fielddata.MultiGeoValues;
@@ -101,9 +100,9 @@ public class ValuesSourceConfig<VS extends ValuesSource> {
         if (valueType == null) {
             if (indexFieldData instanceof IndexNumericFieldData) {
                 config = new ValuesSourceConfig<>(ValuesSourceType.NUMERIC);
-            } else if (indexFieldData instanceof IndexGeoPointFieldData) {
+            } else if (indexFieldData instanceof IndexGeoFieldData.IndexGeoPointFieldData) {
                 config = new ValuesSourceConfig<>(ValuesSourceType.GEOPOINT);
-            } else if (indexFieldData instanceof IndexGeoShapeFieldData) {
+            } else if (indexFieldData instanceof IndexGeoFieldData.IndexGeoShapeFieldData) {
                 config = new ValuesSourceConfig<>(ValuesSourceType.GEOSHAPE);
             } else {
                 config = new ValuesSourceConfig<>(ValuesSourceType.BYTES);
@@ -236,6 +235,7 @@ public class ValuesSourceConfig<VS extends ValuesSource> {
     /** Get a value source given its configuration. A return value of null indicates that
      *  no value source could be built. */
     @Nullable
+    @SuppressWarnings("unchecked")
     public VS toValuesSource(QueryShardContext context, Function<Object, ValuesSource> resolveMissingAny) {
         if (!valid()) {
             throw new IllegalStateException(
@@ -249,6 +249,8 @@ public class ValuesSourceConfig<VS extends ValuesSource> {
                 vs = null;
             } else if (valueSourceType() == ValuesSourceType.NUMERIC) {
                 vs = (VS) ValuesSource.Numeric.EMPTY;
+            } else if (valueSourceType() == ValuesSourceType.GEO) {
+                vs = (VS) ValuesSource.Geo.EMPTY;
             } else if (valueSourceType() == ValuesSourceType.GEOPOINT) {
                 vs = (VS) ValuesSource.GeoPoint.EMPTY;
             } else if (valueSourceType() == ValuesSourceType.GEOSHAPE) {
@@ -280,12 +282,19 @@ public class ValuesSourceConfig<VS extends ValuesSource> {
             return (VS) MissingValues.replaceMissing((ValuesSource.Numeric) vs, missing);
         } else if (vs instanceof ValuesSource.GeoPoint) {
             // TODO: also support the structured formats of geo points
-            final MultiGeoValues.GeoPointValue missing = new
-                MultiGeoValues.GeoPointValue(new GeoPoint(missing().toString()));
-            return (VS) MissingValues.replaceMissing((ValuesSource.GeoPoint) vs, missing);
+            return (VS) MissingValues.replaceMissing((ValuesSource.GeoPoint) vs,
+                MultiGeoValues.GeoPointValue.missing(missing().toString()));
         } else if (vs instanceof ValuesSource.GeoShape) {
-            final MultiGeoValues.GeoShapeValue missing = new MultiGeoValues.GeoShapeValue();
-            return (VS) MissingValues.replaceMissing((ValuesSource.GeoShape) vs, missing);
+            return (VS) MissingValues.replaceMissing((ValuesSource.GeoShape) vs,
+                MultiGeoValues.GeoShapeValue.missing(missing().toString()));
+        } else if (vs instanceof ValuesSource.Geo) {
+            try {
+                return (VS) MissingValues.replaceMissing(ValuesSource.GeoPoint.EMPTY,
+                    MultiGeoValues.GeoPointValue.missing(missing().toString()));
+            } catch (ElasticsearchParseException e) {
+                return (VS) MissingValues.replaceMissing(ValuesSource.GeoShape.EMPTY,
+                    MultiGeoValues.GeoShapeValue.missing(missing().toString()));
+            }
         } else {
             // Should not happen
             throw new IllegalArgumentException("Can't apply missing values on a " + vs.getClass());
@@ -309,6 +318,9 @@ public class ValuesSourceConfig<VS extends ValuesSource> {
 
         if (valueSourceType() == ValuesSourceType.NUMERIC) {
             return (VS) numericField();
+        }
+        if (valueSourceType() == ValuesSourceType.GEO) {
+            return (VS) geoField();
         }
         if (valueSourceType() == ValuesSourceType.GEOPOINT) {
             return (VS) geoPointField();
@@ -356,23 +368,36 @@ public class ValuesSourceConfig<VS extends ValuesSource> {
         return new ValuesSource.Bytes.Script(script());
     }
 
+    private ValuesSource.Geo geoField() {
+        boolean isGeoPoint = fieldContext().indexFieldData() instanceof IndexGeoFieldData.IndexGeoPointFieldData;
+        boolean isGeoShape = fieldContext().indexFieldData() instanceof IndexGeoFieldData.IndexGeoShapeFieldData;
+        if (isGeoPoint == false && isGeoShape == false) {
+            throw new IllegalArgumentException("Expected geo_point or geo_shape type on field [" + fieldContext().field() +
+                "], but got [" + fieldContext().fieldType().typeName() + "]");
+        }
+        if (isGeoPoint) {
+            return new ValuesSource.GeoPoint.Fielddata((IndexGeoFieldData.IndexGeoPointFieldData) fieldContext().indexFieldData());
+        }
+        return new ValuesSource.GeoShape.Fielddata((IndexGeoFieldData.IndexGeoShapeFieldData) fieldContext().indexFieldData());
+    }
+
     private ValuesSource.GeoPoint geoPointField() {
 
-        if (!(fieldContext().indexFieldData() instanceof IndexGeoPointFieldData)) {
+        if (!(fieldContext().indexFieldData() instanceof IndexGeoFieldData.IndexGeoPointFieldData)) {
             throw new IllegalArgumentException("Expected geo_point type on field [" + fieldContext().field() +
                     "], but got [" + fieldContext().fieldType().typeName() + "]");
         }
 
-        return new ValuesSource.GeoPoint.Fielddata((IndexGeoPointFieldData) fieldContext().indexFieldData());
+        return new ValuesSource.GeoPoint.Fielddata((IndexGeoFieldData.IndexGeoPointFieldData) fieldContext().indexFieldData());
     }
 
     private ValuesSource.GeoShape geoShapeField() {
 
-        if (!(fieldContext().indexFieldData() instanceof IndexGeoShapeFieldData)) {
+        if (!(fieldContext().indexFieldData() instanceof IndexGeoFieldData.IndexGeoShapeFieldData)) {
             throw new IllegalArgumentException("Expected geo_shape type on field [" + fieldContext().field() +
                 "], but got [" + fieldContext().fieldType().typeName() + "]");
         }
 
-        return new ValuesSource.GeoShape.Fielddata((IndexGeoShapeFieldData) fieldContext().indexFieldData());
+        return new ValuesSource.GeoShape.Fielddata((IndexGeoFieldData.IndexGeoShapeFieldData) fieldContext().indexFieldData());
     }
 }

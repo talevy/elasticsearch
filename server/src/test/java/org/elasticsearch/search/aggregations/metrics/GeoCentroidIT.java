@@ -19,8 +19,10 @@
 
 package org.elasticsearch.search.aggregations.metrics;
 
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.geo.GeoPoint;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.bucket.geogrid.GeoGrid;
 import org.elasticsearch.search.aggregations.bucket.global.Global;
@@ -32,8 +34,10 @@ import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.geoCentroid;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.geohashGrid;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.global;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchResponse;
 import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -172,5 +176,14 @@ public class GeoCentroidIT extends AbstractGeoTestCase {
             assertThat("Geohash " + geohash + " has wrong centroid longitude", expectedCentroid.lon(),
                     closeTo(centroidAgg.centroid().lon(), GEOHASH_TOLERANCE));
         }
+    }
+
+    public void testInvalidField() {
+        SearchRequestBuilder request = client().prepareSearch(DATELINE_IDX_NAME)
+            .addAggregation(geohashGrid("geoGrid").field(SINGLE_VALUED_GEOPOINT_FIELD_NAME)
+                .subAggregation(geoCentroid(aggName).field("tag")));
+            ;
+        assertFailures(request, RestStatus.BAD_REQUEST,
+            containsString("Expected geo_point type on field [tag], but got [keyword]"));
     }
 }

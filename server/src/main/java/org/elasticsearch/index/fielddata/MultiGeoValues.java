@@ -22,8 +22,13 @@ import org.apache.lucene.geo.GeoEncodingUtils;
 import org.elasticsearch.common.geo.Extent;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.geo.GeometryTreeReader;
+import org.elasticsearch.common.geo.GeometryTreeWriter;
+import org.elasticsearch.geo.geometry.Geometry;
+import org.elasticsearch.geo.utils.GeographyValidator;
+import org.elasticsearch.geo.utils.WellKnownText;
 
 import java.io.IOException;
+import java.text.ParseException;
 
 /**
  * A stateful lightweight per document set of geo values.
@@ -99,9 +104,14 @@ public abstract class MultiGeoValues {
         public String toString() {
             return geoPoint.toString();
         }
+
+        public static GeoPointValue missing(String missing) {
+            return new GeoPointValue(new GeoPoint(missing));
+        }
     }
 
     public static class GeoShapeValue implements GeoValue {
+        private static final WellKnownText MISSING_GEOMETRY_PARSER = new WellKnownText(true, new GeographyValidator(true));
         private final GeometryTreeReader reader;
         private final Extent extent;
 
@@ -110,9 +120,9 @@ public abstract class MultiGeoValues {
             this.extent = reader.getExtent();
         }
 
-        public GeoShapeValue() {
+        public GeoShapeValue(Extent extent) {
             this.reader = null;
-            this.extent = null;
+            this.extent = extent;
         }
 
         @Override
@@ -128,6 +138,17 @@ public abstract class MultiGeoValues {
         @Override
         public double lon() {
             throw new UnsupportedOperationException("centroid of GeoShape is not defined");
+        }
+
+
+        public static GeoShapeValue missing(String missing) {
+            try {
+                Geometry geometry = MISSING_GEOMETRY_PARSER.fromWKT(missing);
+                GeometryTreeWriter writer = new GeometryTreeWriter(geometry);
+                return new GeoShapeValue(writer.getExtent());
+            } catch (IOException | ParseException e) {
+                throw new IllegalArgumentException("Can't apply missing value [" + missing + "]", e);
+            }
         }
     }
 

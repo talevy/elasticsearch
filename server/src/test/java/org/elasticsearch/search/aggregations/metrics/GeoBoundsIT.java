@@ -19,9 +19,11 @@
 
 package org.elasticsearch.search.aggregations.metrics;
 
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.util.BigArray;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.bucket.global.Global;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
@@ -34,9 +36,11 @@ import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.geoBounds;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.global;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.terms;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchResponse;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -163,16 +167,20 @@ public class GeoBoundsIT extends AbstractGeoTestCase {
                 .setQuery(matchAllQuery())
                 .addAggregation(geoBounds(geoPointAggName).field(SINGLE_VALUED_GEOPOINT_FIELD_NAME)
                         .wrapLongitude(false))
+                .addAggregation(geoBounds(geoShapeAggName).field(SINGLE_VALUED_GEOSHAPE_FIELD_NAME)
+                        .wrapLongitude(false))
                 .get();
 
-        assertThat(searchResponse.getHits().getTotalHits().value, equalTo(0L));
-        GeoBounds geoBounds = searchResponse.getAggregations().get(geoPointAggName);
-        assertThat(geoBounds, notNullValue());
-        assertThat(geoBounds.getName(), equalTo(geoPointAggName));
-        GeoPoint topLeft = geoBounds.topLeft();
-        GeoPoint bottomRight = geoBounds.bottomRight();
-        assertThat(topLeft, equalTo(null));
-        assertThat(bottomRight, equalTo(null));
+        for (String aggName : List.of(geoPointAggName, geoShapeAggName)) {
+            assertThat(searchResponse.getHits().getTotalHits().value, equalTo(0L));
+            GeoBounds geoBounds = searchResponse.getAggregations().get(aggName);
+            assertThat(geoBounds, notNullValue());
+            assertThat(geoBounds.getName(), equalTo(aggName));
+            GeoPoint topLeft = geoBounds.topLeft();
+            GeoPoint bottomRight = geoBounds.bottomRight();
+            assertThat(topLeft, equalTo(null));
+            assertThat(bottomRight, equalTo(null));
+        }
     }
 
     public void testSingleValuedFieldNearDateLine() throws Exception {
@@ -265,5 +273,42 @@ public class GeoBoundsIT extends AbstractGeoTestCase {
         assertThat(topLeft.lon(), closeTo(0.0, GEOHASH_TOLERANCE));
         assertThat(bottomRight.lat(), closeTo(1.0, GEOHASH_TOLERANCE));
         assertThat(bottomRight.lon(), closeTo(0.0, GEOHASH_TOLERANCE));
+    }
+
+    public void testIncorrectFieldType() {
+        SearchRequestBuilder searchWithKeywordField = client().prepareSearch(DATELINE_IDX_NAME)
+            .addAggregation(geoBounds("agg").field("tag"));
+        assertFailures(searchWithKeywordField, RestStatus.BAD_REQUEST,
+            containsString("Expected geo_point or geo_shape type on field [tag], but got [keyword]"));
+
+        {
+            SearchResponse response = client().prepareSearch(DATELINE_IDX_NAME)
+                .addAggregation(geoBounds("agg").missing(randomBoolean() ? "0,0" : "POINT (0 0)").field("non_existent")).get();
+            assertSearchResponse(response);
+            GeoBounds geoBounds = response.getAggregations().get("agg");
+            assertThat(geoBounds, notNullValue());
+            assertThat(geoBounds.getName(), equalTo("agg"));
+            GeoPoint topLeft = geoBounds.topLeft();
+            GeoPoint bottomRight = geoBounds.bottomRight();
+            assertThat(topLeft.lat(), closeTo(0.0, GEOHASH_TOLERANCE));
+            assertThat(topLeft.lon(), closeTo(0.0, GEOHASH_TOLERANCE));
+            assertThat(bottomRight.lat(), closeTo(0.0, GEOHASH_TOLERANCE));
+            assertThat(bottomRight.lon(), closeTo(0.0, GEOHASH_TOLERANCE));
+        }
+
+        {
+            SearchResponse response = client().prepareSearch(DATELINE_IDX_NAME)
+                .addAggregation(geoBounds("agg").missing("LINESTRING (30 10, 10 30, 40 40)").field("non_existent")).get();
+            assertSearchResponse(response);
+            GeoBounds geoBounds = response.getAggregations().get("agg");
+            assertThat(geoBounds, notNullValue());
+            assertThat(geoBounds.getName(), equalTo("agg"));
+            GeoPoint topLeft = geoBounds.topLeft();
+            GeoPoint bottomRight = geoBounds.bottomRight();
+            assertThat(topLeft.lat(), closeTo(40, GEOHASH_TOLERANCE));
+            assertThat(topLeft.lon(), closeTo(10, GEOHASH_TOLERANCE));
+            assertThat(bottomRight.lat(), closeTo(10, GEOHASH_TOLERANCE));
+            assertThat(bottomRight.lon(), closeTo(40, GEOHASH_TOLERANCE));
+        }
     }
 }

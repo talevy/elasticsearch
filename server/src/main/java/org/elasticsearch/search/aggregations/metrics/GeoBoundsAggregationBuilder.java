@@ -27,6 +27,7 @@ import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregatorFactories.Builder;
 import org.elasticsearch.search.aggregations.AggregatorFactory;
+import org.elasticsearch.search.aggregations.support.ValueType;
 import org.elasticsearch.search.aggregations.support.ValuesSource;
 import org.elasticsearch.search.aggregations.support.ValuesSourceAggregationBuilder;
 import org.elasticsearch.search.aggregations.support.ValuesSourceConfig;
@@ -55,7 +56,7 @@ public class GeoBoundsAggregationBuilder extends ValuesSourceAggregationBuilder<
     private boolean wrapLongitude = true;
 
     public GeoBoundsAggregationBuilder(String name) {
-        super(name, ValuesSourceType.ANY, null);
+        super(name, ValuesSourceType.GEO, ValueType.GEO);
     }
 
     protected GeoBoundsAggregationBuilder(GeoBoundsAggregationBuilder clone, Builder factoriesBuilder, Map<String, Object> metaData) {
@@ -72,7 +73,7 @@ public class GeoBoundsAggregationBuilder extends ValuesSourceAggregationBuilder<
      * Read from a stream.
      */
     public GeoBoundsAggregationBuilder(StreamInput in) throws IOException {
-        super(in, ValuesSourceType.GEOSHAPE, null);
+        super(in, ValuesSourceType.GEO, ValueType.GEO);
         wrapLongitude = in.readBoolean();
     }
 

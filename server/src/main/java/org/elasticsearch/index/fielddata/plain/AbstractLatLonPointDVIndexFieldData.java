@@ -30,14 +30,14 @@ import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.fielddata.AtomicGeoFieldData;
 import org.elasticsearch.index.fielddata.IndexFieldData;
 import org.elasticsearch.index.fielddata.IndexFieldDataCache;
-import org.elasticsearch.index.fielddata.IndexGeoPointFieldData;
+import org.elasticsearch.index.fielddata.IndexGeoFieldData;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.search.MultiValueMode;
 
 public abstract class AbstractLatLonPointDVIndexFieldData extends DocValuesIndexFieldData
-    implements IndexGeoPointFieldData {
+    implements IndexGeoFieldData.IndexGeoPointFieldData {
     AbstractLatLonPointDVIndexFieldData(Index index, String fieldName) {
         super(index, fieldName);
     }

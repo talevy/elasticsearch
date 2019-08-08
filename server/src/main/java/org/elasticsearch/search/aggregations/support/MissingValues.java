@@ -355,9 +355,9 @@ public enum MissingValues {
         }
     }
 
-    public static ValuesSource.GeoPoint replaceMissing(final ValuesSource.GeoPoint valuesSource,
-                                                       final MultiGeoValues.GeoPointValue missing) {
-        return new ValuesSource.GeoPoint() {
+    public static ValuesSource.Geo replaceMissing(final ValuesSource.Geo valuesSource,
+                                                       final MultiGeoValues.GeoValue missing) {
+        return new ValuesSource.Geo() {
 
             @Override
             public SortedBinaryDocValues bytesValues(LeafReaderContext context) throws IOException {
