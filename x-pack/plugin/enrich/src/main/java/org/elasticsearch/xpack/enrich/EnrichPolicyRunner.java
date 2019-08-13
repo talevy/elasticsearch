@@ -5,14 +5,6 @@
  */
 package org.elasticsearch.xpack.enrich;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.LongSupplier;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
@@ -50,6 +42,14 @@ import org.elasticsearch.index.reindex.ReindexAction;
 import org.elasticsearch.index.reindex.ReindexRequest;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.xpack.core.enrich.EnrichPolicy;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.LongSupplier;
 
 import static org.elasticsearch.xpack.enrich.ExactMatchProcessor.ENRICH_KEY_FIELD_NAME;
 
@@ -196,6 +196,8 @@ public class EnrichPolicyRunner implements Runnable {
         String keyType;
         if (EnrichPolicy.EXACT_MATCH_TYPE.equals(policy.getType())) {
             keyType = "keyword";
+        } else if (EnrichPolicy.GEO_SHAPE_MATCH_TYPE.equals(policy.getType())) {
+            keyType = "geo_shape";
         } else {
             throw new ElasticsearchException("Unrecognized enrich policy type [{}]", policy.getType());
         }
