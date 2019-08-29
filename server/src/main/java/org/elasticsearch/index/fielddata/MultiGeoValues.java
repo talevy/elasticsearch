@@ -130,12 +130,20 @@ public abstract class MultiGeoValues {
 
         @Override
         public double lat() {
-            throw new UnsupportedOperationException("centroid of GeoShape is not defined");
+            try {
+                return GeoShapeCoordinateEncoder.INSTANCE.decodeY(reader.getCentroidY());
+            } catch (IOException e) {
+                throw new IllegalStateException("unable to read centroid of shape", e);
+            }
         }
 
         @Override
         public double lon() {
-            throw new UnsupportedOperationException("centroid of GeoShape is not defined");
+            try {
+                return GeoShapeCoordinateEncoder.INSTANCE.decodeX(reader.getCentroidX());
+            } catch (IOException e) {
+                throw new IllegalStateException("unable to read centroid of shape", e);
+            }
         }
 
         public static GeoShapeValue missing(String missing) {

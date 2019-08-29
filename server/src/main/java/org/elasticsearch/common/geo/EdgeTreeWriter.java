@@ -39,6 +39,8 @@ public class EdgeTreeWriter extends ShapeTreeWriter {
 
     private final Extent extent;
     private final int numShapes;
+    private final double centroidX;
+    private final double centroidY;
     final Edge tree;
 
 
@@ -59,6 +61,13 @@ public class EdgeTreeWriter extends ShapeTreeWriter {
         double negRight = Double.NEGATIVE_INFINITY;
         double posLeft = Double.POSITIVE_INFINITY;
         double posRight = Double.NEGATIVE_INFINITY;
+
+        double sumX = 0;
+        double sumY = 0;
+        double compensatedX = 0;
+        double compensatedY = 0;
+        int numCoords = 0;
+
         List<Edge> edges = new ArrayList<>();
         for (int i = 0; i < y.size(); i++) {
             for (int j = 1; j < y.get(i).length; j++) {
@@ -108,6 +117,33 @@ public class EdgeTreeWriter extends ShapeTreeWriter {
                 if (x2 < 0 && x2 > negRight) {
                     negRight = x2;
                 }
+
+                // calculate centroid
+                double correctedX = x1 - compensatedX;
+                double newSumX = sumX + correctedX;
+                compensatedX = (newSumX - sumX) - correctedX;
+                sumX = newSumX;
+
+                double correctedY = y1 - compensatedY;
+                double newSumY = sumY + correctedY;
+                compensatedY = (newSumY - sumY) - correctedY;
+                sumY = newSumY;
+
+                numCoords += 1;
+
+                if (j == y.get(i).length - 1) {
+                    correctedX = x2 - compensatedX;
+                    newSumX = sumX + correctedX;
+                    compensatedX = (newSumX - sumX) - correctedX;
+                    sumX = newSumX;
+
+                    correctedY = y2 - compensatedY;
+                    newSumY = sumY + correctedY;
+                    compensatedY = (newSumY - sumY) - correctedY;
+                    sumY = newSumY;
+
+                    numCoords += 1;
+                }
             }
         }
         edges.sort(Edge::compareTo);
@@ -115,6 +151,8 @@ public class EdgeTreeWriter extends ShapeTreeWriter {
             coordinateEncoder.encodeX(negLeft), coordinateEncoder.encodeX(negRight),
             coordinateEncoder.encodeX(posLeft), coordinateEncoder.encodeX(posRight));
         this.tree = createTree(edges, 0, edges.size() - 1);
+        this.centroidX = sumX / numCoords;
+        this.centroidY = sumY / numCoords;
     }
 
     @Override

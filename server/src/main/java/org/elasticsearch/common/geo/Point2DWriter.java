@@ -36,6 +36,8 @@ public class Point2DWriter extends ShapeTreeWriter {
     // size of a leaf node where searches are done sequentially.
     static final int LEAF_SIZE = 64;
     private final CoordinateEncoder coordinateEncoder;
+    private final double centroidX;
+    private final double centroidY;
 
     Point2DWriter(double[] x, double[] y, CoordinateEncoder coordinateEncoder) {
         assert x.length == y.length;
@@ -47,6 +49,12 @@ public class Point2DWriter extends ShapeTreeWriter {
         double posLeft = Double.NEGATIVE_INFINITY;
         double posRight = Double.POSITIVE_INFINITY;
         coords = new double[x.length * K];
+
+        double sumX = 0;
+        double sumY = 0;
+        double compensatedX = 0;
+        double compensatedY = 0;
+
         for (int i = 0; i < x.length; i++) {
             double xi = x[i];
             double yi = y[i];
@@ -66,16 +74,31 @@ public class Point2DWriter extends ShapeTreeWriter {
             }
             coords[2 * i] = xi;
             coords[2 * i + 1] = yi;
+
+            // calculate centroid
+            double correctedX = xi - compensatedX;
+            double newSumX = sumX + correctedX;
+            compensatedX = (newSumX - sumX) - correctedX;
+            sumX = newSumX;
+
+            double correctedY = yi - compensatedY;
+            double newSumY = sumY + correctedY;
+            compensatedY = (newSumY - sumY) - correctedY;
+            sumY = newSumY;
         }
         sort(0, x.length - 1, 0);
         this.extent = new Extent(coordinateEncoder.encodeY(top), coordinateEncoder.encodeY(bottom), coordinateEncoder.encodeX(negLeft),
             coordinateEncoder.encodeX(negRight), coordinateEncoder.encodeX(posLeft), coordinateEncoder.encodeX(posRight));
+        this.centroidX = sumX / x.length;
+        this.centroidY = sumY / y.length;
     }
 
     Point2DWriter(double x, double y, CoordinateEncoder coordinateEncoder) {
         this.coordinateEncoder = coordinateEncoder;
         coords = new double[] {x, y};
         this.extent = Extent.fromPoint(coordinateEncoder.encodeX(x), coordinateEncoder.encodeY(y));
+        this.centroidX = x;
+        this.centroidY = y;
     }
 
     @Override

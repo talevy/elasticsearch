@@ -46,14 +46,29 @@ import java.util.List;
 public class GeometryTreeWriter implements Writeable {
 
     private final GeometryTreeBuilder builder;
+    private final CoordinateEncoder coordinateEncoder;
+    private double centroidX;
+    private double centroidY;
 
     public GeometryTreeWriter(Geometry geometry, CoordinateEncoder coordinateEncoder) {
+        this.coordinateEncoder = coordinateEncoder;
         builder = new GeometryTreeBuilder(coordinateEncoder);
         geometry.visit(builder);
+        int numShapes = builder.shapeWriters.size();
+        centroidX = builder.sumX / numShapes;
+        centroidY = builder.sumY / numShapes;
     }
 
     public Extent extent() {
         return new Extent(builder.top, builder.bottom, builder.negLeft, builder.negRight, builder.posLeft, builder.posRight);
+    }
+
+    public double centroidX() {
+        return centroidX;
+    }
+
+    public double centroidY() {
+        return centroidY;
     }
 
     @Override
@@ -62,6 +77,8 @@ public class GeometryTreeWriter implements Writeable {
         // contains multiple sub-shapes
         boolean prependExtent = builder.shapeWriters.size() > 1;
         Extent extent = null;
+        out.writeInt(coordinateEncoder.encodeX(centroidX));
+        out.writeInt(coordinateEncoder.encodeY(centroidY));
         if (prependExtent) {
             extent = new Extent(builder.top, builder.bottom, builder.negLeft, builder.negRight, builder.posLeft, builder.posRight);
         }
@@ -84,6 +101,9 @@ public class GeometryTreeWriter implements Writeable {
         int negRight = Integer.MIN_VALUE;
         int posLeft = Integer.MAX_VALUE;
         int posRight = Integer.MIN_VALUE;
+
+        double sumX = 0;
+        double sumY = 0;
 
         GeometryTreeBuilder(CoordinateEncoder coordinateEncoder) {
             this.coordinateEncoder = coordinateEncoder;
