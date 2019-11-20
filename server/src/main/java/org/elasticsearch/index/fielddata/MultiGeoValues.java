@@ -121,15 +121,18 @@ public abstract class MultiGeoValues {
 
         private final GeometryTreeReader reader;
         private final Extent extent;
+        private final Extent queryScratchExtent;
 
         public GeoShapeValue(GeometryTreeReader reader) throws IOException {
             this.reader = reader;
             this.extent = reader.getExtent();
+            this.queryScratchExtent = Extent.fromPoint(0, 0);
         }
 
         public GeoShapeValue(Extent extent) {
             this.reader = null;
             this.extent = extent;
+            this.queryScratchExtent = Extent.fromPoint(0, 0);
         }
 
         @Override
@@ -146,9 +149,14 @@ public abstract class MultiGeoValues {
             int maxX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(rectangle.getMaxX());
             int minY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMinY());
             int maxY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMaxY());
-            Extent extent = new Extent(maxY, minY, minX, maxX, minX, maxX);
+            queryScratchExtent.top = maxY;
+            queryScratchExtent.bottom = minY;
+            queryScratchExtent.negLeft = minX;
+            queryScratchExtent.negRight = maxX;
+            queryScratchExtent.posLeft = minX;
+            queryScratchExtent.posRight = maxX;
             try {
-                return reader.intersects(extent);
+                return reader.intersects(queryScratchExtent);
             } catch (IOException e) {
                 throw new IllegalStateException("unable to check intersection", e);
             }

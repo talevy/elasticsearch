@@ -33,6 +33,9 @@ public class EdgeTreeReader implements ShapeTreeReader {
     private final ByteBufferStreamInput input;
     private final int startPosition;
     private final boolean hasArea;
+    private static final Optional<Boolean> OPTIONAL_TRUE = Optional.of(true);
+    private static final Optional<Boolean> OPTIONAL_FALSE = Optional.of(false);
+    private static final Optional<Boolean> OPTIONAL_EMPTY = Optional.empty();
 
     public EdgeTreeReader(ByteBufferStreamInput input, boolean hasArea) throws IOException {
         this.startPosition = input.position();
@@ -59,14 +62,14 @@ public class EdgeTreeReader implements ShapeTreeReader {
     static Optional<Boolean> checkExtent(Extent treeExtent, Extent extent) throws IOException {
         if (treeExtent.minY() > extent.maxY() || treeExtent.maxX() < extent.minX()
                 || treeExtent.maxY() < extent.minY() || treeExtent.minX() > extent.maxX()) {
-            return Optional.of(false); // tree and bbox-query are disjoint
+            return OPTIONAL_FALSE; // tree and bbox-query are disjoint
         }
 
         if (extent.minX() <= treeExtent.minX() && extent.minY() <= treeExtent.minY()
                 && extent.maxX() >= treeExtent.maxX() && extent.maxY() >= treeExtent.maxY()) {
-            return Optional.of(true); // bbox-query fully contains tree's extent.
+            return OPTIONAL_TRUE; // bbox-query fully contains tree's extent.
         }
-        return Optional.empty();
+        return OPTIONAL_EMPTY;
     }
 
     boolean containsBottomLeft(Extent extent) throws IOException {

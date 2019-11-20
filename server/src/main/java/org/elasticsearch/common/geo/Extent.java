@@ -32,12 +32,12 @@ import java.util.Objects;
 public class Extent implements Writeable {
     static final int WRITEABLE_SIZE_IN_BYTES = 24;
 
-    public final int top;
-    public final int bottom;
-    public final int negLeft;
-    public final int negRight;
-    public final int posLeft;
-    public final int posRight;
+    public int top;
+    public int bottom;
+    public int negLeft;
+    public int negRight;
+    public int posLeft;
+    public int posRight;
 
     public Extent(int top, int bottom, int negLeft, int negRight, int posLeft, int posRight) {
         this.top = top;
