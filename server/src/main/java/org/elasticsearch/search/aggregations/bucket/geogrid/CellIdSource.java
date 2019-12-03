@@ -85,12 +85,12 @@ public class CellIdSource extends ValuesSource.Numeric {
     }
 
     /** Sorted numeric doc values for geo shapes */
-    protected static class GeoShapeCellValues extends AbstractSortingNumericDocValues {
+    public static class GeoShapeCellValues extends AbstractSortingNumericDocValues {
         private MultiGeoValues geoValues;
         private int precision;
         private GeoGridTiler tiler;
 
-        protected GeoShapeCellValues(MultiGeoValues geoValues, int precision, GeoGridTiler tiler) {
+        public GeoShapeCellValues(MultiGeoValues geoValues, int precision, GeoGridTiler tiler) {
             this.geoValues = geoValues;
             this.precision = precision;
             this.tiler = tiler;

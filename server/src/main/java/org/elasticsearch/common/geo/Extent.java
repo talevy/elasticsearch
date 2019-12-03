@@ -77,7 +77,7 @@ public class Extent implements Writeable {
      * @param topRightY   the top-right y-coordinate
      * @return the extent of the two points
      */
-    static Extent fromPoints(int bottomLeftX, int bottomLeftY, int topRightX, int topRightY) {
+    public static Extent fromPoints(int bottomLeftX, int bottomLeftY, int topRightX, int topRightY) {
         int negLeft = Integer.MAX_VALUE;
         int negRight = Integer.MIN_VALUE;
         int posLeft = Integer.MAX_VALUE;

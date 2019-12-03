@@ -19,7 +19,9 @@
 
 package org.elasticsearch.search.aggregations.bucket.geogrid;
 
+import org.elasticsearch.common.geo.Extent;
 import org.elasticsearch.common.geo.GeoRelation;
+import org.elasticsearch.common.geo.GeoShapeCoordinateEncoder;
 import org.elasticsearch.geometry.Rectangle;
 import org.elasticsearch.geometry.utils.Geohash;
 import org.elasticsearch.index.fielddata.MultiGeoValues;
@@ -169,6 +171,13 @@ public interface GeoGridTiler {
             if (count == 1) {
                 values.resizeCell(1);
                 values.add(0, GeoTileUtils.longEncodeTiles(precision, minXTile, minYTile));
+//                {
+//                    int minX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(bounds.minX());
+//                    int maxX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(bounds.maxX());
+//                    int minY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(bounds.minY());
+//                    int maxY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(bounds.maxY());
+//                    System.out.println("geometryTreeReader.relate(Extent.fromPoints(" + minX + "," + minY + "," + maxX + "," + maxY + ");");
+//                }
                 return 1;
             } else if (count <= precision) {
                 return setValuesByBruteForceScan(values, geoValue, precision, minXTile, minYTile, maxXTile, maxYTile);
@@ -190,6 +199,14 @@ public interface GeoGridTiler {
             for (int i = minXTile; i <= maxXTile; i++) {
                 for (int j = minYTile; j <= maxYTile; j++) {
                     Rectangle rectangle = GeoTileUtils.toBoundingBox(i, j, precision);
+                    {
+//                        int minX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(rectangle.getMinX());
+//                        int maxX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(rectangle.getMaxX());
+//                        int minY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMinY());
+//                        int maxY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMaxY());
+//                        System.out.println("@Benchmark public void test_"+ i + "_" + j + "_" + precision + "_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(" + minX + "," + minY + "," + maxX + "," + maxY + "));}");
+//                        System.out.println("@Benchmark public void test_"+ i + "_" + j + "_" + precision + "_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(" + minX + "," + minY + "," + maxX + "," + maxY + "));}");
+                    }
                     if (geoValue.relate(rectangle) != GeoRelation.QUERY_DISJOINT) {
                         values.resizeCell(idx + 1);
                         values.add(idx++, GeoTileUtils.longEncodeTiles(precision, i, j));
@@ -212,6 +229,14 @@ public interface GeoGridTiler {
                     if (shapeBounds.minX() == rectangle.getMaxX() ||
                         shapeBounds.maxY() == rectangle.getMinY()) {
                         continue;
+                    }
+                    {
+//                        int minX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(rectangle.getMinX());
+//                        int maxX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(rectangle.getMaxX());
+//                        int minY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMinY());
+//                        int maxY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMaxY());
+//                        System.out.println("@Benchmark public void test_"+ nextX + "_" + nextY + "_" + zTile + "_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(" + minX + "," + minY + "," + maxX + "," + maxY + "));}");
+//                        System.out.println("@Benchmark public void test_"+ nextX + "_" + nextY + "_" + zTile + "_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(" + minX + "," + minY + "," + maxX + "," + maxY + "));}");
                     }
                     GeoRelation relation = geoValue.relate(rectangle);
                     if (GeoRelation.QUERY_INSIDE == relation) {
