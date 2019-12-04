@@ -19,9 +19,18 @@
 
 package org.elasticsearch.search.aggregations.bucket.geogrid;
 
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.geo.Extent;
+import org.elasticsearch.common.geo.GeoJson;
 import org.elasticsearch.common.geo.GeoRelation;
 import org.elasticsearch.common.geo.GeoShapeCoordinateEncoder;
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.geometry.LinearRing;
+import org.elasticsearch.geometry.Polygon;
 import org.elasticsearch.geometry.Rectangle;
 import org.elasticsearch.geometry.utils.Geohash;
 import org.elasticsearch.index.fielddata.MultiGeoValues;
@@ -171,13 +180,13 @@ public interface GeoGridTiler {
             if (count == 1) {
                 values.resizeCell(1);
                 values.add(0, GeoTileUtils.longEncodeTiles(precision, minXTile, minYTile));
-//                {
-//                    int minX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(bounds.minX());
-//                    int maxX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(bounds.maxX());
-//                    int minY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(bounds.minY());
-//                    int maxY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(bounds.maxY());
-//                    System.out.println("geometryTreeReader.relate(Extent.fromPoints(" + minX + "," + minY + "," + maxX + "," + maxY + ");");
-//                }
+                {
+                    int minX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(bounds.minX());
+                    int maxX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(bounds.maxX());
+                    int minY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(bounds.minY());
+                    int maxY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(bounds.maxY());
+                    System.out.println("geometryTreeReader.relate(" + minX + "," + minY + "," + maxX + "," + maxY + ");");
+                }
                 return 1;
             } else if (count <= precision) {
                 return setValuesByBruteForceScan(values, geoValue, precision, minXTile, minYTile, maxXTile, maxYTile);
@@ -200,12 +209,24 @@ public interface GeoGridTiler {
                 for (int j = minYTile; j <= maxYTile; j++) {
                     Rectangle rectangle = GeoTileUtils.toBoundingBox(i, j, precision);
                     {
-//                        int minX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(rectangle.getMinX());
-//                        int maxX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(rectangle.getMaxX());
-//                        int minY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMinY());
-//                        int maxY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMaxY());
-//                        System.out.println("@Benchmark public void test_"+ i + "_" + j + "_" + precision + "_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(" + minX + "," + minY + "," + maxX + "," + maxY + "));}");
-//                        System.out.println("@Benchmark public void test_"+ i + "_" + j + "_" + precision + "_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(" + minX + "," + minY + "," + maxX + "," + maxY + "));}");
+                        int minX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(rectangle.getMinX());
+                        int maxX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(rectangle.getMaxX());
+                        int minY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMinY());
+                        int maxY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMaxY());
+                        System.out.println("@Benchmark public void test_"+ i + "_" + j + "_" + precision + "_geometry() throws Exception { geometryTreeReader.relate(" + minX + "," + minY + "," + maxX + "," + maxY + ");}");
+                        System.out.println("@Benchmark public void test_"+ i + "_" + j + "_" + precision + "_edge() throws Exception { edgeTreeReader.relate(" + minX + "," + minY + "," + maxX + "," + maxY + ");}");
+                        System.out.println("@Benchmark public void test_"+ i + "_" + j + "_" + precision + "_triangle() throws Exception { triangleTreeReader.relate(" + minX + "," + minY + "," + maxX + "," + maxY + ");}");
+//                        System.out.println("geometryTreeReader.relate(" + minX + "," + minY + "," + maxX + "," + maxY + ");");
+//                        try {
+//                            Polygon polygon = new Polygon(new LinearRing(
+//                                new double[] {rectangle.getMinX(), rectangle.getMaxX(), rectangle.getMaxX(), rectangle.getMinX(), rectangle.getMinX() },
+//                                new double[] {rectangle.getMinY(), rectangle.getMinY(), rectangle.getMaxY(), rectangle.getMaxY(), rectangle.getMinY() }
+//                                ));
+//                            XContentBuilder builder = XContentFactory.jsonBuilder();
+//                            GeoJson.toXContent(polygon, builder, ToXContent.EMPTY_PARAMS);
+//                            String tileJson = XContentHelper.convertToJson(BytesReference.bytes(builder), true, false, XContentType.JSON);
+//                            System.out.println(tileJson + ",");
+//                        } catch (Exception e) { }
                     }
                     if (geoValue.relate(rectangle) != GeoRelation.QUERY_DISJOINT) {
                         values.resizeCell(idx + 1);
@@ -231,12 +252,26 @@ public interface GeoGridTiler {
                         continue;
                     }
                     {
-//                        int minX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(rectangle.getMinX());
-//                        int maxX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(rectangle.getMaxX());
-//                        int minY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMinY());
-//                        int maxY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMaxY());
-//                        System.out.println("@Benchmark public void test_"+ nextX + "_" + nextY + "_" + zTile + "_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(" + minX + "," + minY + "," + maxX + "," + maxY + "));}");
-//                        System.out.println("@Benchmark public void test_"+ nextX + "_" + nextY + "_" + zTile + "_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(" + minX + "," + minY + "," + maxX + "," + maxY + "));}");
+                        int minX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(rectangle.getMinX());
+                        int maxX = GeoShapeCoordinateEncoder.INSTANCE.encodeX(rectangle.getMaxX());
+                        int minY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMinY());
+                        int maxY = GeoShapeCoordinateEncoder.INSTANCE.encodeY(rectangle.getMaxY());
+                        System.out.println("@Benchmark public void test_"+ nextX + "_" + nextY + "_" + zTile + "_geometry() throws Exception { geometryTreeReader.relate(" + minX + "," + minY + "," + maxX + "," + maxY + ");}");
+                        System.out.println("@Benchmark public void test_"+ nextX + "_" + nextY + "_" + zTile + "_edge() throws Exception { edgeTreeReader.relate(" + minX + "," + minY + "," + maxX + "," + maxY + ");}");
+                        System.out.println("@Benchmark public void test_"+ nextX + "_" + nextY + "_" + zTile + "_triangle() throws Exception { triangleTreeReader.relate(" + minX + "," + minY + "," + maxX + "," + maxY + ");}");
+//                        System.out.println("geometryTreeReader.relate(" + minX + "," + minY + "," + maxX + "," + maxY + ");");
+//                        try {
+//                            Polygon polygon = new Polygon(new LinearRing(
+//                                new double[] {rectangle.getMinX(), rectangle.getMaxX(), rectangle.getMaxX(), rectangle.getMinX(), rectangle.getMinX() },
+//                                new double[] {rectangle.getMinY(), rectangle.getMinY(), rectangle.getMaxY(), rectangle.getMaxY(), rectangle.getMinY() }
+//                            ));
+//                            XContentBuilder builder = XContentFactory.jsonBuilder();
+//                            GeoJson.toXContent(polygon, builder, ToXContent.EMPTY_PARAMS);
+//                            String tileJson = XContentHelper.convertToJson(BytesReference.bytes(builder), true, false, XContentType.JSON);
+//                            if (zTile >= targetPrecision - 2) {
+//                                System.out.println(tileJson + ",");
+//                            }
+//                        } catch (Exception e) { }
                     }
                     GeoRelation relation = geoValue.relate(rectangle);
                     if (GeoRelation.QUERY_INSIDE == relation) {

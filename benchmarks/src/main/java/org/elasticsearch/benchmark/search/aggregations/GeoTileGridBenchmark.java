@@ -22,6 +22,7 @@ package org.elasticsearch.benchmark.search.aggregations;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.geo.CoordinateEncoder;
+import org.elasticsearch.common.geo.EdgeTreeReader;
 import org.elasticsearch.common.geo.Extent;
 import org.elasticsearch.common.geo.GeoJson;
 import org.elasticsearch.common.geo.GeoShapeCoordinateEncoder;
@@ -59,19 +60,21 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 @Warmup(iterations = 3)
-@Measurement(iterations = 1000)
+@Measurement(iterations = 5)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
-@Fork(value = 2)
+@Fork(value = 1)
 public class GeoTileGridBenchmark {
 
     int precision;
     Geometry geometry;
     GeometryTreeReader geometryTreeReader;
     TriangleTreeReader triangleTreeReader;
+    EdgeTreeReader edgeTreeReader;
     MultiGeoValues.GeoShapeValue geometryTreeValue;
     MultiGeoValues.GeoShapeValue triangleTreeValue;
+    MultiGeoValues.GeoShapeValue edgeTreeValue;
     Extent extentQuery;
     CellIdSource.GeoShapeCellValues cellValues;
 
@@ -196,6 +199,11 @@ public class GeoTileGridBenchmark {
         geometryTreeReader = geometryTreeReader(geometry, encoder);
         triangleTreeReader = triangleTreeReader(geometry, encoder);
         geometryTreeValue = new MultiGeoValues.GeoShapeValue(geometryTreeReader);
+
+        geometryTreeReader.getExtent();
+        edgeTreeReader = geometryTreeReader.polygonTreeReader.outerShell;
+        edgeTreeValue = new MultiGeoValues.GeoShapeValue(edgeTreeReader);
+
         triangleTreeValue = new MultiGeoValues.GeoShapeValue(triangleTreeReader);
         extentQuery = Extent.fromPoints(encoder.encodeX(7.520740), encoder.encodeY(46.202784),
             encoder.encodeX(9.212635), encoder.encodeY(47.539589));
@@ -231,10 +239,10 @@ public class GeoTileGridBenchmark {
 //        return triangleTreeReader.relate(extentQuery.minX(), extentQuery.minY(), extentQuery.maxX(), extentQuery.maxY());
 //    }
 //
-    @Benchmark
-    public int measureGeoTile_GeometryTree() {
-        return GeoGridTiler.GeoTileGridTiler.INSTANCE.setValues(cellValues, geometryTreeValue, precision);
-    }
+//    @Benchmark
+//    public int measureGeoTile_GeometryTree() {
+//        return GeoGridTiler.GeoTileGridTiler.INSTANCE.setValues(cellValues, geometryTreeValue, precision);
+//    }
 //
 //
 //
@@ -279,175 +287,257 @@ public class GeoTileGridBenchmark {
         return XContentHelper.convertToJson(BytesReference.bytes(builder), true, false, XContentType.JSON);
     }
 
-
-//    @Benchmark public void test_0_0_1_geometry() throws Exception { geometryTreeReader.relate(-2147483648,0,0,2029398981);}
-//    @Benchmark public void test_0_0_1_triangle() throws Exception { geometryTreeReader.relate(-2147483648,0,0,2029398981);}
-//    @Benchmark public void test_0_1_1_geometry() throws Exception { geometryTreeReader.relate(-2147483648,-2029398982,0,0);}
-//    @Benchmark public void test_0_1_1_triangle() throws Exception { geometryTreeReader.relate(-2147483648,-2029398982,0,0);}
-//    @Benchmark public void test_1_0_1_geometry() throws Exception { geometryTreeReader.relate(0,0,2147483647,2029398981);}
-//    @Benchmark public void test_1_0_1_triangle() throws Exception { geometryTreeReader.relate(0,0,2147483647,2029398981);}
-//    @Benchmark public void test_2_0_2_geometry() throws Exception { geometryTreeReader.relate(0,1587068213,1073741824,2029398981);}
-//    @Benchmark public void test_2_0_2_triangle() throws Exception { geometryTreeReader.relate(0,1587068213,1073741824,2029398981);}
-//    @Benchmark public void test_2_1_2_geometry() throws Exception { geometryTreeReader.relate(0,0,1073741824,1587068213);}
-//    @Benchmark public void test_2_1_2_triangle() throws Exception { geometryTreeReader.relate(0,0,1073741824,1587068213);}
-//    @Benchmark public void test_4_2_3_geometry() throws Exception { geometryTreeReader.relate(0,977818455,536870912,1587068213);}
-//    @Benchmark public void test_4_2_3_triangle() throws Exception { geometryTreeReader.relate(0,977818455,536870912,1587068213);}
-//    @Benchmark public void test_8_4_4_geometry() throws Exception { geometryTreeReader.relate(0,1330880872,268435456,1587068213);}
-//    @Benchmark public void test_8_4_4_triangle() throws Exception { geometryTreeReader.relate(0,1330880872,268435456,1587068213);}
-//    @Benchmark public void test_8_5_4_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,977818455,268435456,1330880872));}
-//    @Benchmark public void test_8_5_4_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,977818455,268435456,1330880872));}
-//    @Benchmark public void test_16_10_5_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,1167336302,134217728,1330880872));}
-//    @Benchmark public void test_16_10_5_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,1167336302,134217728,1330880872));}
-//    @Benchmark public void test_16_11_5_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,977818455,134217728,1167336302));}
-//    @Benchmark public void test_16_11_5_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,977818455,134217728,1167336302));}
-//    @Benchmark public void test_32_22_6_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,1075866295,67108864,1167336302));}
-//    @Benchmark public void test_32_22_6_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,1075866295,67108864,1167336302));}
-//    @Benchmark public void test_32_23_6_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,977818455,67108864,1075866295));}
-//    @Benchmark public void test_32_23_6_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,977818455,67108864,1075866295));}
-//    @Benchmark public void test_33_22_6_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1075866295,134217728,1167336302));}
-//    @Benchmark public void test_33_22_6_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1075866295,134217728,1167336302));}
-//    @Benchmark public void test_66_44_7_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1122422466,100663296,1167336302));}
-//    @Benchmark public void test_66_44_7_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1122422466,100663296,1167336302));}
-//    @Benchmark public void test_132_88_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1145084133,83886080,1167336302));}
-//    @Benchmark public void test_132_88_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1145084133,83886080,1167336302));}
-//    @Benchmark public void test_132_89_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1122422466,83886080,1145084133));}
-//    @Benchmark public void test_132_89_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1122422466,83886080,1145084133));}
-//    @Benchmark public void test_264_178_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1133804572,75497472,1145084133));}
-//    @Benchmark public void test_264_178_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1133804572,75497472,1145084133));}
-//    @Benchmark public void test_264_179_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1122422466,75497472,1133804572));}
-//    @Benchmark public void test_264_179_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1122422466,75497472,1133804572));}
-//    @Benchmark public void test_265_178_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(75497472,1133804572,83886080,1145084133));}
-//    @Benchmark public void test_265_178_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(75497472,1133804572,83886080,1145084133));}
-//    @Benchmark public void test_265_179_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(75497472,1122422466,83886080,1133804572));}
-//    @Benchmark public void test_265_179_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(75497472,1122422466,83886080,1133804572));}
-//    @Benchmark public void test_133_88_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1145084133,100663296,1167336302));}
-//    @Benchmark public void test_133_88_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1145084133,100663296,1167336302));}
-//    @Benchmark public void test_133_89_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1122422466,100663296,1145084133));}
-//    @Benchmark public void test_133_89_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1122422466,100663296,1145084133));}
-//    @Benchmark public void test_266_178_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1133804572,92274688,1145084133));}
-//    @Benchmark public void test_266_178_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1133804572,92274688,1145084133));}
-//    @Benchmark public void test_266_179_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1122422466,92274688,1133804572));}
-//    @Benchmark public void test_266_179_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1122422466,92274688,1133804572));}
-//    @Benchmark public void test_267_178_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(92274688,1133804572,100663296,1145084133));}
-//    @Benchmark public void test_267_178_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(92274688,1133804572,100663296,1145084133));}
-//    @Benchmark public void test_267_179_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(92274688,1122422466,100663296,1133804572));}
-//    @Benchmark public void test_267_179_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(92274688,1122422466,100663296,1133804572));}
-//    @Benchmark public void test_66_45_7_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1075866295,100663296,1122422466));}
-//    @Benchmark public void test_66_45_7_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1075866295,100663296,1122422466));}
-//    @Benchmark public void test_132_90_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1099350104,83886080,1122422466));}
-//    @Benchmark public void test_132_90_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1099350104,83886080,1122422466));}
-//    @Benchmark public void test_264_180_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1110937679,75497472,1122422466));}
-//    @Benchmark public void test_264_180_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1110937679,75497472,1122422466));}
-//    @Benchmark public void test_264_181_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1099350104,75497472,1110937679));}
-//    @Benchmark public void test_264_181_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1099350104,75497472,1110937679));}
-//    @Benchmark public void test_265_180_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(75497472,1110937679,83886080,1122422466));}
-//    @Benchmark public void test_265_180_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(75497472,1110937679,83886080,1122422466));}
-//    @Benchmark public void test_265_181_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(75497472,1099350104,83886080,1110937679));}
-//    @Benchmark public void test_265_181_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(75497472,1099350104,83886080,1110937679));}
-//    @Benchmark public void test_132_91_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1075866295,83886080,1099350104));}
-//    @Benchmark public void test_132_91_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1075866295,83886080,1099350104));}
-//    @Benchmark public void test_264_182_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1087659659,75497472,1099350104));}
-//    @Benchmark public void test_264_182_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1087659659,75497472,1099350104));}
-//    @Benchmark public void test_264_183_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1075866295,75497472,1087659659));}
-//    @Benchmark public void test_264_183_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,1075866295,75497472,1087659659));}
-//    @Benchmark public void test_265_182_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(75497472,1087659659,83886080,1099350104));}
-//    @Benchmark public void test_265_182_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(75497472,1087659659,83886080,1099350104));}
-//    @Benchmark public void test_265_183_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(75497472,1075866295,83886080,1087659659));}
-//    @Benchmark public void test_265_183_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(75497472,1075866295,83886080,1087659659));}
-//    @Benchmark public void test_133_90_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1099350104,100663296,1122422466));}
-//    @Benchmark public void test_133_90_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1099350104,100663296,1122422466));}
-//    @Benchmark public void test_266_180_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1110937679,92274688,1122422466));}
-//    @Benchmark public void test_266_180_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1110937679,92274688,1122422466));}
-//    @Benchmark public void test_266_181_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1099350104,92274688,1110937679));}
-//    @Benchmark public void test_266_181_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1099350104,92274688,1110937679));}
-//    @Benchmark public void test_267_180_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(92274688,1110937679,100663296,1122422466));}
-//    @Benchmark public void test_267_180_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(92274688,1110937679,100663296,1122422466));}
-//    @Benchmark public void test_267_181_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(92274688,1099350104,100663296,1110937679));}
-//    @Benchmark public void test_267_181_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(92274688,1099350104,100663296,1110937679));}
-//    @Benchmark public void test_133_91_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1075866295,100663296,1099350104));}
-//    @Benchmark public void test_133_91_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1075866295,100663296,1099350104));}
-//    @Benchmark public void test_266_182_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1087659659,92274688,1099350104));}
-//    @Benchmark public void test_266_182_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1087659659,92274688,1099350104));}
-//    @Benchmark public void test_266_183_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1075866295,92274688,1087659659));}
-//    @Benchmark public void test_266_183_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(83886080,1075866295,92274688,1087659659));}
-//    @Benchmark public void test_267_182_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(92274688,1087659659,100663296,1099350104));}
-//    @Benchmark public void test_267_182_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(92274688,1087659659,100663296,1099350104));}
-//    @Benchmark public void test_267_183_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(92274688,1075866295,100663296,1087659659));}
-//    @Benchmark public void test_267_183_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(92274688,1075866295,100663296,1087659659));}
-//    @Benchmark public void test_67_44_7_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1122422466,134217728,1167336302));}
-//    @Benchmark public void test_67_44_7_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1122422466,134217728,1167336302));}
-//    @Benchmark public void test_134_88_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1145084133,117440512,1167336302));}
-//    @Benchmark public void test_134_88_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1145084133,117440512,1167336302));}
-//    @Benchmark public void test_134_89_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1122422466,117440512,1145084133));}
-//    @Benchmark public void test_134_89_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1122422466,117440512,1145084133));}
-//    @Benchmark public void test_268_178_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1133804572,109051904,1145084133));}
-//    @Benchmark public void test_268_178_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1133804572,109051904,1145084133));}
-//    @Benchmark public void test_268_179_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1122422466,109051904,1133804572));}
-//    @Benchmark public void test_268_179_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1122422466,109051904,1133804572));}
-//    @Benchmark public void test_269_178_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(109051904,1133804572,117440512,1145084133));}
-//    @Benchmark public void test_269_178_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(109051904,1133804572,117440512,1145084133));}
-//    @Benchmark public void test_269_179_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(109051904,1122422466,117440512,1133804572));}
-//    @Benchmark public void test_269_179_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(109051904,1122422466,117440512,1133804572));}
-//    @Benchmark public void test_135_88_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(117440512,1145084133,134217728,1167336302));}
-//    @Benchmark public void test_135_88_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(117440512,1145084133,134217728,1167336302));}
-//    @Benchmark public void test_135_89_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(117440512,1122422466,134217728,1145084133));}
-//    @Benchmark public void test_135_89_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(117440512,1122422466,134217728,1145084133));}
-//    @Benchmark public void test_67_45_7_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1075866295,134217728,1122422466));}
-//    @Benchmark public void test_67_45_7_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1075866295,134217728,1122422466));}
-//    @Benchmark public void test_134_90_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1099350104,117440512,1122422466));}
-//    @Benchmark public void test_134_90_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1099350104,117440512,1122422466));}
-//    @Benchmark public void test_268_180_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1110937679,109051904,1122422466));}
-//    @Benchmark public void test_268_180_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1110937679,109051904,1122422466));}
-//    @Benchmark public void test_268_181_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1099350104,109051904,1110937679));}
-//    @Benchmark public void test_268_181_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1099350104,109051904,1110937679));}
-//    @Benchmark public void test_269_180_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(109051904,1110937679,117440512,1122422466));}
-//    @Benchmark public void test_269_180_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(109051904,1110937679,117440512,1122422466));}
-//    @Benchmark public void test_269_181_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(109051904,1099350104,117440512,1110937679));}
-//    @Benchmark public void test_269_181_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(109051904,1099350104,117440512,1110937679));}
-//    @Benchmark public void test_134_91_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1075866295,117440512,1099350104));}
-//    @Benchmark public void test_134_91_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1075866295,117440512,1099350104));}
-//    @Benchmark public void test_268_182_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1087659659,109051904,1099350104));}
-//    @Benchmark public void test_268_182_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1087659659,109051904,1099350104));}
-//    @Benchmark public void test_268_183_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1075866295,109051904,1087659659));}
-//    @Benchmark public void test_268_183_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(100663296,1075866295,109051904,1087659659));}
-//    @Benchmark public void test_269_182_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(109051904,1087659659,117440512,1099350104));}
-//    @Benchmark public void test_269_182_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(109051904,1087659659,117440512,1099350104));}
-//    @Benchmark public void test_269_183_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(109051904,1075866295,117440512,1087659659));}
-//    @Benchmark public void test_269_183_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(109051904,1075866295,117440512,1087659659));}
-//    @Benchmark public void test_135_90_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(117440512,1099350104,134217728,1122422466));}
-//    @Benchmark public void test_135_90_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(117440512,1099350104,134217728,1122422466));}
-//    @Benchmark public void test_270_180_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(117440512,1110937679,125829120,1122422466));}
-//    @Benchmark public void test_270_180_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(117440512,1110937679,125829120,1122422466));}
-//    @Benchmark public void test_270_181_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(117440512,1099350104,125829120,1110937679));}
-//    @Benchmark public void test_270_181_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(117440512,1099350104,125829120,1110937679));}
-//    @Benchmark public void test_271_180_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(125829120,1110937679,134217728,1122422466));}
-//    @Benchmark public void test_271_180_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(125829120,1110937679,134217728,1122422466));}
-//    @Benchmark public void test_271_181_9_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(125829120,1099350104,134217728,1110937679));}
-//    @Benchmark public void test_271_181_9_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(125829120,1099350104,134217728,1110937679));}
-//    @Benchmark public void test_135_91_8_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(117440512,1075866295,134217728,1099350104));}
-//    @Benchmark public void test_135_91_8_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(117440512,1075866295,134217728,1099350104));}
-//    @Benchmark public void test_33_23_6_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,977818455,134217728,1075866295));}
-//    @Benchmark public void test_33_23_6_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(67108864,977818455,134217728,1075866295));}
-//    @Benchmark public void test_17_10_5_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(134217728,1167336302,268435456,1330880872));}
-//    @Benchmark public void test_17_10_5_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(134217728,1167336302,268435456,1330880872));}
-//    @Benchmark public void test_17_11_5_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(134217728,977818455,268435456,1167336302));}
-//    @Benchmark public void test_17_11_5_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(134217728,977818455,268435456,1167336302));}
-//    @Benchmark public void test_9_4_4_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(268435456,1330880872,536870912,1587068213));}
-//    @Benchmark public void test_9_4_4_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(268435456,1330880872,536870912,1587068213));}
-//    @Benchmark public void test_9_5_4_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(268435456,977818455,536870912,1330880872));}
-//    @Benchmark public void test_9_5_4_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(268435456,977818455,536870912,1330880872));}
-//    @Benchmark public void test_4_3_3_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,0,536870912,977818455));}
-//    @Benchmark public void test_4_3_3_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,0,536870912,977818455));}
-//    @Benchmark public void test_5_2_3_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(536870912,977818455,1073741824,1587068213));}
-//    @Benchmark public void test_5_2_3_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(536870912,977818455,1073741824,1587068213));}
-//    @Benchmark public void test_5_3_3_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(536870912,0,1073741824,977818455));}
-//    @Benchmark public void test_5_3_3_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(536870912,0,1073741824,977818455));}
-//    @Benchmark public void test_3_0_2_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(1073741824,1587068213,2147483647,2029398981));}
-//    @Benchmark public void test_3_0_2_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(1073741824,1587068213,2147483647,2029398981));}
-//    @Benchmark public void test_3_1_2_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(1073741824,0,2147483647,1587068213));}
-//    @Benchmark public void test_3_1_2_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(1073741824,0,2147483647,1587068213));}
-//    @Benchmark public void test_1_1_1_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,-2029398982,2147483647,0));}
-//    @Benchmark public void test_1_1_1_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,-2029398982,2147483647,0));}
-
+    @Benchmark public void test_0_0_1_geometry() throws Exception { geometryTreeReader.relate(-2147483648,0,0,2029398981);}
+    @Benchmark public void test_0_0_1_edge() throws Exception { edgeTreeReader.relate(-2147483648,0,0,2029398981);}
+    @Benchmark public void test_0_0_1_triangle() throws Exception { triangleTreeReader.relate(-2147483648,0,0,2029398981);}
+    @Benchmark public void test_0_1_1_geometry() throws Exception { geometryTreeReader.relate(-2147483648,-2029398982,0,0);}
+    @Benchmark public void test_0_1_1_edge() throws Exception { edgeTreeReader.relate(-2147483648,-2029398982,0,0);}
+    @Benchmark public void test_0_1_1_triangle() throws Exception { triangleTreeReader.relate(-2147483648,-2029398982,0,0);}
+    @Benchmark public void test_1_0_1_geometry() throws Exception { geometryTreeReader.relate(0,0,2147483647,2029398981);}
+    @Benchmark public void test_1_0_1_edge() throws Exception { edgeTreeReader.relate(0,0,2147483647,2029398981);}
+    @Benchmark public void test_1_0_1_triangle() throws Exception { triangleTreeReader.relate(0,0,2147483647,2029398981);}
+    @Benchmark public void test_2_0_2_geometry() throws Exception { geometryTreeReader.relate(0,1587068213,1073741824,2029398981);}
+    @Benchmark public void test_2_0_2_edge() throws Exception { edgeTreeReader.relate(0,1587068213,1073741824,2029398981);}
+    @Benchmark public void test_2_0_2_triangle() throws Exception { triangleTreeReader.relate(0,1587068213,1073741824,2029398981);}
+    @Benchmark public void test_2_1_2_geometry() throws Exception { geometryTreeReader.relate(0,0,1073741824,1587068213);}
+    @Benchmark public void test_2_1_2_edge() throws Exception { edgeTreeReader.relate(0,0,1073741824,1587068213);}
+    @Benchmark public void test_2_1_2_triangle() throws Exception { triangleTreeReader.relate(0,0,1073741824,1587068213);}
+    @Benchmark public void test_4_2_3_geometry() throws Exception { geometryTreeReader.relate(0,977818455,536870912,1587068213);}
+    @Benchmark public void test_4_2_3_edge() throws Exception { edgeTreeReader.relate(0,977818455,536870912,1587068213);}
+    @Benchmark public void test_4_2_3_triangle() throws Exception { triangleTreeReader.relate(0,977818455,536870912,1587068213);}
+    @Benchmark public void test_8_4_4_geometry() throws Exception { geometryTreeReader.relate(0,1330880872,268435456,1587068213);}
+    @Benchmark public void test_8_4_4_edge() throws Exception { edgeTreeReader.relate(0,1330880872,268435456,1587068213);}
+    @Benchmark public void test_8_4_4_triangle() throws Exception { triangleTreeReader.relate(0,1330880872,268435456,1587068213);}
+    @Benchmark public void test_8_5_4_geometry() throws Exception { geometryTreeReader.relate(0,977818455,268435456,1330880872);}
+    @Benchmark public void test_8_5_4_edge() throws Exception { edgeTreeReader.relate(0,977818455,268435456,1330880872);}
+    @Benchmark public void test_8_5_4_triangle() throws Exception { triangleTreeReader.relate(0,977818455,268435456,1330880872);}
+    @Benchmark public void test_16_10_5_geometry() throws Exception { geometryTreeReader.relate(0,1167336302,134217728,1330880872);}
+    @Benchmark public void test_16_10_5_edge() throws Exception { edgeTreeReader.relate(0,1167336302,134217728,1330880872);}
+    @Benchmark public void test_16_10_5_triangle() throws Exception { triangleTreeReader.relate(0,1167336302,134217728,1330880872);}
+    @Benchmark public void test_16_11_5_geometry() throws Exception { geometryTreeReader.relate(0,977818455,134217728,1167336302);}
+    @Benchmark public void test_16_11_5_edge() throws Exception { edgeTreeReader.relate(0,977818455,134217728,1167336302);}
+    @Benchmark public void test_16_11_5_triangle() throws Exception { triangleTreeReader.relate(0,977818455,134217728,1167336302);}
+    @Benchmark public void test_32_22_6_geometry() throws Exception { geometryTreeReader.relate(0,1075866295,67108864,1167336302);}
+    @Benchmark public void test_32_22_6_edge() throws Exception { edgeTreeReader.relate(0,1075866295,67108864,1167336302);}
+    @Benchmark public void test_32_22_6_triangle() throws Exception { triangleTreeReader.relate(0,1075866295,67108864,1167336302);}
+    @Benchmark public void test_32_23_6_geometry() throws Exception { geometryTreeReader.relate(0,977818455,67108864,1075866295);}
+    @Benchmark public void test_32_23_6_edge() throws Exception { edgeTreeReader.relate(0,977818455,67108864,1075866295);}
+    @Benchmark public void test_32_23_6_triangle() throws Exception { triangleTreeReader.relate(0,977818455,67108864,1075866295);}
+    @Benchmark public void test_33_22_6_geometry() throws Exception { geometryTreeReader.relate(67108864,1075866295,134217728,1167336302);}
+    @Benchmark public void test_33_22_6_edge() throws Exception { edgeTreeReader.relate(67108864,1075866295,134217728,1167336302);}
+    @Benchmark public void test_33_22_6_triangle() throws Exception { triangleTreeReader.relate(67108864,1075866295,134217728,1167336302);}
+    @Benchmark public void test_66_44_7_geometry() throws Exception { geometryTreeReader.relate(67108864,1122422466,100663296,1167336302);}
+    @Benchmark public void test_66_44_7_edge() throws Exception { edgeTreeReader.relate(67108864,1122422466,100663296,1167336302);}
+    @Benchmark public void test_66_44_7_triangle() throws Exception { triangleTreeReader.relate(67108864,1122422466,100663296,1167336302);}
+    @Benchmark public void test_132_88_8_geometry() throws Exception { geometryTreeReader.relate(67108864,1145084133,83886080,1167336302);}
+    @Benchmark public void test_132_88_8_edge() throws Exception { edgeTreeReader.relate(67108864,1145084133,83886080,1167336302);}
+    @Benchmark public void test_132_88_8_triangle() throws Exception { triangleTreeReader.relate(67108864,1145084133,83886080,1167336302);}
+    @Benchmark public void test_132_89_8_geometry() throws Exception { geometryTreeReader.relate(67108864,1122422466,83886080,1145084133);}
+    @Benchmark public void test_132_89_8_edge() throws Exception { edgeTreeReader.relate(67108864,1122422466,83886080,1145084133);}
+    @Benchmark public void test_132_89_8_triangle() throws Exception { triangleTreeReader.relate(67108864,1122422466,83886080,1145084133);}
+    @Benchmark public void test_264_178_9_geometry() throws Exception { geometryTreeReader.relate(67108864,1133804572,75497472,1145084133);}
+    @Benchmark public void test_264_178_9_edge() throws Exception { edgeTreeReader.relate(67108864,1133804572,75497472,1145084133);}
+    @Benchmark public void test_264_178_9_triangle() throws Exception { triangleTreeReader.relate(67108864,1133804572,75497472,1145084133);}
+    @Benchmark public void test_264_179_9_geometry() throws Exception { geometryTreeReader.relate(67108864,1122422466,75497472,1133804572);}
+    @Benchmark public void test_264_179_9_edge() throws Exception { edgeTreeReader.relate(67108864,1122422466,75497472,1133804572);}
+    @Benchmark public void test_264_179_9_triangle() throws Exception { triangleTreeReader.relate(67108864,1122422466,75497472,1133804572);}
+    @Benchmark public void test_265_178_9_geometry() throws Exception { geometryTreeReader.relate(75497472,1133804572,83886080,1145084133);}
+    @Benchmark public void test_265_178_9_edge() throws Exception { edgeTreeReader.relate(75497472,1133804572,83886080,1145084133);}
+    @Benchmark public void test_265_178_9_triangle() throws Exception { triangleTreeReader.relate(75497472,1133804572,83886080,1145084133);}
+    @Benchmark public void test_265_179_9_geometry() throws Exception { geometryTreeReader.relate(75497472,1122422466,83886080,1133804572);}
+    @Benchmark public void test_265_179_9_edge() throws Exception { edgeTreeReader.relate(75497472,1122422466,83886080,1133804572);}
+    @Benchmark public void test_265_179_9_triangle() throws Exception { triangleTreeReader.relate(75497472,1122422466,83886080,1133804572);}
+    @Benchmark public void test_133_88_8_geometry() throws Exception { geometryTreeReader.relate(83886080,1145084133,100663296,1167336302);}
+    @Benchmark public void test_133_88_8_edge() throws Exception { edgeTreeReader.relate(83886080,1145084133,100663296,1167336302);}
+    @Benchmark public void test_133_88_8_triangle() throws Exception { triangleTreeReader.relate(83886080,1145084133,100663296,1167336302);}
+    @Benchmark public void test_133_89_8_geometry() throws Exception { geometryTreeReader.relate(83886080,1122422466,100663296,1145084133);}
+    @Benchmark public void test_133_89_8_edge() throws Exception { edgeTreeReader.relate(83886080,1122422466,100663296,1145084133);}
+    @Benchmark public void test_133_89_8_triangle() throws Exception { triangleTreeReader.relate(83886080,1122422466,100663296,1145084133);}
+    @Benchmark public void test_266_178_9_geometry() throws Exception { geometryTreeReader.relate(83886080,1133804572,92274688,1145084133);}
+    @Benchmark public void test_266_178_9_edge() throws Exception { edgeTreeReader.relate(83886080,1133804572,92274688,1145084133);}
+    @Benchmark public void test_266_178_9_triangle() throws Exception { triangleTreeReader.relate(83886080,1133804572,92274688,1145084133);}
+    @Benchmark public void test_266_179_9_geometry() throws Exception { geometryTreeReader.relate(83886080,1122422466,92274688,1133804572);}
+    @Benchmark public void test_266_179_9_edge() throws Exception { edgeTreeReader.relate(83886080,1122422466,92274688,1133804572);}
+    @Benchmark public void test_266_179_9_triangle() throws Exception { triangleTreeReader.relate(83886080,1122422466,92274688,1133804572);}
+    @Benchmark public void test_267_178_9_geometry() throws Exception { geometryTreeReader.relate(92274688,1133804572,100663296,1145084133);}
+    @Benchmark public void test_267_178_9_edge() throws Exception { edgeTreeReader.relate(92274688,1133804572,100663296,1145084133);}
+    @Benchmark public void test_267_178_9_triangle() throws Exception { triangleTreeReader.relate(92274688,1133804572,100663296,1145084133);}
+    @Benchmark public void test_267_179_9_geometry() throws Exception { geometryTreeReader.relate(92274688,1122422466,100663296,1133804572);}
+    @Benchmark public void test_267_179_9_edge() throws Exception { edgeTreeReader.relate(92274688,1122422466,100663296,1133804572);}
+    @Benchmark public void test_267_179_9_triangle() throws Exception { triangleTreeReader.relate(92274688,1122422466,100663296,1133804572);}
+    @Benchmark public void test_66_45_7_geometry() throws Exception { geometryTreeReader.relate(67108864,1075866295,100663296,1122422466);}
+    @Benchmark public void test_66_45_7_edge() throws Exception { edgeTreeReader.relate(67108864,1075866295,100663296,1122422466);}
+    @Benchmark public void test_66_45_7_triangle() throws Exception { triangleTreeReader.relate(67108864,1075866295,100663296,1122422466);}
+    @Benchmark public void test_132_90_8_geometry() throws Exception { geometryTreeReader.relate(67108864,1099350104,83886080,1122422466);}
+    @Benchmark public void test_132_90_8_edge() throws Exception { edgeTreeReader.relate(67108864,1099350104,83886080,1122422466);}
+    @Benchmark public void test_132_90_8_triangle() throws Exception { triangleTreeReader.relate(67108864,1099350104,83886080,1122422466);}
+    @Benchmark public void test_264_180_9_geometry() throws Exception { geometryTreeReader.relate(67108864,1110937679,75497472,1122422466);}
+    @Benchmark public void test_264_180_9_edge() throws Exception { edgeTreeReader.relate(67108864,1110937679,75497472,1122422466);}
+    @Benchmark public void test_264_180_9_triangle() throws Exception { triangleTreeReader.relate(67108864,1110937679,75497472,1122422466);}
+    @Benchmark public void test_264_181_9_geometry() throws Exception { geometryTreeReader.relate(67108864,1099350104,75497472,1110937679);}
+    @Benchmark public void test_264_181_9_edge() throws Exception { edgeTreeReader.relate(67108864,1099350104,75497472,1110937679);}
+    @Benchmark public void test_264_181_9_triangle() throws Exception { triangleTreeReader.relate(67108864,1099350104,75497472,1110937679);}
+    @Benchmark public void test_265_180_9_geometry() throws Exception { geometryTreeReader.relate(75497472,1110937679,83886080,1122422466);}
+    @Benchmark public void test_265_180_9_edge() throws Exception { edgeTreeReader.relate(75497472,1110937679,83886080,1122422466);}
+    @Benchmark public void test_265_180_9_triangle() throws Exception { triangleTreeReader.relate(75497472,1110937679,83886080,1122422466);}
+    @Benchmark public void test_265_181_9_geometry() throws Exception { geometryTreeReader.relate(75497472,1099350104,83886080,1110937679);}
+    @Benchmark public void test_265_181_9_edge() throws Exception { edgeTreeReader.relate(75497472,1099350104,83886080,1110937679);}
+    @Benchmark public void test_265_181_9_triangle() throws Exception { triangleTreeReader.relate(75497472,1099350104,83886080,1110937679);}
+    @Benchmark public void test_132_91_8_geometry() throws Exception { geometryTreeReader.relate(67108864,1075866295,83886080,1099350104);}
+    @Benchmark public void test_132_91_8_edge() throws Exception { edgeTreeReader.relate(67108864,1075866295,83886080,1099350104);}
+    @Benchmark public void test_132_91_8_triangle() throws Exception { triangleTreeReader.relate(67108864,1075866295,83886080,1099350104);}
+    @Benchmark public void test_264_182_9_geometry() throws Exception { geometryTreeReader.relate(67108864,1087659659,75497472,1099350104);}
+    @Benchmark public void test_264_182_9_edge() throws Exception { edgeTreeReader.relate(67108864,1087659659,75497472,1099350104);}
+    @Benchmark public void test_264_182_9_triangle() throws Exception { triangleTreeReader.relate(67108864,1087659659,75497472,1099350104);}
+    @Benchmark public void test_264_183_9_geometry() throws Exception { geometryTreeReader.relate(67108864,1075866295,75497472,1087659659);}
+    @Benchmark public void test_264_183_9_edge() throws Exception { edgeTreeReader.relate(67108864,1075866295,75497472,1087659659);}
+    @Benchmark public void test_264_183_9_triangle() throws Exception { triangleTreeReader.relate(67108864,1075866295,75497472,1087659659);}
+    @Benchmark public void test_265_182_9_geometry() throws Exception { geometryTreeReader.relate(75497472,1087659659,83886080,1099350104);}
+    @Benchmark public void test_265_182_9_edge() throws Exception { edgeTreeReader.relate(75497472,1087659659,83886080,1099350104);}
+    @Benchmark public void test_265_182_9_triangle() throws Exception { triangleTreeReader.relate(75497472,1087659659,83886080,1099350104);}
+    @Benchmark public void test_265_183_9_geometry() throws Exception { geometryTreeReader.relate(75497472,1075866295,83886080,1087659659);}
+    @Benchmark public void test_265_183_9_edge() throws Exception { edgeTreeReader.relate(75497472,1075866295,83886080,1087659659);}
+    @Benchmark public void test_265_183_9_triangle() throws Exception { triangleTreeReader.relate(75497472,1075866295,83886080,1087659659);}
+    @Benchmark public void test_133_90_8_geometry() throws Exception { geometryTreeReader.relate(83886080,1099350104,100663296,1122422466);}
+    @Benchmark public void test_133_90_8_edge() throws Exception { edgeTreeReader.relate(83886080,1099350104,100663296,1122422466);}
+    @Benchmark public void test_133_90_8_triangle() throws Exception { triangleTreeReader.relate(83886080,1099350104,100663296,1122422466);}
+    @Benchmark public void test_266_180_9_geometry() throws Exception { geometryTreeReader.relate(83886080,1110937679,92274688,1122422466);}
+    @Benchmark public void test_266_180_9_edge() throws Exception { edgeTreeReader.relate(83886080,1110937679,92274688,1122422466);}
+    @Benchmark public void test_266_180_9_triangle() throws Exception { triangleTreeReader.relate(83886080,1110937679,92274688,1122422466);}
+    @Benchmark public void test_266_181_9_geometry() throws Exception { geometryTreeReader.relate(83886080,1099350104,92274688,1110937679);}
+    @Benchmark public void test_266_181_9_edge() throws Exception { edgeTreeReader.relate(83886080,1099350104,92274688,1110937679);}
+    @Benchmark public void test_266_181_9_triangle() throws Exception { triangleTreeReader.relate(83886080,1099350104,92274688,1110937679);}
+    @Benchmark public void test_267_180_9_geometry() throws Exception { geometryTreeReader.relate(92274688,1110937679,100663296,1122422466);}
+    @Benchmark public void test_267_180_9_edge() throws Exception { edgeTreeReader.relate(92274688,1110937679,100663296,1122422466);}
+    @Benchmark public void test_267_180_9_triangle() throws Exception { triangleTreeReader.relate(92274688,1110937679,100663296,1122422466);}
+    @Benchmark public void test_267_181_9_geometry() throws Exception { geometryTreeReader.relate(92274688,1099350104,100663296,1110937679);}
+    @Benchmark public void test_267_181_9_edge() throws Exception { edgeTreeReader.relate(92274688,1099350104,100663296,1110937679);}
+    @Benchmark public void test_267_181_9_triangle() throws Exception { triangleTreeReader.relate(92274688,1099350104,100663296,1110937679);}
+    @Benchmark public void test_133_91_8_geometry() throws Exception { geometryTreeReader.relate(83886080,1075866295,100663296,1099350104);}
+    @Benchmark public void test_133_91_8_edge() throws Exception { edgeTreeReader.relate(83886080,1075866295,100663296,1099350104);}
+    @Benchmark public void test_133_91_8_triangle() throws Exception { triangleTreeReader.relate(83886080,1075866295,100663296,1099350104);}
+    @Benchmark public void test_266_182_9_geometry() throws Exception { geometryTreeReader.relate(83886080,1087659659,92274688,1099350104);}
+    @Benchmark public void test_266_182_9_edge() throws Exception { edgeTreeReader.relate(83886080,1087659659,92274688,1099350104);}
+    @Benchmark public void test_266_182_9_triangle() throws Exception { triangleTreeReader.relate(83886080,1087659659,92274688,1099350104);}
+    @Benchmark public void test_266_183_9_geometry() throws Exception { geometryTreeReader.relate(83886080,1075866295,92274688,1087659659);}
+    @Benchmark public void test_266_183_9_edge() throws Exception { edgeTreeReader.relate(83886080,1075866295,92274688,1087659659);}
+    @Benchmark public void test_266_183_9_triangle() throws Exception { triangleTreeReader.relate(83886080,1075866295,92274688,1087659659);}
+    @Benchmark public void test_267_182_9_geometry() throws Exception { geometryTreeReader.relate(92274688,1087659659,100663296,1099350104);}
+    @Benchmark public void test_267_182_9_edge() throws Exception { edgeTreeReader.relate(92274688,1087659659,100663296,1099350104);}
+    @Benchmark public void test_267_182_9_triangle() throws Exception { triangleTreeReader.relate(92274688,1087659659,100663296,1099350104);}
+    @Benchmark public void test_267_183_9_geometry() throws Exception { geometryTreeReader.relate(92274688,1075866295,100663296,1087659659);}
+    @Benchmark public void test_267_183_9_edge() throws Exception { edgeTreeReader.relate(92274688,1075866295,100663296,1087659659);}
+    @Benchmark public void test_267_183_9_triangle() throws Exception { triangleTreeReader.relate(92274688,1075866295,100663296,1087659659);}
+    @Benchmark public void test_67_44_7_geometry() throws Exception { geometryTreeReader.relate(100663296,1122422466,134217728,1167336302);}
+    @Benchmark public void test_67_44_7_edge() throws Exception { edgeTreeReader.relate(100663296,1122422466,134217728,1167336302);}
+    @Benchmark public void test_67_44_7_triangle() throws Exception { triangleTreeReader.relate(100663296,1122422466,134217728,1167336302);}
+    @Benchmark public void test_134_88_8_geometry() throws Exception { geometryTreeReader.relate(100663296,1145084133,117440512,1167336302);}
+    @Benchmark public void test_134_88_8_edge() throws Exception { edgeTreeReader.relate(100663296,1145084133,117440512,1167336302);}
+    @Benchmark public void test_134_88_8_triangle() throws Exception { triangleTreeReader.relate(100663296,1145084133,117440512,1167336302);}
+    @Benchmark public void test_134_89_8_geometry() throws Exception { geometryTreeReader.relate(100663296,1122422466,117440512,1145084133);}
+    @Benchmark public void test_134_89_8_edge() throws Exception { edgeTreeReader.relate(100663296,1122422466,117440512,1145084133);}
+    @Benchmark public void test_134_89_8_triangle() throws Exception { triangleTreeReader.relate(100663296,1122422466,117440512,1145084133);}
+    @Benchmark public void test_268_178_9_geometry() throws Exception { geometryTreeReader.relate(100663296,1133804572,109051904,1145084133);}
+    @Benchmark public void test_268_178_9_edge() throws Exception { edgeTreeReader.relate(100663296,1133804572,109051904,1145084133);}
+    @Benchmark public void test_268_178_9_triangle() throws Exception { triangleTreeReader.relate(100663296,1133804572,109051904,1145084133);}
+    @Benchmark public void test_268_179_9_geometry() throws Exception { geometryTreeReader.relate(100663296,1122422466,109051904,1133804572);}
+    @Benchmark public void test_268_179_9_edge() throws Exception { edgeTreeReader.relate(100663296,1122422466,109051904,1133804572);}
+    @Benchmark public void test_268_179_9_triangle() throws Exception { triangleTreeReader.relate(100663296,1122422466,109051904,1133804572);}
+    @Benchmark public void test_269_178_9_geometry() throws Exception { geometryTreeReader.relate(109051904,1133804572,117440512,1145084133);}
+    @Benchmark public void test_269_178_9_edge() throws Exception { edgeTreeReader.relate(109051904,1133804572,117440512,1145084133);}
+    @Benchmark public void test_269_178_9_triangle() throws Exception { triangleTreeReader.relate(109051904,1133804572,117440512,1145084133);}
+    @Benchmark public void test_269_179_9_geometry() throws Exception { geometryTreeReader.relate(109051904,1122422466,117440512,1133804572);}
+    @Benchmark public void test_269_179_9_edge() throws Exception { edgeTreeReader.relate(109051904,1122422466,117440512,1133804572);}
+    @Benchmark public void test_269_179_9_triangle() throws Exception { triangleTreeReader.relate(109051904,1122422466,117440512,1133804572);}
+    @Benchmark public void test_135_88_8_geometry() throws Exception { geometryTreeReader.relate(117440512,1145084133,134217728,1167336302);}
+    @Benchmark public void test_135_88_8_edge() throws Exception { edgeTreeReader.relate(117440512,1145084133,134217728,1167336302);}
+    @Benchmark public void test_135_88_8_triangle() throws Exception { triangleTreeReader.relate(117440512,1145084133,134217728,1167336302);}
+    @Benchmark public void test_135_89_8_geometry() throws Exception { geometryTreeReader.relate(117440512,1122422466,134217728,1145084133);}
+    @Benchmark public void test_135_89_8_edge() throws Exception { edgeTreeReader.relate(117440512,1122422466,134217728,1145084133);}
+    @Benchmark public void test_135_89_8_triangle() throws Exception { triangleTreeReader.relate(117440512,1122422466,134217728,1145084133);}
+    @Benchmark public void test_67_45_7_geometry() throws Exception { geometryTreeReader.relate(100663296,1075866295,134217728,1122422466);}
+    @Benchmark public void test_67_45_7_edge() throws Exception { edgeTreeReader.relate(100663296,1075866295,134217728,1122422466);}
+    @Benchmark public void test_67_45_7_triangle() throws Exception { triangleTreeReader.relate(100663296,1075866295,134217728,1122422466);}
+    @Benchmark public void test_134_90_8_geometry() throws Exception { geometryTreeReader.relate(100663296,1099350104,117440512,1122422466);}
+    @Benchmark public void test_134_90_8_edge() throws Exception { edgeTreeReader.relate(100663296,1099350104,117440512,1122422466);}
+    @Benchmark public void test_134_90_8_triangle() throws Exception { triangleTreeReader.relate(100663296,1099350104,117440512,1122422466);}
+    @Benchmark public void test_268_180_9_geometry() throws Exception { geometryTreeReader.relate(100663296,1110937679,109051904,1122422466);}
+    @Benchmark public void test_268_180_9_edge() throws Exception { edgeTreeReader.relate(100663296,1110937679,109051904,1122422466);}
+    @Benchmark public void test_268_180_9_triangle() throws Exception { triangleTreeReader.relate(100663296,1110937679,109051904,1122422466);}
+    @Benchmark public void test_268_181_9_geometry() throws Exception { geometryTreeReader.relate(100663296,1099350104,109051904,1110937679);}
+    @Benchmark public void test_268_181_9_edge() throws Exception { edgeTreeReader.relate(100663296,1099350104,109051904,1110937679);}
+    @Benchmark public void test_268_181_9_triangle() throws Exception { triangleTreeReader.relate(100663296,1099350104,109051904,1110937679);}
+    @Benchmark public void test_269_180_9_geometry() throws Exception { geometryTreeReader.relate(109051904,1110937679,117440512,1122422466);}
+    @Benchmark public void test_269_180_9_edge() throws Exception { edgeTreeReader.relate(109051904,1110937679,117440512,1122422466);}
+    @Benchmark public void test_269_180_9_triangle() throws Exception { triangleTreeReader.relate(109051904,1110937679,117440512,1122422466);}
+    @Benchmark public void test_269_181_9_geometry() throws Exception { geometryTreeReader.relate(109051904,1099350104,117440512,1110937679);}
+    @Benchmark public void test_269_181_9_edge() throws Exception { edgeTreeReader.relate(109051904,1099350104,117440512,1110937679);}
+    @Benchmark public void test_269_181_9_triangle() throws Exception { triangleTreeReader.relate(109051904,1099350104,117440512,1110937679);}
+    @Benchmark public void test_134_91_8_geometry() throws Exception { geometryTreeReader.relate(100663296,1075866295,117440512,1099350104);}
+    @Benchmark public void test_134_91_8_edge() throws Exception { edgeTreeReader.relate(100663296,1075866295,117440512,1099350104);}
+    @Benchmark public void test_134_91_8_triangle() throws Exception { triangleTreeReader.relate(100663296,1075866295,117440512,1099350104);}
+    @Benchmark public void test_268_182_9_geometry() throws Exception { geometryTreeReader.relate(100663296,1087659659,109051904,1099350104);}
+    @Benchmark public void test_268_182_9_edge() throws Exception { edgeTreeReader.relate(100663296,1087659659,109051904,1099350104);}
+    @Benchmark public void test_268_182_9_triangle() throws Exception { triangleTreeReader.relate(100663296,1087659659,109051904,1099350104);}
+    @Benchmark public void test_268_183_9_geometry() throws Exception { geometryTreeReader.relate(100663296,1075866295,109051904,1087659659);}
+    @Benchmark public void test_268_183_9_edge() throws Exception { edgeTreeReader.relate(100663296,1075866295,109051904,1087659659);}
+    @Benchmark public void test_268_183_9_triangle() throws Exception { triangleTreeReader.relate(100663296,1075866295,109051904,1087659659);}
+    @Benchmark public void test_269_182_9_geometry() throws Exception { geometryTreeReader.relate(109051904,1087659659,117440512,1099350104);}
+    @Benchmark public void test_269_182_9_edge() throws Exception { edgeTreeReader.relate(109051904,1087659659,117440512,1099350104);}
+    @Benchmark public void test_269_182_9_triangle() throws Exception { triangleTreeReader.relate(109051904,1087659659,117440512,1099350104);}
+    @Benchmark public void test_269_183_9_geometry() throws Exception { geometryTreeReader.relate(109051904,1075866295,117440512,1087659659);}
+    @Benchmark public void test_269_183_9_edge() throws Exception { edgeTreeReader.relate(109051904,1075866295,117440512,1087659659);}
+    @Benchmark public void test_269_183_9_triangle() throws Exception { triangleTreeReader.relate(109051904,1075866295,117440512,1087659659);}
+    @Benchmark public void test_135_90_8_geometry() throws Exception { geometryTreeReader.relate(117440512,1099350104,134217728,1122422466);}
+    @Benchmark public void test_135_90_8_edge() throws Exception { edgeTreeReader.relate(117440512,1099350104,134217728,1122422466);}
+    @Benchmark public void test_135_90_8_triangle() throws Exception { triangleTreeReader.relate(117440512,1099350104,134217728,1122422466);}
+    @Benchmark public void test_270_180_9_geometry() throws Exception { geometryTreeReader.relate(117440512,1110937679,125829120,1122422466);}
+    @Benchmark public void test_270_180_9_edge() throws Exception { edgeTreeReader.relate(117440512,1110937679,125829120,1122422466);}
+    @Benchmark public void test_270_180_9_triangle() throws Exception { triangleTreeReader.relate(117440512,1110937679,125829120,1122422466);}
+    @Benchmark public void test_270_181_9_geometry() throws Exception { geometryTreeReader.relate(117440512,1099350104,125829120,1110937679);}
+    @Benchmark public void test_270_181_9_edge() throws Exception { edgeTreeReader.relate(117440512,1099350104,125829120,1110937679);}
+    @Benchmark public void test_270_181_9_triangle() throws Exception { triangleTreeReader.relate(117440512,1099350104,125829120,1110937679);}
+    @Benchmark public void test_271_180_9_geometry() throws Exception { geometryTreeReader.relate(125829120,1110937679,134217728,1122422466);}
+    @Benchmark public void test_271_180_9_edge() throws Exception { edgeTreeReader.relate(125829120,1110937679,134217728,1122422466);}
+    @Benchmark public void test_271_180_9_triangle() throws Exception { triangleTreeReader.relate(125829120,1110937679,134217728,1122422466);}
+    @Benchmark public void test_271_181_9_geometry() throws Exception { geometryTreeReader.relate(125829120,1099350104,134217728,1110937679);}
+    @Benchmark public void test_271_181_9_edge() throws Exception { edgeTreeReader.relate(125829120,1099350104,134217728,1110937679);}
+    @Benchmark public void test_271_181_9_triangle() throws Exception { triangleTreeReader.relate(125829120,1099350104,134217728,1110937679);}
+    @Benchmark public void test_135_91_8_geometry() throws Exception { geometryTreeReader.relate(117440512,1075866295,134217728,1099350104);}
+    @Benchmark public void test_135_91_8_edge() throws Exception { edgeTreeReader.relate(117440512,1075866295,134217728,1099350104);}
+    @Benchmark public void test_135_91_8_triangle() throws Exception { triangleTreeReader.relate(117440512,1075866295,134217728,1099350104);}
+    @Benchmark public void test_33_23_6_geometry() throws Exception { geometryTreeReader.relate(67108864,977818455,134217728,1075866295);}
+    @Benchmark public void test_33_23_6_edge() throws Exception { edgeTreeReader.relate(67108864,977818455,134217728,1075866295);}
+    @Benchmark public void test_33_23_6_triangle() throws Exception { triangleTreeReader.relate(67108864,977818455,134217728,1075866295);}
+    @Benchmark public void test_17_10_5_geometry() throws Exception { geometryTreeReader.relate(134217728,1167336302,268435456,1330880872);}
+    @Benchmark public void test_17_10_5_edge() throws Exception { edgeTreeReader.relate(134217728,1167336302,268435456,1330880872);}
+    @Benchmark public void test_17_10_5_triangle() throws Exception { triangleTreeReader.relate(134217728,1167336302,268435456,1330880872);}
+    @Benchmark public void test_17_11_5_geometry() throws Exception { geometryTreeReader.relate(134217728,977818455,268435456,1167336302);}
+    @Benchmark public void test_17_11_5_edge() throws Exception { edgeTreeReader.relate(134217728,977818455,268435456,1167336302);}
+    @Benchmark public void test_17_11_5_triangle() throws Exception { triangleTreeReader.relate(134217728,977818455,268435456,1167336302);}
+    @Benchmark public void test_9_4_4_geometry() throws Exception { geometryTreeReader.relate(268435456,1330880872,536870912,1587068213);}
+    @Benchmark public void test_9_4_4_edge() throws Exception { edgeTreeReader.relate(268435456,1330880872,536870912,1587068213);}
+    @Benchmark public void test_9_4_4_triangle() throws Exception { triangleTreeReader.relate(268435456,1330880872,536870912,1587068213);}
+    @Benchmark public void test_9_5_4_geometry() throws Exception { geometryTreeReader.relate(268435456,977818455,536870912,1330880872);}
+    @Benchmark public void test_9_5_4_edge() throws Exception { edgeTreeReader.relate(268435456,977818455,536870912,1330880872);}
+    @Benchmark public void test_9_5_4_triangle() throws Exception { triangleTreeReader.relate(268435456,977818455,536870912,1330880872);}
+    @Benchmark public void test_4_3_3_geometry() throws Exception { geometryTreeReader.relate(0,0,536870912,977818455);}
+    @Benchmark public void test_4_3_3_edge() throws Exception { edgeTreeReader.relate(0,0,536870912,977818455);}
+    @Benchmark public void test_4_3_3_triangle() throws Exception { triangleTreeReader.relate(0,0,536870912,977818455);}
+    @Benchmark public void test_5_2_3_geometry() throws Exception { geometryTreeReader.relate(536870912,977818455,1073741824,1587068213);}
+    @Benchmark public void test_5_2_3_edge() throws Exception { edgeTreeReader.relate(536870912,977818455,1073741824,1587068213);}
+    @Benchmark public void test_5_2_3_triangle() throws Exception { triangleTreeReader.relate(536870912,977818455,1073741824,1587068213);}
+    @Benchmark public void test_5_3_3_geometry() throws Exception { geometryTreeReader.relate(536870912,0,1073741824,977818455);}
+    @Benchmark public void test_5_3_3_edge() throws Exception { edgeTreeReader.relate(536870912,0,1073741824,977818455);}
+    @Benchmark public void test_5_3_3_triangle() throws Exception { triangleTreeReader.relate(536870912,0,1073741824,977818455);}
+    @Benchmark public void test_3_0_2_geometry() throws Exception { geometryTreeReader.relate(1073741824,1587068213,2147483647,2029398981);}
+    @Benchmark public void test_3_0_2_edge() throws Exception { edgeTreeReader.relate(1073741824,1587068213,2147483647,2029398981);}
+    @Benchmark public void test_3_0_2_triangle() throws Exception { triangleTreeReader.relate(1073741824,1587068213,2147483647,2029398981);}
+    @Benchmark public void test_3_1_2_geometry() throws Exception { geometryTreeReader.relate(1073741824,0,2147483647,1587068213);}
+    @Benchmark public void test_3_1_2_edge() throws Exception { edgeTreeReader.relate(1073741824,0,2147483647,1587068213);}
+    @Benchmark public void test_3_1_2_triangle() throws Exception { triangleTreeReader.relate(1073741824,0,2147483647,1587068213);}
+    @Benchmark public void test_1_1_1_geometry() throws Exception { geometryTreeReader.relate(0,-2029398982,2147483647,0);}
+    @Benchmark public void test_1_1_1_edge() throws Exception { edgeTreeReader.relate(0,-2029398982,2147483647,0);}
+    @Benchmark public void test_1_1_1_triangle() throws Exception { triangleTreeReader.relate(0,-2029398982,2147483647,0);}
 
 }

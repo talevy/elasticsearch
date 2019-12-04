@@ -84,7 +84,7 @@ public class TriangleTreeReader implements ShapeTreeReader {
      * then the bounding box is within the shape.
      */
     @Override
-    public GeoRelation relate(int minX, int maxX, int minY, int maxY) throws IOException {
+    public GeoRelation relate(int minX, int minY, int maxX, int maxY) throws IOException {
         input.position(extentOffset);
         int thisMaxX = input.readInt();
         int thisMinX = Math.toIntExact(thisMaxX - input.readVLong());

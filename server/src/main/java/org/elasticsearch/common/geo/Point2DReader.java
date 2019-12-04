@@ -29,11 +29,17 @@ import java.util.Deque;
  * serialized with the {@link Point2DWriter}
  */
 class Point2DReader implements ShapeTreeReader {
-    private final ByteBufferStreamInput input;
-    private final int size;
-    private final int startPosition;
+    private ByteBufferStreamInput input;
+    private int size;
+    private int startPosition;
 
     Point2DReader(ByteBufferStreamInput input) throws IOException {
+        this.input = input;
+        this.size = input.readVInt();
+        this.startPosition = input.position();
+    }
+
+    void reset(ByteBufferStreamInput input) throws IOException {
         this.input = input;
         this.size = input.readVInt();
         this.startPosition = input.position();

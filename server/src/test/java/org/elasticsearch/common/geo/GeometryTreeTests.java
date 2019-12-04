@@ -85,11 +85,12 @@ public class GeometryTreeTests extends AbstractTreeTestCase {
 
         {
             int v = GeoGridTiler.GeoTileGridTiler.INSTANCE.setValues(cellValues, geometryTreeValue, precision);
+            assertThat(v, equalTo(28));
         }
 //
 //        {
 //            int v = GeoGridTiler.GeoTileGridTiler.INSTANCE.setValues(cellValues, triangleTreeValue, precision);
-//            assertThat(v, equalTo(1));
+//            assertThat(v, equalTo(28));
 //        }
     }
 

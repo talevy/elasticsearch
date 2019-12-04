@@ -37,6 +37,10 @@ public class GeometryTreeReader implements ShapeTreeReader {
     private int startPosition;
     private ByteBufferStreamInput input;
     private final CoordinateEncoder coordinateEncoder;
+    // re-usable sub-tree readers
+    public PolygonTreeReader polygonTreeReader;
+    private EdgeTreeReader edgeTreeReader;
+    private Point2DReader point2DReader;
 
     public GeometryTreeReader(CoordinateEncoder coordinateEncoder) {
         this.coordinateEncoder = coordinateEncoder;
@@ -129,14 +133,29 @@ public class GeometryTreeReader implements ShapeTreeReader {
         return relation;
     }
 
-    private static ShapeTreeReader getReader(int shapeTypeOrdinal, CoordinateEncoder coordinateEncoder, ByteBufferStreamInput input)
+    private ShapeTreeReader getReader(int shapeTypeOrdinal, CoordinateEncoder coordinateEncoder, ByteBufferStreamInput input)
             throws IOException {
         if (shapeTypeOrdinal == ShapeType.POLYGON.ordinal()) {
-            return new PolygonTreeReader(input);
+            if (polygonTreeReader == null) {
+                polygonTreeReader = new PolygonTreeReader(input);
+                return polygonTreeReader;
+            }
+            polygonTreeReader.reset(input);
+            return polygonTreeReader;
         } else if (shapeTypeOrdinal == ShapeType.POINT.ordinal() || shapeTypeOrdinal == ShapeType.MULTIPOINT.ordinal()) {
-            return new Point2DReader(input);
+            if (point2DReader == null) {
+                point2DReader = new Point2DReader(input);
+                return point2DReader;
+            }
+            point2DReader.reset(input);
+            return point2DReader;
         } else if (shapeTypeOrdinal == ShapeType.LINESTRING.ordinal() || shapeTypeOrdinal == ShapeType.MULTILINESTRING.ordinal()) {
-            return new EdgeTreeReader(input, false);
+            if (edgeTreeReader == null) {
+                edgeTreeReader = new EdgeTreeReader(input, false);
+                return edgeTreeReader;
+            }
+            edgeTreeReader.reset(input, false);
+            return edgeTreeReader;
         } else if (shapeTypeOrdinal == ShapeType.GEOMETRYCOLLECTION.ordinal()) {
             return new GeometryTreeReader(input, coordinateEncoder);
         }

@@ -27,20 +27,41 @@ import java.io.IOException;
  * serialized with the {@link PolygonTreeWriter}
  */
 public class PolygonTreeReader implements ShapeTreeReader {
-    private final EdgeTreeReader outerShell;
-    private final EdgeTreeReader holes;
+    public EdgeTreeReader outerShell;
+    private EdgeTreeReader holes;
+    private boolean hasHoles;
 
     public PolygonTreeReader(ByteBufferStreamInput input) throws IOException {
         int outerShellSize = input.readVInt();
         int outerShellPosition = input.position();
         this.outerShell = new EdgeTreeReader(input, true);
         input.position(outerShellPosition + outerShellSize);
-        boolean hasHoles = input.readBoolean();
+        this.hasHoles = input.readBoolean();
         if (hasHoles) {
             this.holes = new EdgeTreeReader(input, true);
         } else {
             this.holes = null;
         }
+    }
+
+    public void reset(ByteBufferStreamInput input) throws IOException {
+        int outerShellSize = input.readVInt();
+        int outerShellPosition = input.position();
+        if (outerShell == null) {
+            outerShell = new EdgeTreeReader(input, true);
+        } else {
+            outerShell.reset(input, true);
+        }
+        input.position(outerShellPosition + outerShellSize);
+        this.hasHoles = input.readBoolean();
+        if (hasHoles && holes == null) {
+            this.holes = new EdgeTreeReader(input, true);
+        } else if (hasHoles) {
+            this.holes.reset(input, true);
+        } else {
+            this.holes = null;
+        }
+
     }
 
     public Extent getExtent() throws IOException {

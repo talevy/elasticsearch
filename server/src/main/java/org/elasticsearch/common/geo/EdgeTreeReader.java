@@ -29,11 +29,17 @@ import static org.apache.lucene.geo.GeoUtils.lineCrossesLineWithBoundary;
  * serialized with the {@link EdgeTreeWriter}
  */
 public class EdgeTreeReader implements ShapeTreeReader {
-    private final ByteBufferStreamInput input;
-    private final int startPosition;
-    private final boolean hasArea;
+    private ByteBufferStreamInput input;
+    private int startPosition;
+    private boolean hasArea;
 
     public EdgeTreeReader(ByteBufferStreamInput input, boolean hasArea) throws IOException {
+        this.startPosition = input.position();
+        this.input = input;
+        this.hasArea = hasArea;
+    }
+
+    public void reset(ByteBufferStreamInput input, boolean hasArea) throws IOException {
         this.startPosition = input.position();
         this.input = input;
         this.hasArea = hasArea;
