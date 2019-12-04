@@ -59,7 +59,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 @Warmup(iterations = 3)
-@Measurement(iterations = 4)
+@Measurement(iterations = 1000)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
@@ -235,13 +235,13 @@ public class GeoTileGridBenchmark {
     public int measureGeoTile_GeometryTree() {
         return GeoGridTiler.GeoTileGridTiler.INSTANCE.setValues(cellValues, geometryTreeValue, precision);
     }
-
-
-
-    @Benchmark
-    public int measureGeoTile_TriangleTree() {
-        return GeoGridTiler.GeoTileGridTiler.INSTANCE.setValues(cellValues, triangleTreeValue, precision);
-    }
+//
+//
+//
+//    @Benchmark
+//    public int measureGeoTile_TriangleTree() {
+//        return GeoGridTiler.GeoTileGridTiler.INSTANCE.setValues(cellValues, triangleTreeValue, precision);
+//    }
 //
 //    @Benchmark
 //    public MultiGeoValues.BoundingBox measureBoundingBox_TriangleTree() {
@@ -280,20 +280,20 @@ public class GeoTileGridBenchmark {
     }
 
 
-//    @Benchmark public void test_0_0_1_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(-2147483648,0,0,2029398981));}
-//    @Benchmark public void test_0_0_1_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(-2147483648,0,0,2029398981));}
-//    @Benchmark public void test_0_1_1_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(-2147483648,-2029398982,0,0));}
-//    @Benchmark public void test_0_1_1_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(-2147483648,-2029398982,0,0));}
-//    @Benchmark public void test_1_0_1_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,0,2147483647,2029398981));}
-//    @Benchmark public void test_1_0_1_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,0,2147483647,2029398981));}
-//    @Benchmark public void test_2_0_2_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,1587068213,1073741824,2029398981));}
-//    @Benchmark public void test_2_0_2_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,1587068213,1073741824,2029398981));}
-//    @Benchmark public void test_2_1_2_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,0,1073741824,1587068213));}
-//    @Benchmark public void test_2_1_2_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,0,1073741824,1587068213));}
-//    @Benchmark public void test_4_2_3_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,977818455,536870912,1587068213));}
-//    @Benchmark public void test_4_2_3_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,977818455,536870912,1587068213));}
-//    @Benchmark public void test_8_4_4_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,1330880872,268435456,1587068213));}
-//    @Benchmark public void test_8_4_4_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,1330880872,268435456,1587068213));}
+//    @Benchmark public void test_0_0_1_geometry() throws Exception { geometryTreeReader.relate(-2147483648,0,0,2029398981);}
+//    @Benchmark public void test_0_0_1_triangle() throws Exception { geometryTreeReader.relate(-2147483648,0,0,2029398981);}
+//    @Benchmark public void test_0_1_1_geometry() throws Exception { geometryTreeReader.relate(-2147483648,-2029398982,0,0);}
+//    @Benchmark public void test_0_1_1_triangle() throws Exception { geometryTreeReader.relate(-2147483648,-2029398982,0,0);}
+//    @Benchmark public void test_1_0_1_geometry() throws Exception { geometryTreeReader.relate(0,0,2147483647,2029398981);}
+//    @Benchmark public void test_1_0_1_triangle() throws Exception { geometryTreeReader.relate(0,0,2147483647,2029398981);}
+//    @Benchmark public void test_2_0_2_geometry() throws Exception { geometryTreeReader.relate(0,1587068213,1073741824,2029398981);}
+//    @Benchmark public void test_2_0_2_triangle() throws Exception { geometryTreeReader.relate(0,1587068213,1073741824,2029398981);}
+//    @Benchmark public void test_2_1_2_geometry() throws Exception { geometryTreeReader.relate(0,0,1073741824,1587068213);}
+//    @Benchmark public void test_2_1_2_triangle() throws Exception { geometryTreeReader.relate(0,0,1073741824,1587068213);}
+//    @Benchmark public void test_4_2_3_geometry() throws Exception { geometryTreeReader.relate(0,977818455,536870912,1587068213);}
+//    @Benchmark public void test_4_2_3_triangle() throws Exception { geometryTreeReader.relate(0,977818455,536870912,1587068213);}
+//    @Benchmark public void test_8_4_4_geometry() throws Exception { geometryTreeReader.relate(0,1330880872,268435456,1587068213);}
+//    @Benchmark public void test_8_4_4_triangle() throws Exception { geometryTreeReader.relate(0,1330880872,268435456,1587068213);}
 //    @Benchmark public void test_8_5_4_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,977818455,268435456,1330880872));}
 //    @Benchmark public void test_8_5_4_triangle() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,977818455,268435456,1330880872));}
 //    @Benchmark public void test_16_10_5_geometry() throws Exception { geometryTreeReader.relate(Extent.fromPoints(0,1167336302,134217728,1330880872));}
