@@ -123,9 +123,7 @@ public class TriangleTreeWriter extends ShapeTreeWriter {
 
         @Override
         public Void visit(Line line) {
-            for (int i = 0; i < line.length(); i++) {
-                centroidCalculator.addCoordinate(line.getX(i), line.getY(i));
-            }
+            centroidCalculator.addLine(line);
             org.apache.lucene.geo.Line luceneLine = GeoShapeIndexer.toLuceneLine(line);
             addToExtent(luceneLine.minLon, luceneLine.maxLon, luceneLine.minLat, luceneLine.maxLat);
             addTriangles(TriangleTreeLeaf.fromLine(coordinateEncoder, luceneLine));
@@ -142,10 +140,7 @@ public class TriangleTreeWriter extends ShapeTreeWriter {
 
         @Override
         public Void visit(Polygon polygon) {
-            // TODO: Shall we consider holes for centroid computation?
-            for (int i =0; i < polygon.getPolygon().length() - 1; i++) {
-                centroidCalculator.addCoordinate(polygon.getPolygon().getX(i), polygon.getPolygon().getY(i));
-            }
+            centroidCalculator.addPolygon(polygon);
             org.apache.lucene.geo.Polygon lucenePolygon = GeoShapeIndexer.toLucenePolygon(polygon);
             addToExtent(lucenePolygon.minLon, lucenePolygon.maxLon, lucenePolygon.minLat, lucenePolygon.maxLat);
             addTriangles(TriangleTreeLeaf.fromPolygon(coordinateEncoder, lucenePolygon));
@@ -162,8 +157,7 @@ public class TriangleTreeWriter extends ShapeTreeWriter {
 
         @Override
         public Void visit(Rectangle r) {
-            centroidCalculator.addCoordinate(r.getMinX(), r.getMinY());
-            centroidCalculator.addCoordinate(r.getMaxX(), r.getMaxY());
+            centroidCalculator.addRectangle(r);
             addToExtent(r.getMinLon(), r.getMaxLon(), r.getMinLat(), r.getMaxLat());
             addTriangles(TriangleTreeLeaf.fromRectangle(coordinateEncoder, r));
             return null;
@@ -171,7 +165,7 @@ public class TriangleTreeWriter extends ShapeTreeWriter {
 
         @Override
         public Void visit(Point point) {
-            centroidCalculator.addCoordinate(point.getX(), point.getY());
+            centroidCalculator.addPoint(point);
             addToExtent(point.getLon(), point.getLon(), point.getLat(), point.getLat());
             addTriangles(TriangleTreeLeaf.fromPoints(coordinateEncoder, point));
             return null;

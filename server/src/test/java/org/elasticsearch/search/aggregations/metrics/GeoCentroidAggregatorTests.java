@@ -176,7 +176,6 @@ public class GeoCentroidAggregatorTests extends AggregatorTestCase {
                 geometry.visit(new GeometryVisitor<Void, Exception>() {
                     @Override
                     public Void visit(Circle circle) throws Exception {
-                        calculator.addCoordinate(circle.getX(), circle.getY());
                         return null;
                     }
 
@@ -190,17 +189,12 @@ public class GeoCentroidAggregatorTests extends AggregatorTestCase {
 
                     @Override
                     public Void visit(Line line) throws Exception {
-                        for (int i = 0; i < line.length(); i++) {
-                            calculator.addCoordinate(line.getX(i), line.getY(i));
-                        }
+                        calculator.addLine(line);
                         return null;
                     }
 
                     @Override
                     public Void visit(LinearRing ring) throws Exception {
-                        for (int i = 0; i < ring.length() - 1; i++) {
-                            calculator.addCoordinate(ring.getX(i), ring.getY(i));
-                        }
                         return null;
                     }
 
@@ -230,7 +224,7 @@ public class GeoCentroidAggregatorTests extends AggregatorTestCase {
 
                     @Override
                     public Void visit(Point point) throws Exception {
-                        calculator.addCoordinate(point.getX(), point.getY());
+                        calculator.addPoint(point);
                         return null;
                     }
 
@@ -241,16 +235,13 @@ public class GeoCentroidAggregatorTests extends AggregatorTestCase {
 
                     @Override
                     public Void visit(Rectangle rectangle) throws Exception {
-                        calculator.addCoordinate(rectangle.getMinX(), rectangle.getMinY());
-                        calculator.addCoordinate(rectangle.getMinX(), rectangle.getMaxY());
-                        calculator.addCoordinate(rectangle.getMaxX(), rectangle.getMinY());
-                        calculator.addCoordinate(rectangle.getMaxX(), rectangle.getMaxY());
+                        calculator.addRectangle(rectangle);
                         return null;
                     }
                 });
                 document.add(new BinaryGeoShapeDocValuesField("field", geometry));
                 w.addDocument(document);
-                centroidOfCentroidsCalculator.addCoordinate(calculator.getX(), calculator.getY());
+                centroidOfCentroidsCalculator.addWeightedCoordinate(calculator.getX(), calculator.getY(), 1);
             }
             expectedCentroid.reset(centroidOfCentroidsCalculator.getY(), centroidOfCentroidsCalculator.getX());
             assertCentroid(w, expectedCentroid, new GeoShapeFieldMapper.GeoShapeFieldType());
