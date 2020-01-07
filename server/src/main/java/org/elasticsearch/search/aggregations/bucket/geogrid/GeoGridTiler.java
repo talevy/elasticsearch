@@ -19,6 +19,7 @@
 
 package org.elasticsearch.search.aggregations.bucket.geogrid;
 
+import org.elasticsearch.common.geo.GeoBoundingBox;
 import org.elasticsearch.common.geo.GeoRelation;
 import org.elasticsearch.geometry.Rectangle;
 import org.elasticsearch.geometry.utils.Geohash;
@@ -45,7 +46,8 @@ public interface GeoGridTiler {
      *
      * @return the number of tiles the geoValue intersects
      */
-    int setValues(CellIdSource.GeoShapeCellValues docValues, MultiGeoValues.GeoValue geoValue, int precision);
+    int setValues(CellIdSource.GeoShapeCellValues docValues, MultiGeoValues.GeoValue geoValue, int precision,
+                  GeoBoundingBox geoBoundingBox);
 
     class GeoHashGridTiler implements GeoGridTiler {
         public static final GeoHashGridTiler INSTANCE = new GeoHashGridTiler();
@@ -58,7 +60,8 @@ public interface GeoGridTiler {
         }
 
         @Override
-        public int setValues(CellIdSource.GeoShapeCellValues values, MultiGeoValues.GeoValue geoValue, int precision) {
+        public int setValues(CellIdSource.GeoShapeCellValues values, MultiGeoValues.GeoValue geoValue, int precision,
+                             GeoBoundingBox geoBoundingBox) {
             MultiGeoValues.BoundingBox bounds = geoValue.boundingBox();
             assert bounds.minX() <= bounds.maxX();
             long numLonCells = (long) ((bounds.maxX() - bounds.minX()) / Geohash.lonWidthInDegrees(precision));
@@ -157,8 +160,10 @@ public interface GeoGridTiler {
         }
 
         @Override
-        public int setValues(CellIdSource.GeoShapeCellValues values, MultiGeoValues.GeoValue geoValue, int precision) {
+        public int setValues(CellIdSource.GeoShapeCellValues values, MultiGeoValues.GeoValue geoValue, int precision,
+                             GeoBoundingBox geoBoundingBox) {
             MultiGeoValues.BoundingBox bounds = geoValue.boundingBox();
+            // TODO(talevy): intersect bounds with geoBoundingBox. solves brute-force-scan
             assert bounds.minX() <= bounds.maxX();
             final double tiles = 1 << precision;
             int minXTile = GeoTileUtils.getXTile(bounds.minX(), (long) tiles);
@@ -173,7 +178,7 @@ public interface GeoGridTiler {
             } else if (count <= precision) {
                 return setValuesByBruteForceScan(values, geoValue, precision, minXTile, minYTile, maxXTile, maxYTile);
             } else {
-                return setValuesByRasterization(0, 0, 0, values, 0, precision, geoValue, bounds);
+                return setValuesByRasterization(0, 0, 0, values, 0, precision, geoValue);
             }
         }
 
@@ -200,19 +205,15 @@ public interface GeoGridTiler {
         }
 
         protected int setValuesByRasterization(int xTile, int yTile, int zTile, CellIdSource.GeoShapeCellValues values,
-                                               int valuesIndex, int targetPrecision, MultiGeoValues.GeoValue geoValue,
-                                               MultiGeoValues.BoundingBox shapeBounds) {
+                                               int valuesIndex, int targetPrecision, MultiGeoValues.GeoValue geoValue) {
             zTile++;
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {
                     int nextX = 2 * xTile + i;
                     int nextY = 2 * yTile + j;
                     Rectangle rectangle = GeoTileUtils.toBoundingBox(nextX, nextY, zTile);
-                    // TODO: this looks hacky, maybe the relate method should handle it?
-                    if (shapeBounds.minX() == rectangle.getMaxX() ||
-                        shapeBounds.maxY() == rectangle.getMinY()) {
-                        continue;
-                    }
+                    // TODO(talevy): intersect Rectangle with geoBoundingBox. if no intersection
+                    //               then simply return valuesIndex, otherwise -- relate intersection
                     GeoRelation relation = geoValue.relate(rectangle);
                     if (GeoRelation.QUERY_INSIDE == relation) {
                         if (zTile == targetPrecision) {
@@ -228,7 +229,7 @@ public interface GeoGridTiler {
                             values.add(valuesIndex++, GeoTileUtils.longEncodeTiles(zTile, nextX, nextY));
                         } else {
                             valuesIndex = setValuesByRasterization(nextX, nextY, zTile, values, valuesIndex,
-                                targetPrecision, geoValue, shapeBounds);
+                                targetPrecision, geoValue);
                         }
                     }
                 }

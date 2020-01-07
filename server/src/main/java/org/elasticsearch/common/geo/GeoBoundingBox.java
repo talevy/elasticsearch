@@ -250,5 +250,4 @@ public class GeoBoundingBox implements ToXContentObject, Writeable {
         GeoPoint bottomRight = new GeoPoint(bottom, right);
         return new GeoBoundingBox(topLeft, bottomRight);
     }
-
 }

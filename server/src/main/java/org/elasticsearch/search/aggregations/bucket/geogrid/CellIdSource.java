@@ -71,7 +71,7 @@ public class CellIdSource extends ValuesSource.Numeric {
             return new GeoPointCellValues(geoValues, precision, geoBoundingBox, encoder);
         } else if (CoreValuesSourceType.GEOSHAPE == vs || CoreValuesSourceType.GEO == vs) {
             // docValues are geo shapes
-            return new GeoShapeCellValues(geoValues, precision, encoder);
+            return new GeoShapeCellValues(geoValues, precision, geoBoundingBox, encoder);
         } else {
             throw new IllegalArgumentException("unsupported geo type");
         }
@@ -91,11 +91,13 @@ public class CellIdSource extends ValuesSource.Numeric {
     protected static class GeoShapeCellValues extends AbstractSortingNumericDocValues {
         private MultiGeoValues geoValues;
         private int precision;
+        private GeoBoundingBox geoBoundingBox;
         private GeoGridTiler tiler;
 
-        protected GeoShapeCellValues(MultiGeoValues geoValues, int precision, GeoGridTiler tiler) {
+        protected GeoShapeCellValues(MultiGeoValues geoValues, int precision, GeoBoundingBox geoBoundingBox, GeoGridTiler tiler) {
             this.geoValues = geoValues;
             this.precision = precision;
+            this.geoBoundingBox = geoBoundingBox;
             this.tiler = tiler;
         }
 
@@ -119,7 +121,7 @@ public class CellIdSource extends ValuesSource.Numeric {
                 MultiGeoValues.GeoValue target = geoValues.nextValue();
                 // TODO(talevy): determine reasonable circuit-breaker here
                 resize(0);
-                tiler.setValues(this, target, precision);
+                tiler.setValues(this, target, precision, geoBoundingBox);
                 sort();
                 return true;
             } else {
