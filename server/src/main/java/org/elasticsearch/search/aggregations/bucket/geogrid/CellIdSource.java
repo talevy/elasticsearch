@@ -20,6 +20,7 @@ package org.elasticsearch.search.aggregations.bucket.geogrid;
 
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.SortedNumericDocValues;
+import org.elasticsearch.common.geo.GeoBoundingBox;
 import org.elasticsearch.index.fielddata.AbstractSortingNumericDocValues;
 import org.elasticsearch.index.fielddata.MultiGeoValues;
 import org.elasticsearch.index.fielddata.SortedBinaryDocValues;
@@ -38,11 +39,13 @@ public class CellIdSource extends ValuesSource.Numeric {
     private final ValuesSource.Geo valuesSource;
     private final int precision;
     private final GeoGridTiler encoder;
+    private final GeoBoundingBox geoBoundingBox;
 
-    public CellIdSource(Geo valuesSource, int precision, GeoGridTiler encoder) {
+    public CellIdSource(Geo valuesSource, int precision, GeoBoundingBox geoBoundingBox, GeoGridTiler encoder) {
         this.valuesSource = valuesSource;
         //different GeoPoints could map to the same or different hashing cells.
         this.precision = precision;
+        this.geoBoundingBox = geoBoundingBox;
         this.encoder = encoder;
     }
 
@@ -65,7 +68,7 @@ public class CellIdSource extends ValuesSource.Numeric {
         ValuesSourceType vs = geoValues.valuesSourceType();
         if (CoreValuesSourceType.GEOPOINT == vs) {
             // docValues are geo points
-            return new GeoPointCellValues(geoValues, precision, encoder);
+            return new GeoPointCellValues(geoValues, precision, geoBoundingBox, encoder);
         } else if (CoreValuesSourceType.GEOSHAPE == vs || CoreValuesSourceType.GEO == vs) {
             // docValues are geo shapes
             return new GeoShapeCellValues(geoValues, precision, encoder);
@@ -129,11 +132,13 @@ public class CellIdSource extends ValuesSource.Numeric {
     protected static class GeoPointCellValues extends AbstractSortingNumericDocValues {
         private MultiGeoValues geoValues;
         private int precision;
+        private GeoBoundingBox geoBoundingBox;
         private GeoGridTiler tiler;
 
-        protected GeoPointCellValues(MultiGeoValues geoValues, int precision, GeoGridTiler tiler) {
+        protected GeoPointCellValues(MultiGeoValues geoValues, int precision, GeoBoundingBox geoBoundingBox, GeoGridTiler tiler) {
             this.geoValues = geoValues;
             this.precision = precision;
+            this.geoBoundingBox = geoBoundingBox;
             this.tiler = tiler;
         }
 
@@ -145,11 +150,16 @@ public class CellIdSource extends ValuesSource.Numeric {
         @Override
         public boolean advanceExact(int docId) throws IOException {
             if (geoValues.advanceExact(docId)) {
-                resize(geoValues.docValueCount());
-                for (int i = 0; i < docValueCount(); ++i) {
+                int docValueCount = geoValues.docValueCount();
+                resize(docValueCount);
+                int j = 0;
+                for (int i = 0; i < docValueCount; i++) {
                     MultiGeoValues.GeoValue target = geoValues.nextValue();
-                    values[i] = tiler.encode(target.lon(), target.lat(), precision);
+                    if (geoBoundingBox.isUnbounded() || geoBoundingBox.pointInBounds(target.lon(), target.lat())) {
+                        values[j++] = tiler.encode(target.lon(), target.lat(), precision);
+                    }
                 }
+                resize(j);
                 sort();
                 return true;
             } else {

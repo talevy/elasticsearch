@@ -35,6 +35,9 @@ import org.elasticsearch.geometry.Geometry;
 import org.elasticsearch.geometry.MultiPoint;
 import org.elasticsearch.geometry.Point;
 import org.elasticsearch.index.mapper.BinaryGeoShapeDocValuesField;
+import org.elasticsearch.common.geo.GeoBoundingBox;
+import org.elasticsearch.common.geo.GeoBoundingBoxTests;
+import org.elasticsearch.common.geo.GeoUtils;
 import org.elasticsearch.index.mapper.GeoPointFieldMapper;
 import org.elasticsearch.index.mapper.GeoShapeFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
@@ -51,6 +54,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+
+import static org.hamcrest.Matchers.equalTo;
 
 public abstract class GeoGridAggregatorTestCase<T extends InternalGeoGridBucket> extends AggregatorTestCase {
 
@@ -72,13 +77,7 @@ public abstract class GeoGridAggregatorTestCase<T extends InternalGeoGridBucket>
     protected abstract GeoGridAggregationBuilder createBuilder(String name);
 
     public void testNoDocs() throws IOException {
-        testCase(new MatchAllDocsQuery(), FIELD_NAME, randomPrecision(), iw -> {
-            // Intentionally not writing any docs
-        }, geoGrid -> {
-            assertEquals(0, geoGrid.getBuckets().size());
-        }, new GeoPointFieldMapper.GeoPointFieldType());
-
-        testCase(new MatchAllDocsQuery(), FIELD_NAME, randomPrecision(), iw -> {
+        testCase(new MatchAllDocsQuery(), FIELD_NAME, randomPrecision(), null, iw -> {
             // Intentionally not writing any docs
         }, geoGrid -> {
             assertEquals(0, geoGrid.getBuckets().size());
@@ -86,13 +85,13 @@ public abstract class GeoGridAggregatorTestCase<T extends InternalGeoGridBucket>
     }
 
     public void testFieldMissing() throws IOException {
-        testCase(new MatchAllDocsQuery(), "wrong_field", randomPrecision(), iw -> {
+        testCase(new MatchAllDocsQuery(), "wrong_field", randomPrecision(), null, iw -> {
             iw.addDocument(Collections.singleton(new LatLonDocValuesField(FIELD_NAME, 10D, 10D)));
         }, geoGrid -> {
             assertEquals(0, geoGrid.getBuckets().size());
         }, new GeoPointFieldMapper.GeoPointFieldType());
 
-        testCase(new MatchAllDocsQuery(), "wrong_field", randomPrecision(), iw -> {
+        testCase(new MatchAllDocsQuery(), "wrong_field", randomPrecision(), null, iw -> {
             iw.addDocument(Collections.singleton(
                 new BinaryGeoShapeDocValuesField(FIELD_NAME, GeoTestUtils.toDecodedTriangles(new Point(10D, 10D)),
                     new CentroidCalculator(new Point(10D, 10D)))));
@@ -105,7 +104,7 @@ public abstract class GeoGridAggregatorTestCase<T extends InternalGeoGridBucket>
         int precision = randomPrecision();
         int numPoints = randomIntBetween(8, 128);
         Map<String, Integer> expectedCountPerGeoHash = new HashMap<>();
-        testCase(new MatchAllDocsQuery(), FIELD_NAME, precision, iw -> {
+        testCase(new MatchAllDocsQuery(), FIELD_NAME, precision, null, iw -> {
             List<LatLonDocValuesField> points = new ArrayList<>();
             Set<String> distinctHashesPerDoc = new HashSet<>();
             for (int pointId = 0; pointId < numPoints; pointId++) {
@@ -143,11 +142,70 @@ public abstract class GeoGridAggregatorTestCase<T extends InternalGeoGridBucket>
         }, new GeoPointFieldMapper.GeoPointFieldType());
     }
 
+    public void testBounds() throws IOException {
+        final int numDocs = randomIntBetween(64, 256);
+        final GeoGridAggregationBuilder builder = createBuilder("_name");
+
+        expectThrows(IllegalArgumentException.class, () -> builder.precision(-1));
+        expectThrows(IllegalArgumentException.class, () -> builder.precision(30));
+
+        GeoBoundingBox bbox = GeoBoundingBoxTests.randomBBox();
+
+        int in = 0, out = 0;
+        List<LatLonDocValuesField> docs = new ArrayList<>();
+        while (in + out < numDocs) {
+            if (bbox.left() > bbox.right()) {
+                if (randomBoolean()) {
+                    double lonWithin = randomBoolean() ?
+                        randomDoubleBetween(bbox.left(), 180.0, true)
+                        : randomDoubleBetween(-180.0, bbox.right(), true);
+                    double latWithin = randomDoubleBetween(bbox.bottom(), bbox.top(), true);
+                    in++;
+                    docs.add(new LatLonDocValuesField(FIELD_NAME, latWithin, lonWithin));
+                } else {
+                    double lonOutside = randomDoubleBetween(bbox.left(), bbox.right(), true);
+                    double latOutside = randomDoubleBetween(bbox.top(), -90, false);
+                    out++;
+                    docs.add(new LatLonDocValuesField(FIELD_NAME, latOutside, lonOutside));
+                }
+            } else {
+                if (randomBoolean()) {
+                    double lonWithin = randomDoubleBetween(bbox.left(), bbox.right(), true);
+                    double latWithin = randomDoubleBetween(bbox.bottom(), bbox.top(), true);
+                    in++;
+                    docs.add(new LatLonDocValuesField(FIELD_NAME, latWithin, lonWithin));
+                } else {
+                    double lonOutside = GeoUtils.normalizeLon(randomDoubleBetween(bbox.right(), 180.001, false));
+                    double latOutside = GeoUtils.normalizeLat(randomDoubleBetween(bbox.top(), 90.001, false));
+                    out++;
+                    docs.add(new LatLonDocValuesField(FIELD_NAME, latOutside, lonOutside));
+                }
+            }
+
+        }
+
+        final long numDocsInBucket = in;
+        final int precision = randomPrecision();
+
+        testCase(new MatchAllDocsQuery(), FIELD_NAME, precision, bbox, iw -> {
+            for (LatLonDocValuesField docField : docs) {
+                iw.addDocument(Collections.singletonList(docField));
+            }
+        }, geoGrid -> {
+            assertTrue(AggregationInspectionHelper.hasValue(geoGrid));
+            long docCount = 0;
+            for (int i = 0; i < geoGrid.getBuckets().size(); i++) {
+                docCount += geoGrid.getBuckets().get(i).getDocCount();
+            }
+            assertThat(docCount, equalTo(numDocsInBucket));
+        }, new GeoPointFieldMapper.GeoPointFieldType());
+    }
+
     public void testGeoShapeWithSeveralDocs() throws IOException {
         int precision = randomIntBetween(1, 4);
         int numShapes = randomIntBetween(8, 128);
         Map<String, Integer> expectedCountPerGeoHash = new HashMap<>();
-        testCase(new MatchAllDocsQuery(), FIELD_NAME, precision, iw -> {
+        testCase(new MatchAllDocsQuery(), FIELD_NAME, precision, null, iw -> {
             List<Point> shapes = new ArrayList<>();
             Document document = new Document();
             Set<String> distinctHashesPerDoc = new HashSet<>();
@@ -194,7 +252,8 @@ public abstract class GeoGridAggregatorTestCase<T extends InternalGeoGridBucket>
         }, new GeoShapeFieldMapper.GeoShapeFieldType());
     }
 
-    private void testCase(Query query, String field, int precision, CheckedConsumer<RandomIndexWriter, IOException> buildIndex,
+    private void testCase(Query query, String field, int precision, GeoBoundingBox geoBoundingBox,
+                          CheckedConsumer<RandomIndexWriter, IOException> buildIndex,
                           Consumer<InternalGeoGrid<T>> verify, MappedFieldType fieldType) throws IOException {
         Directory directory = newDirectory();
         RandomIndexWriter indexWriter = new RandomIndexWriter(random(), directory);
@@ -206,6 +265,11 @@ public abstract class GeoGridAggregatorTestCase<T extends InternalGeoGridBucket>
 
         GeoGridAggregationBuilder aggregationBuilder = createBuilder("_name").field(field);
         aggregationBuilder.precision(precision);
+        if (geoBoundingBox != null) {
+            aggregationBuilder.setGeoBoundingBox(geoBoundingBox);
+            assertThat(aggregationBuilder.geoBoundingBox(), equalTo(geoBoundingBox));
+        }
+
         fieldType.setHasDocValues(true);
         fieldType.setName(FIELD_NAME);
 
