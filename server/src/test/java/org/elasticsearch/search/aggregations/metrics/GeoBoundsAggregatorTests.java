@@ -27,9 +27,13 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.store.Directory;
 import org.elasticsearch.common.geo.CentroidCalculator;
+import org.elasticsearch.common.geo.GeoBoundingBox;
+import org.elasticsearch.common.geo.GeoBoundingBoxTests;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.geo.GeoTestUtils;
+import org.elasticsearch.common.geo.GeoUtils;
 import org.elasticsearch.geometry.Geometry;
+import org.elasticsearch.geometry.LinearRing;
 import org.elasticsearch.geometry.MultiPoint;
 import org.elasticsearch.geometry.MultiPolygon;
 import org.elasticsearch.geometry.Point;
@@ -219,6 +223,39 @@ public class GeoBoundsAggregatorTests extends AggregatorTestCase {
         }
     }
 
+    public void testRandomBounds() throws Exception {
+        GeoBoundingBox geoBox = GeoBoundingBoxTests.randomBBox();
+        final Geometry geometry = boxToGeo(geoBox);
+        try (Directory dir = newDirectory();
+             RandomIndexWriter w = new RandomIndexWriter(random(), dir)) {
+            Document doc = new Document();
+            doc.add(new BinaryGeoShapeDocValuesField("shape",
+                GeoTestUtils.toDecodedTriangles(geometry), new CentroidCalculator(geometry)));
+            w.addDocument(doc);
+
+            boolean wrapLongitude = randomBoolean();
+
+            GeoBoundsAggregationBuilder shapesAggBuilder = new GeoBoundsAggregationBuilder("my_agg")
+                .field("shape").wrapLongitude(wrapLongitude);
+            MappedFieldType shapeType = new GeoShapeFieldMapper.GeoShapeFieldType();
+            shapeType.setHasDocValues(true);
+            shapeType.setName("shape");
+
+            try (IndexReader reader = w.getReader()) {
+                IndexSearcher searcher = new IndexSearcher(reader);
+                InternalGeoBounds shapeBounds = search(searcher, new MatchAllDocsQuery(), shapesAggBuilder, shapeType);
+                assertTrue(AggregationInspectionHelper.hasValue(shapeBounds));
+                GeoBoundingBox actualBox = shapeBounds.resolveGeoBoundingBox();
+                System.out.println(GeoTestUtils.toGeoJsonString(geometry));
+                System.out.println(GeoTestUtils.toGeoJsonString(boxToGeo(actualBox)));
+                assertEquals(actualBox.left(), geoBox.left(), GEOHASH_TOLERANCE);
+                assertEquals(actualBox.right(), geoBox.right(), GEOHASH_TOLERANCE);
+                assertEquals(actualBox.top(), geoBox.top(), GEOHASH_TOLERANCE);
+                assertEquals(actualBox.bottom(), geoBox.bottom(), GEOHASH_TOLERANCE);
+            }
+        }
+    }
+
     public void testFiji() throws Exception {
         MultiPolygon geometryForIndexing = (MultiPolygon) GeoTestUtils.fromGeoJsonString("{\n" +
             "  \"type\": \"MultiPolygon\",\n" +
@@ -361,5 +398,25 @@ public class GeoBoundsAggregatorTests extends AggregatorTestCase {
                 assertThat(shapeBounds, equalTo(pointBounds));
             }
         }
+    }
+
+    private Geometry boxToGeo(GeoBoundingBox geoBox) {
+        // turn into polygon
+        if (geoBox.right() < geoBox.left() && geoBox.right() != -180) {
+            return new MultiPolygon(List.of(
+                new Polygon(new LinearRing(
+                    new double[] { -180, geoBox.right(), geoBox.right(), -180, -180 },
+                    new double[] { geoBox.bottom(), geoBox.bottom(), geoBox.top(), geoBox.top(), geoBox.bottom() })),
+                new Polygon(new LinearRing(
+                    new double[] { geoBox.left(), 180, 180, geoBox.left(), geoBox.left() },
+                    new double[] { geoBox.bottom(), geoBox.bottom(), geoBox.top(), geoBox.top(), geoBox.bottom() }))
+            ));
+        } else {
+            double right = GeoUtils.normalizeLon(geoBox.right());
+            return new Polygon(new LinearRing(
+                new double[] { geoBox.left(), right, right, geoBox.left(), geoBox.left() },
+                new double[] { geoBox.bottom(), geoBox.bottom(), geoBox.top(), geoBox.top(), geoBox.bottom() }));
+        }
+
     }
 }
