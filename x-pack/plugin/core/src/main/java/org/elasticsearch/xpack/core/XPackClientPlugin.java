@@ -146,10 +146,13 @@ import org.elasticsearch.xpack.core.rollup.action.GetRollupCapsAction;
 import org.elasticsearch.xpack.core.rollup.action.GetRollupJobsAction;
 import org.elasticsearch.xpack.core.rollup.action.PutRollupJobAction;
 import org.elasticsearch.xpack.core.rollup.action.RollupSearchAction;
+import org.elasticsearch.xpack.core.rollup.action.RollupV2Action;
 import org.elasticsearch.xpack.core.rollup.action.StartRollupJobAction;
 import org.elasticsearch.xpack.core.rollup.action.StopRollupJobAction;
 import org.elasticsearch.xpack.core.rollup.job.RollupJob;
 import org.elasticsearch.xpack.core.rollup.job.RollupJobStatus;
+import org.elasticsearch.xpack.core.rollup.job.RollupV2Job;
+import org.elasticsearch.xpack.core.rollup.job.RollupV2JobStatus;
 import org.elasticsearch.xpack.core.search.action.GetAsyncSearchAction;
 import org.elasticsearch.xpack.core.search.action.SubmitAsyncSearchAction;
 import org.elasticsearch.xpack.core.searchablesnapshots.SearchableSnapshotFeatureSetUsage;
@@ -380,6 +383,8 @@ public class XPackClientPlugin extends Plugin implements ActionPlugin, NetworkPl
                 DeleteRollupJobAction.INSTANCE,
                 GetRollupJobsAction.INSTANCE,
                 GetRollupCapsAction.INSTANCE,
+                // rollupV2
+                RollupV2Action.INSTANCE,
                 // ILM
                 DeleteLifecycleAction.INSTANCE,
                 GetLifecycleAction.INSTANCE,
@@ -450,6 +455,10 @@ public class XPackClientPlugin extends Plugin implements ActionPlugin, NetworkPl
             new NamedWriteableRegistry.Entry(PersistentTaskParams.class, RollupJob.NAME, RollupJob::new),
             new NamedWriteableRegistry.Entry(Task.Status.class, RollupJobStatus.NAME, RollupJobStatus::new),
             new NamedWriteableRegistry.Entry(PersistentTaskState.class, RollupJobStatus.NAME, RollupJobStatus::new),
+            // rollup-V2
+            new NamedWriteableRegistry.Entry(PersistentTaskParams.class, RollupV2Job.NAME, RollupV2Job::new),
+            new NamedWriteableRegistry.Entry(Task.Status.class, RollupV2JobStatus.NAME, RollupV2JobStatus::new),
+            new NamedWriteableRegistry.Entry(PersistentTaskState.class, RollupV2JobStatus.NAME, RollupV2JobStatus::new),
             // ccr
             new NamedWriteableRegistry.Entry(AutoFollowMetadata.class, AutoFollowMetadata.TYPE, AutoFollowMetadata::new),
             new NamedWriteableRegistry.Entry(Metadata.Custom.class, AutoFollowMetadata.TYPE, AutoFollowMetadata::new),
@@ -543,7 +552,9 @@ public class XPackClientPlugin extends Plugin implements ActionPlugin, NetworkPl
                         RollupJobStatus::fromXContent),
                 new NamedXContentRegistry.Entry(PersistentTaskState.class, new ParseField(RollupJobStatus.NAME),
                         RollupJobStatus::fromXContent),
-                // Transforms
+                new NamedXContentRegistry.Entry(PersistentTaskParams.class, new ParseField(RollupV2Job.NAME),
+                        RollupV2Job::fromXContent),
+            // Transforms
                 new NamedXContentRegistry.Entry(PersistentTaskParams.class, new ParseField(TransformField.TASK_NAME),
                         TransformTaskParams::fromXContent),
                 new NamedXContentRegistry.Entry(Task.Status.class, new ParseField(TransformField.TASK_NAME),

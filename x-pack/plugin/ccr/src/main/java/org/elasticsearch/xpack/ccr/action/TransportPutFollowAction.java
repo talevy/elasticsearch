@@ -90,10 +90,7 @@ public final class TransportPutFollowAction
     }
 
     @Override
-    protected void masterOperation(
-        Task task, final PutFollowAction.Request request,
-        final ClusterState state,
-        final ActionListener<PutFollowAction.Response> listener) {
+    protected void masterOperation( Task task, final PutFollowAction.Request request, final ClusterState state, final ActionListener<PutFollowAction.Response> listener) {
         if (ccrLicenseChecker.isCcrAllowed() == false) {
             listener.onFailure(LicenseUtils.newComplianceException("ccr"));
             return;
