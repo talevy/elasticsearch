@@ -61,6 +61,11 @@ public final class OriginalIndices implements IndicesRequest {
         return true;
     }
 
+    @Override
+    public boolean resolveRollupIndices() {
+        return true;
+    }
+
     public static OriginalIndices readOriginalIndices(StreamInput in) throws IOException {
         return new OriginalIndices(in.readStringArray(), IndicesOptions.readIndicesOptions(in));
     }

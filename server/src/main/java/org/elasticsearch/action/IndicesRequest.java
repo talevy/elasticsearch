@@ -49,6 +49,10 @@ public interface IndicesRequest {
         return false;
     }
 
+    default boolean resolveRollupIndices() {
+        return false;
+    }
+
     interface Replaceable extends IndicesRequest {
         /**
          * Sets the indices that the action relates to.

@@ -78,6 +78,7 @@ public class SearchTransportService {
     public static final String FETCH_ID_SCROLL_ACTION_NAME = "indices:data/read/search[phase/fetch/id/scroll]";
     public static final String FETCH_ID_ACTION_NAME = "indices:data/read/search[phase/fetch/id]";
     public static final String QUERY_CAN_MATCH_NAME = "indices:data/read/search[can_match]";
+    public static final String QUERY_CAN_MATCH_ROLLOVER_NAME = "indices:data/read/search[can_match_rollover]";
 
     private final TransportService transportService;
     private final BiFunction<Transport.Connection, SearchActionListener, ActionListener> responseWrapper;
@@ -108,6 +109,12 @@ public class SearchTransportService {
                                 ActionListener<SearchFreeContextResponse> listener) {
         transportService.sendRequest(connection, FREE_CONTEXT_SCROLL_ACTION_NAME, new ScrollFreeContextRequest(contextId),
             TransportRequestOptions.EMPTY, new ActionListenerResponseHandler<>(listener, SearchFreeContextResponse::new));
+    }
+
+    public void sendCanMatchRollover(Transport.Connection connection, final ShardSearchRequest request, SearchTask task, final
+    ActionListener<SearchService.CanMatchResponse> listener) {
+        transportService.sendChildRequest(connection, QUERY_CAN_MATCH_ROLLOVER_NAME, request, task,
+            TransportRequestOptions.EMPTY, new ActionListenerResponseHandler<>(listener, SearchService.CanMatchResponse::new));
     }
 
     public void sendCanMatch(Transport.Connection connection, final ShardSearchRequest request, SearchTask task, final
@@ -358,6 +365,14 @@ public class SearchTransportService {
                 searchService.canMatch(request, new ChannelActionListener<>(channel, QUERY_CAN_MATCH_NAME, request));
             });
         TransportActionProxy.registerProxyAction(transportService, QUERY_CAN_MATCH_NAME, SearchService.CanMatchResponse::new);
+
+        // TODO(talevy)
+        // this is cheap, it does not fetch during the rewrite phase, so we can let it quickly execute on a networking thread
+        transportService.registerRequestHandler(QUERY_CAN_MATCH_ROLLOVER_NAME, ThreadPool.Names.SAME, ShardSearchRequest::new,
+            (request, channel, task) -> {
+                searchService.canMatchRollover(request, new ChannelActionListener<>(channel, QUERY_CAN_MATCH_ROLLOVER_NAME, request));
+            });
+        TransportActionProxy.registerProxyAction(transportService, QUERY_CAN_MATCH_ROLLOVER_NAME, SearchService.CanMatchResponse::new);
     }
 
 

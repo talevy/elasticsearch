@@ -13,6 +13,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.tasks.TaskInfo;
 import org.elasticsearch.test.ESIntegTestCase;
@@ -95,5 +96,10 @@ public class RollupV2IT extends ESIntegTestCase {
             }
         });
 
+        SearchResponse rolledUpSearch = client().prepareSearch(rollupIndex, sourceIndex)
+            .addAggregation(AggregationBuilders.dateHistogram("date_histo")
+                .field("date").fixedInterval(new DateHistogramInterval("1m")))
+            .get();
+        assertThat(rolledUpSearch.getHits().getTotalHits().value, equalTo(5L));
     }
 }

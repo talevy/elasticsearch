@@ -181,6 +181,10 @@ public class AggregatorFactories {
         this.factories = factories;
     }
 
+    public AggregatorFactory[] factories() {
+        return factories;
+    }
+
     /**
      * Create all aggregators so that they can be consumed with multiple
      * buckets.
@@ -208,7 +212,7 @@ public class AggregatorFactories {
         for (int i = 0; i < factories.length; i++) {
             /*
              * Top level aggs only collect from owningBucketOrd 0 which is
-             * *exactly* what CardinalityUpperBound.ONE *means*.  
+             * *exactly* what CardinalityUpperBound.ONE *means*.
              */
             Aggregator factory = factories[i].create(searchContext, null, CardinalityUpperBound.ONE);
             Profilers profilers = factory.context().getProfilers();

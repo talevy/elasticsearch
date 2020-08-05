@@ -21,7 +21,10 @@ package org.elasticsearch.search;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.search.FieldDoc;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.QueryVisitor;
 import org.apache.lucene.search.TopDocs;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
@@ -56,6 +59,7 @@ import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.query.InnerHitContextBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchNoneQueryBuilder;
+import org.elasticsearch.index.query.ParsedQuery;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryRewriteContext;
 import org.elasticsearch.index.query.QueryShardContext;
@@ -71,10 +75,12 @@ import org.elasticsearch.script.FieldScript;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.aggregations.AggregationInitializationException;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
+import org.elasticsearch.search.aggregations.AggregatorFactory;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.InternalAggregation.ReduceContext;
 import org.elasticsearch.search.aggregations.MultiBucketConsumerService;
 import org.elasticsearch.search.aggregations.SearchContextAggregations;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregatorFactory;
 import org.elasticsearch.search.aggregations.pipeline.PipelineAggregator.PipelineTree;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.collapse.CollapseContext;
@@ -116,6 +122,7 @@ import org.elasticsearch.transport.TransportRequest;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1115,6 +1122,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         try (Engine.Searcher searcher = indexShard.acquireCanMatchSearcher()) {
             QueryShardContext context = indexService.newQueryShardContext(request.shardId().id(), searcher,
                 request::nowInMillis, request.getClusterAlias());
+            context.setAllowUnmappedFields();
             Rewriteable.rewrite(request.getRewriteable(), context, false);
             final boolean aliasFilterCanMatch = request.getAliasFilter()
                 .getQueryBuilder() instanceof MatchNoneQueryBuilder == false;
@@ -1132,9 +1140,54 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         }
     }
 
+
     public void canMatch(ShardSearchRequest request, ActionListener<CanMatchResponse> listener) {
         try {
             listener.onResponse(canMatch(request));
+        } catch (IOException e) {
+            listener.onFailure(e);
+        }
+    }
+
+    public CanMatchResponse canMatchRollover(ShardSearchRequest request) throws IOException {
+        // check query:
+        // 1) check other
+        // 2)
+        IndexService indexService = indicesService.indexServiceSafe(request.shardId().getIndex());
+        IndexShard indexShard = indexService.getShard(request.shardId().getId());
+        try (Engine.Searcher searcher = indexShard.acquireCanMatchSearcher()) {
+            QueryShardContext context = indexService.newQueryShardContext(request.shardId().id(), searcher,
+                request::nowInMillis, request.getClusterAlias());
+            if (request.source().query() != null) {
+                ParsedQuery query = context.toQuery(request.source().query());
+                query.query().visit(new QueryVisitor() {
+                    @Override
+                    public void consumeTerms(Query query, Term... terms) {
+                        super.consumeTerms(query, terms);
+                    }
+                });
+            }
+
+            if (request.source().aggregations() != null) {
+                try {
+                    AggregatorFactories factories = request.source().aggregations().build(context, null);
+                    SearchContextAggregations aggs = new SearchContextAggregations(factories, multiBucketConsumerService.create());
+                    for (AggregatorFactory factory : aggs.factories().factories()) {
+                        if (factory instanceof DateHistogramAggregatorFactory) {
+                            DateHistogramAggregatorFactory f = (DateHistogramAggregatorFactory) factory;
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new AggregationInitializationException("Failed to create aggregators", e);
+                }
+            }
+        }
+        return new CanMatchResponse(true, null);
+    }
+
+    public void canMatchRollover(ShardSearchRequest request, ActionListener<CanMatchResponse> listener) {
+        try {
+            listener.onResponse(canMatchRollover(request));
         } catch (IOException e) {
             listener.onFailure(e);
         }

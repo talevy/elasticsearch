@@ -520,7 +520,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             nodes::get, remoteConnections, searchTransportService::getConnection);
         boolean preFilterSearchShards = shouldPreFilterSearchShards(clusterState, searchRequest, indices, shardIterators.size());
         searchAsyncAction(task, searchRequest, shardIterators, timeProvider, connectionLookup, clusterState,
-            Collections.unmodifiableMap(aliasFilter), concreteIndexBoosts, routingMap, listener, preFilterSearchShards, clusters).start();
+            Collections.unmodifiableMap(aliasFilter), concreteIndexBoosts, routingMap, listener, preFilterSearchShards, clusters, false).start();
     }
 
     static BiFunction<String, String, Transport.Connection> buildConnectionLookup(String requestClusterAlias,
@@ -584,17 +584,42 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
     }
 
     private AbstractSearchAsyncAction<? extends SearchPhaseResult> searchAsyncAction(SearchTask task, SearchRequest searchRequest,
-                                                        GroupShardsIterator<SearchShardIterator> shardIterators,
-                                                        SearchTimeProvider timeProvider,
-                                                        BiFunction<String, String, Transport.Connection> connectionLookup,
-                                                        ClusterState clusterState,
-                                                        Map<String, AliasFilter> aliasFilter,
-                                                        Map<String, Float> concreteIndexBoosts,
-                                                        Map<String, Set<String>> indexRoutings,
-                                                        ActionListener<SearchResponse> listener,
-                                                        boolean preFilter,
-                                                        SearchResponse.Clusters clusters) {
+                                                                                     GroupShardsIterator<SearchShardIterator> shardIterators,
+                                                                                     SearchTimeProvider timeProvider,
+                                                                                     BiFunction<String, String, Transport.Connection> connectionLookup,
+                                                                                     ClusterState clusterState,
+                                                                                     Map<String, AliasFilter> aliasFilter,
+                                                                                     Map<String, Float> concreteIndexBoosts,
+                                                                                     Map<String, Set<String>> indexRoutings,
+                                                                                     ActionListener<SearchResponse> listener,
+                                                                                     boolean preFilter,
+                                                                                     SearchResponse.Clusters clusters, boolean postRollupFilter) {
         Executor executor = threadPool.executor(ThreadPool.Names.SEARCH);
+        if (searchRequest.resolveRollupIndices() && postRollupFilter == false) {
+            return new CanRolloverMatchSearchPhase(logger, searchTransportService, connectionLookup,
+                aliasFilter, concreteIndexBoosts, indexRoutings, executor, searchRequest, listener, shardIterators,
+                timeProvider, clusterState, task, (iter) -> {
+                AbstractSearchAsyncAction<? extends SearchPhaseResult> action = searchAsyncAction(
+                    task,
+                    searchRequest,
+                    iter,
+                    timeProvider,
+                    connectionLookup,
+                    clusterState,
+                    aliasFilter,
+                    concreteIndexBoosts,
+                    indexRoutings,
+                    listener,
+                    preFilter,
+                    clusters, true);
+                return new SearchPhase(action.getName()) {
+                    @Override
+                    public void run() {
+                        action.start();
+                    }
+                };
+            }, clusters);
+        }
         if (preFilter) {
             return new CanMatchPreFilterSearchPhase(logger, searchTransportService, connectionLookup,
                 aliasFilter, concreteIndexBoosts, indexRoutings, executor, searchRequest, listener, shardIterators,
@@ -611,7 +636,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     indexRoutings,
                     listener,
                     false,
-                    clusters);
+                    clusters, true);
                 return new SearchPhase(action.getName()) {
                     @Override
                     public void run() {
