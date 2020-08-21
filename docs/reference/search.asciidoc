@@ -1,7 +1,7 @@
 [[search]]
 == Search APIs
 
-Most search APIs support <<search-multi-index,multi-target syntax>>, with the
+Most search APIs support <<multi-index,multi-target syntax>>, with the
 exception of the <<search-explain>> endpoints.
 
 [discrete]
@@ -153,8 +153,6 @@ which could cause shard request rejections if the number of shards per node is
 high). This default value is `5`.
 
 include::search/search.asciidoc[]
-
-include::search/request-body.asciidoc[]
 
 include::search/async-search.asciidoc[]
 
