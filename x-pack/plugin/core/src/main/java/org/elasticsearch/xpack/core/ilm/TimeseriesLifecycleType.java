@@ -42,7 +42,7 @@ public class TimeseriesLifecycleType implements LifecycleType {
     static final List<String> ORDERED_VALID_WARM_ACTIONS = Arrays.asList(SetPriorityAction.NAME, UnfollowAction.NAME, ReadOnlyAction.NAME,
         AllocateAction.NAME, ShrinkAction.NAME, ForceMergeAction.NAME);
     static final List<String> ORDERED_VALID_COLD_ACTIONS = Arrays.asList(SetPriorityAction.NAME, UnfollowAction.NAME, AllocateAction.NAME,
-        FreezeAction.NAME, SearchableSnapshotAction.NAME);
+        FreezeAction.NAME, SearchableSnapshotAction.NAME, RollupAction.NAME);
     static final List<String> ORDERED_VALID_FROZEN_ACTIONS = Arrays.asList(SetPriorityAction.NAME, UnfollowAction.NAME, AllocateAction.NAME,
         FreezeAction.NAME, SearchableSnapshotAction.NAME);
     static final List<String> ORDERED_VALID_DELETE_ACTIONS = Arrays.asList(WaitForSnapshotAction.NAME, DeleteAction.NAME);

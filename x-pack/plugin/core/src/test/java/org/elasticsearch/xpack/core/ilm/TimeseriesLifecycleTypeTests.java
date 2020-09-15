@@ -7,7 +7,12 @@ package org.elasticsearch.xpack.core.ilm;
 
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.test.ESTestCase;
+import org.elasticsearch.xpack.core.rollup.job.DateHistogramGroupConfig;
+import org.elasticsearch.xpack.core.rollup.job.GroupConfig;
+import org.elasticsearch.xpack.core.rollup.v2.RollupV2Config;
+import org.elasticsearch.xpack.core.rollup.v2.RollupV2ConfigTests;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,6 +53,9 @@ public class TimeseriesLifecycleTypeTests extends ESTestCase {
     private static final SetPriorityAction TEST_PRIORITY_ACTION = new SetPriorityAction(0);
     private static final UnfollowAction TEST_UNFOLLOW_ACTION  = new UnfollowAction();
     private static final SearchableSnapshotAction TEST_SEARCHABLE_SNAPSHOT_ACTION = new SearchableSnapshotAction("repo");
+    private static final RollupAction TEST_ROLLUP_ACTION =new RollupAction(new RollupV2Config("source",
+        new GroupConfig(new DateHistogramGroupConfig.FixedInterval("field", DateHistogramInterval.DAY)),
+        Collections.emptyList(), null, "rollup"));
 
     public void testValidatePhases() {
         boolean invalid = randomBoolean();
@@ -698,6 +706,8 @@ public class TimeseriesLifecycleTypeTests extends ESTestCase {
                 return TEST_UNFOLLOW_ACTION;
             case SearchableSnapshotAction.NAME:
                 return TEST_SEARCHABLE_SNAPSHOT_ACTION;
+            case RollupAction.NAME:
+                return TEST_ROLLUP_ACTION;
             default:
                 throw new IllegalArgumentException("unsupported timeseries phase action [" + actionName + "]");
         }

@@ -45,11 +45,11 @@ public class RollupV2Config implements NamedWriteable, ToXContentObject {
     private static final String TIMEOUT = "timeout";
     private static final String ROLLUP_INDEX = "rollup_index";
 
-    private final String sourceIndex;
     private final String rollupIndex;
     private final GroupConfig groupConfig;
     private final List<MetricConfig> metricsConfig;
     private final TimeValue timeout;
+    private String sourceIndex;
 
     private static final ConstructingObjectParser<RollupV2Config, String> PARSER;
     static {
@@ -100,6 +100,10 @@ public class RollupV2Config implements NamedWriteable, ToXContentObject {
 
     public String getSourceIndex() {
         return sourceIndex;
+    }
+
+    public void setSourceIndex(String sourceIndex) {
+        this.sourceIndex = sourceIndex;
     }
 
     public GroupConfig getGroupConfig() {

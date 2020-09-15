@@ -16,6 +16,7 @@ import org.junit.Before;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Random;
 
 import static java.util.Collections.emptyList;
 import static org.hamcrest.Matchers.equalTo;
@@ -32,10 +33,15 @@ public class RollupV2ConfigTests extends AbstractSerializingTestCase<RollupV2Con
 
     @Override
     protected RollupV2Config createTestInstance() {
+        return randomConfig(random());
+    }
+
+    public static RollupV2Config randomConfig(Random random) {
+        final String sourceIndex = randomAlphaOfLength(10);
         final String rollupIndex = "rollup-" + sourceIndex;
-        final TimeValue timeout = randomBoolean() ? null : ConfigTestHelpers.randomTimeout(random());
-        final GroupConfig groupConfig = ConfigTestHelpers.randomGroupConfig(random());
-        final List<MetricConfig> metricConfigs = ConfigTestHelpers.randomMetricsConfigs(random());
+        final TimeValue timeout = random.nextBoolean() ? null : ConfigTestHelpers.randomTimeout(random);
+        final GroupConfig groupConfig = ConfigTestHelpers.randomGroupConfig(random);
+        final List<MetricConfig> metricConfigs = ConfigTestHelpers.randomMetricsConfigs(random);
         return new RollupV2Config(sourceIndex, groupConfig, metricConfigs, timeout, rollupIndex);
     }
 
