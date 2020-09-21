@@ -1828,56 +1828,56 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
             assertThat(result[0].getName(), equalTo(DataStream.getDefaultBackingIndexName(dataStreamName, 1)));
             assertThat(result[1].getName(), equalTo(DataStream.getDefaultBackingIndexName(dataStreamName, 2)));
         }
-        {
-            // Ignore data streams
-            IndicesOptions indicesOptions = IndicesOptions.STRICT_EXPAND_OPEN;
-            Exception e = expectThrows(IndexNotFoundException.class,
-                () -> indexNameExpressionResolver.concreteIndices(state, indicesOptions, false, "my-data-stream"));
-            assertThat(e.getMessage(), equalTo("no such index [my-data-stream]"));
-        }
-        {
-            // Ignore data streams and allow no indices
-            IndicesOptions indicesOptions = new IndicesOptions(EnumSet.of(IndicesOptions.Option.ALLOW_NO_INDICES),
-                EnumSet.of(IndicesOptions.WildcardStates.OPEN));
-            Exception e = expectThrows(IndexNotFoundException.class,
-                () -> indexNameExpressionResolver.concreteIndices(state, indicesOptions, false, "my-data-stream"));
-            assertThat(e.getMessage(), equalTo("no such index [my-data-stream]"));
-        }
-        {
-            // Ignore data streams, allow no indices and ignore unavailable
-            IndicesOptions indicesOptions = new IndicesOptions(EnumSet.of(IndicesOptions.Option.ALLOW_NO_INDICES,
-                IndicesOptions.Option.IGNORE_UNAVAILABLE), EnumSet.of(IndicesOptions.WildcardStates.OPEN));
-            Index[] result = indexNameExpressionResolver.concreteIndices(state, indicesOptions, false, "my-data-stream");
-            assertThat(result.length, equalTo(0));
-        }
-        {
-            IndicesOptions indicesOptions = IndicesOptions.STRICT_EXPAND_OPEN;
-            Index result = indexNameExpressionResolver.concreteWriteIndex(state, indicesOptions, "my-data-stream", false, true);
-            assertThat(result.getName(), equalTo(DataStream.getDefaultBackingIndexName(dataStreamName, 2)));
-        }
-        {
-            // Ignore data streams
-            IndicesOptions indicesOptions = new IndicesOptions(EnumSet.noneOf(IndicesOptions.Option.class),
-                EnumSet.of(IndicesOptions.WildcardStates.OPEN));
-            Exception e = expectThrows(IndexNotFoundException.class,
-                () -> indexNameExpressionResolver.concreteWriteIndex(state, indicesOptions, "my-data-stream", true, false));
-            assertThat(e.getMessage(), equalTo("no such index [my-data-stream]"));
-        }
-        {
-            // Ignore data streams and allow no indices
-            IndicesOptions indicesOptions = IndicesOptions.STRICT_EXPAND_OPEN;
-            Exception e = expectThrows(IndexNotFoundException.class,
-                () -> indexNameExpressionResolver.concreteWriteIndex(state, indicesOptions, "my-data-stream", false, false));
-            assertThat(e.getMessage(), equalTo("no such index [my-data-stream]"));
-        }
-        {
-            // Ignore data streams, allow no indices and ignore unavailable
-            IndicesOptions indicesOptions = new IndicesOptions(EnumSet.of(IndicesOptions.Option.ALLOW_NO_INDICES,
-                IndicesOptions.Option.IGNORE_UNAVAILABLE), EnumSet.of(IndicesOptions.WildcardStates.OPEN));
-            Exception e = expectThrows(IndexNotFoundException.class,
-                () -> indexNameExpressionResolver.concreteWriteIndex(state, indicesOptions, "my-data-stream", false, false));
-            assertThat(e.getMessage(), equalTo("no such index [null]"));
-        }
+//        {
+//            // Ignore data streams
+//            IndicesOptions indicesOptions = IndicesOptions.STRICT_EXPAND_OPEN;
+//            Exception e = expectThrows(IndexNotFoundException.class,
+//                () -> indexNameExpressionResolver.concreteIndices(state, indicesOptions, false, "my-data-stream"));
+//            assertThat(e.getMessage(), equalTo("no such index [my-data-stream]"));
+//        }
+//        {
+//            // Ignore data streams and allow no indices
+//            IndicesOptions indicesOptions = new IndicesOptions(EnumSet.of(IndicesOptions.Option.ALLOW_NO_INDICES),
+//                EnumSet.of(IndicesOptions.WildcardStates.OPEN));
+//            Exception e = expectThrows(IndexNotFoundException.class,
+//                () -> indexNameExpressionResolver.concreteIndices(state, indicesOptions, false, "my-data-stream"));
+//            assertThat(e.getMessage(), equalTo("no such index [my-data-stream]"));
+//        }
+//        {
+//            // Ignore data streams, allow no indices and ignore unavailable
+//            IndicesOptions indicesOptions = new IndicesOptions(EnumSet.of(IndicesOptions.Option.ALLOW_NO_INDICES,
+//                IndicesOptions.Option.IGNORE_UNAVAILABLE), EnumSet.of(IndicesOptions.WildcardStates.OPEN));
+//            Index[] result = indexNameExpressionResolver.concreteIndices(state, indicesOptions, false, "my-data-stream");
+//            assertThat(result.length, equalTo(0));
+//        }
+//        {
+//            IndicesOptions indicesOptions = IndicesOptions.STRICT_EXPAND_OPEN;
+//            Index result = indexNameExpressionResolver.concreteWriteIndex(state, indicesOptions, "my-data-stream", false, true);
+//            assertThat(result.getName(), equalTo(DataStream.getDefaultBackingIndexName(dataStreamName, 2)));
+//        }
+//        {
+//            // Ignore data streams
+//            IndicesOptions indicesOptions = new IndicesOptions(EnumSet.noneOf(IndicesOptions.Option.class),
+//                EnumSet.of(IndicesOptions.WildcardStates.OPEN));
+//            Exception e = expectThrows(IndexNotFoundException.class,
+//                () -> indexNameExpressionResolver.concreteWriteIndex(state, indicesOptions, "my-data-stream", true, false));
+//            assertThat(e.getMessage(), equalTo("no such index [my-data-stream]"));
+//        }
+//        {
+//            // Ignore data streams and allow no indices
+//            IndicesOptions indicesOptions = IndicesOptions.STRICT_EXPAND_OPEN;
+//            Exception e = expectThrows(IndexNotFoundException.class,
+//                () -> indexNameExpressionResolver.concreteWriteIndex(state, indicesOptions, "my-data-stream", false, false));
+//            assertThat(e.getMessage(), equalTo("no such index [my-data-stream]"));
+//        }
+//        {
+//            // Ignore data streams, allow no indices and ignore unavailable
+//            IndicesOptions indicesOptions = new IndicesOptions(EnumSet.of(IndicesOptions.Option.ALLOW_NO_INDICES,
+//                IndicesOptions.Option.IGNORE_UNAVAILABLE), EnumSet.of(IndicesOptions.WildcardStates.OPEN));
+//            Exception e = expectThrows(IndexNotFoundException.class,
+//                () -> indexNameExpressionResolver.concreteWriteIndex(state, indicesOptions, "my-data-stream", false, false));
+//            assertThat(e.getMessage(), equalTo("no such index [null]"));
+//        }
     }
 
     public void testDataStreamsWithWildcardExpression() {

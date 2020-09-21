@@ -44,6 +44,7 @@ public final class DataStream extends AbstractDiffable<DataStream> implements To
     private final String name;
     private final TimestampField timeStampField;
     private final List<Index> indices;
+    //private final List<String> rollupGroups;
     private final long generation;
 
     public DataStream(String name, TimestampField timeStampField, List<Index> indices, long generation) {

@@ -162,7 +162,7 @@ public class IndexNameExpressionResolver {
      * indices options in the context don't allow such a case.
      */
     public Index[] concreteIndices(ClusterState state, IndicesRequest request, long startTime) {
-        Context context = new Context(state, request.indicesOptions(), startTime, false, false, request.includeDataStreams(), false);
+        Context context = new Context(state, request.indicesOptions(), startTime, false, false, request.includeDataStreams(), false, request.resolveRollupIndices());
         return concreteIndices(context, request.indices());
     }
 
@@ -271,6 +271,12 @@ public class IndexNameExpressionResolver {
                     }
                 }
             }
+        }
+
+        // resolve rollup indices
+        if (context.resolveRollupIndices) {
+            // TODO(talevy)
+            // loop through indices and add rollup indices that were not included in the query, but should be
         }
 
         if (options.allowNoIndices() == false && concreteIndices.isEmpty()) {
@@ -659,6 +665,7 @@ public class IndexNameExpressionResolver {
         private final boolean resolveToWriteIndex;
         private final boolean includeDataStreams;
         private final boolean preserveDataStreams;
+        private final boolean resolveRollupIndices;
 
         Context(ClusterState state, IndicesOptions options) {
             this(state, options, System.currentTimeMillis());
@@ -666,20 +673,20 @@ public class IndexNameExpressionResolver {
 
         Context(ClusterState state, IndicesOptions options, boolean preserveAliases, boolean resolveToWriteIndex,
                 boolean includeDataStreams) {
-            this(state, options, System.currentTimeMillis(), preserveAliases, resolveToWriteIndex, includeDataStreams, false);
+            this(state, options, System.currentTimeMillis(), preserveAliases, resolveToWriteIndex, includeDataStreams, false, false);
         }
 
         Context(ClusterState state, IndicesOptions options, boolean preserveAliases, boolean resolveToWriteIndex,
                 boolean includeDataStreams, boolean preserveDataStreams) {
-            this(state, options, System.currentTimeMillis(), preserveAliases, resolveToWriteIndex, includeDataStreams, preserveDataStreams);
+            this(state, options, System.currentTimeMillis(), preserveAliases, resolveToWriteIndex, includeDataStreams, preserveDataStreams, false);
         }
 
         Context(ClusterState state, IndicesOptions options, long startTime) {
-           this(state, options, startTime, false, false, false, false);
+           this(state, options, startTime, false, false, false, false, false);
         }
 
         protected Context(ClusterState state, IndicesOptions options, long startTime, boolean preserveAliases, boolean resolveToWriteIndex,
-                          boolean includeDataStreams, boolean preserveDataStreams) {
+                          boolean includeDataStreams, boolean preserveDataStreams, boolean resolveRollupIndices) {
             this.state = state;
             this.options = options;
             this.startTime = startTime;
@@ -687,6 +694,7 @@ public class IndexNameExpressionResolver {
             this.resolveToWriteIndex = resolveToWriteIndex;
             this.includeDataStreams = includeDataStreams;
             this.preserveDataStreams = preserveDataStreams;
+            this.resolveRollupIndices = resolveRollupIndices;
         }
 
         public ClusterState getState() {
@@ -724,6 +732,10 @@ public class IndexNameExpressionResolver {
 
         public boolean isPreserveDataStreams() {
             return preserveDataStreams;
+        }
+
+        public boolean isResolveRollupIndices() {
+            return resolveRollupIndices;
         }
     }
 

@@ -22,7 +22,10 @@ package org.elasticsearch.search;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.search.FieldDoc;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.QueryVisitor;
 import org.apache.lucene.search.TopDocs;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
@@ -34,6 +37,7 @@ import org.elasticsearch.action.search.SearchShardTask;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.support.TransportActions;
 import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.metadata.RollupMetadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.breaker.CircuitBreaker;
@@ -76,6 +80,7 @@ import org.elasticsearch.script.FieldScript;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.aggregations.AggregationInitializationException;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
+import org.elasticsearch.search.aggregations.AggregatorFactory;
 import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.InternalAggregation.ReduceContext;
 import org.elasticsearch.search.aggregations.MultiBucketConsumerService;
@@ -1170,14 +1175,25 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
             }
 
             try (canMatchSearcher) {
+                // get info about things
+
+                RollupMetadata rollupMetadata = clusterService.state().getMetadata().custom(RollupMetadata.TYPE);
+
                 QueryShardContext context = indexService.newQueryShardContext(request.shardId().id(), canMatchSearcher,
                     request::nowInMillis, request.getClusterAlias());
                 Rewriteable.rewrite(request.getRewriteable(), context, false);
+
                 final boolean aliasFilterCanMatch = request.getAliasFilter()
                     .getQueryBuilder() instanceof MatchNoneQueryBuilder == false;
                 FieldSortBuilder sortBuilder = FieldSortBuilder.getPrimaryFieldSortOrNull(request.source());
                 MinAndMax<?> minMax = sortBuilder != null ? FieldSortBuilder.getMinMaxOrNull(context, sortBuilder) : null;
                 final boolean canMatch;
+
+                // check if shard should match rollup
+                if (shouldMatchRollup(context, request.source().query(), request.source().aggregations(), rollupMetadata) == false) {
+                    return new CanMatchResponse(false, minMax);
+                }
+
                 if (canRewriteToMatchNone(request.source())) {
                     QueryBuilder queryBuilder = request.source().query();
                     canMatch = aliasFilterCanMatch && queryBuilder instanceof MatchNoneQueryBuilder == false;
@@ -1188,6 +1204,26 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                 return new CanMatchResponse(canMatch || hasRefreshPending, minMax);
             }
         }
+    }
+
+    boolean shouldMatchRollup(QueryShardContext context, QueryBuilder queryBuilder, AggregatorFactories.Builder aggFactoryBuilders, RollupMetadata rollupMetadata) {
+        if (aggFactoryBuilders != null && rollupMetadata != null && rollupMetadata.contains(context.index().getName())) {
+            try {
+                AggregatorFactory[] factories = aggFactoryBuilders.build(context, null).factories();
+            } catch (IOException e) {
+                throw new AggregationInitializationException("Failed to create aggregators", e);
+            }
+
+            // do something with query?
+            Query query = context.toQuery(queryBuilder).query();
+            query.visit(new QueryVisitor() {
+                @Override
+                public void consumeTerms(Query query, Term... terms) {
+                    super.consumeTerms(query, terms);
+                }
+            });
+        }
+        return false;
     }
 
     /**
