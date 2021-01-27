@@ -7,6 +7,12 @@ package org.elasticsearch.xpack.spatial;
 
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
+import org.elasticsearch.cluster.node.DiscoveryNodes;
+import org.elasticsearch.common.settings.ClusterSettings;
+import org.elasticsearch.common.settings.IndexScopedSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.common.xcontent.ContextParser;
 import org.elasticsearch.geo.GeoPlugin;
 import org.elasticsearch.index.mapper.Mapper;
@@ -17,6 +23,8 @@ import org.elasticsearch.plugins.ActionPlugin;
 import org.elasticsearch.plugins.IngestPlugin;
 import org.elasticsearch.plugins.MapperPlugin;
 import org.elasticsearch.plugins.SearchPlugin;
+import org.elasticsearch.rest.RestController;
+import org.elasticsearch.rest.RestHandler;
 import org.elasticsearch.search.aggregations.bucket.geogrid.GeoHashGridAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.geogrid.GeoTileGridAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.CardinalityAggregationBuilder;
@@ -30,6 +38,7 @@ import org.elasticsearch.xpack.core.XPackPlugin;
 import org.elasticsearch.xpack.core.action.XPackInfoFeatureAction;
 import org.elasticsearch.xpack.core.action.XPackUsageFeatureAction;
 import org.elasticsearch.xpack.core.spatial.action.SpatialStatsAction;
+import org.elasticsearch.xpack.core.spatial.action.VectorTileAction;
 import org.elasticsearch.xpack.spatial.action.SpatialInfoTransportAction;
 import org.elasticsearch.xpack.spatial.action.SpatialStatsTransportAction;
 import org.elasticsearch.xpack.spatial.action.SpatialUsageTransportAction;
@@ -52,6 +61,8 @@ import org.elasticsearch.xpack.spatial.search.aggregations.bucket.geogrid.GeoTil
 import org.elasticsearch.xpack.spatial.search.aggregations.metrics.GeoShapeBoundsAggregator;
 import org.elasticsearch.xpack.spatial.search.aggregations.support.GeoShapeValuesSource;
 import org.elasticsearch.xpack.spatial.search.aggregations.support.GeoShapeValuesSourceType;
+import org.elasticsearch.xpack.spatial.vectortile.RestVectorTileAction;
+import org.elasticsearch.xpack.spatial.vectortile.TransportVectorTileAction;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,6 +70,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static java.util.Collections.singletonList;
 
@@ -71,12 +83,21 @@ public class SpatialPlugin extends GeoPlugin implements ActionPlugin, MapperPlug
     }
 
     @Override
-    public List<ActionPlugin.ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
+    public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
         return Arrays.asList(
-            new ActionPlugin.ActionHandler<>(XPackUsageFeatureAction.SPATIAL, SpatialUsageTransportAction.class),
-            new ActionPlugin.ActionHandler<>(XPackInfoFeatureAction.SPATIAL, SpatialInfoTransportAction.class),
-            new ActionPlugin.ActionHandler<>(SpatialStatsAction.INSTANCE, SpatialStatsTransportAction.class));
+            new ActionHandler<>(XPackUsageFeatureAction.SPATIAL, SpatialUsageTransportAction.class),
+            new ActionHandler<>(XPackInfoFeatureAction.SPATIAL, SpatialInfoTransportAction.class),
+            new ActionHandler<>(SpatialStatsAction.INSTANCE, SpatialStatsTransportAction.class),
+            new ActionHandler<>(VectorTileAction.INSTANCE, TransportVectorTileAction.class));
     }
+    @Override
+    public List<RestHandler> getRestHandlers(Settings settings, RestController restController, ClusterSettings clusterSettings,
+                                             IndexScopedSettings indexScopedSettings, SettingsFilter settingsFilter,
+                                             IndexNameExpressionResolver indexNameExpressionResolver,
+                                             Supplier<DiscoveryNodes> nodesInCluster) {
+        return Collections.singletonList(new RestVectorTileAction());
+    }
+
 
     @Override
     public Map<String, Mapper.TypeParser> getMappers() {
